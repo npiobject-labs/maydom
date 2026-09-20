@@ -8,7 +8,7 @@ Flujo "PC arranca, móvil continúa": el desarrollo, la revisión y las pruebas 
 |---|---|
 | Proyecto | `maydom` |
 | Owner de GitHub | `npiobject-labs` |
-| App de Fly.io | `derivada` |
+| App de Fly.io | `maydom-npiobject-labs` |
 | Carpeta de Drive (id) |  |
 
 Esta tabla la rellena sola `.github/workflows/init-plantilla.yml` en el primer push de un repo creado desde la plantilla; no hay nada que tocar a mano salvo el id de Drive.

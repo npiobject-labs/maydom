@@ -127,6 +127,25 @@ jobs:
             || { echo "::error::/holamundo sin cabecera CORS"; exit 1; }
           echo "OK: /holamundo responde 'holamundo' con CORS"
 
+      # El mayordomo de la app llama a esta ruta desde Pages. Sin OPENROUTER_API_KEY responde 503 con
+      # un JSON de error; con clave, 200. Cualquier otra cosa es un fallo del despliegue.
+      - name: Verificar /api/mayordomo
+        if: steps.fly.outputs.configurado == 'true'
+        env:
+          FLY_APP: ${{ steps.app.outputs.app }}
+        run: |
+          url="https://${FLY_APP}.fly.dev/api/mayordomo"
+          codigo="$(curl -sS --max-time 90 -o /tmp/mayordomo -w '%{http_code}' -X POST "${url}" \
+            -H 'content-type: application/json' -d '{"mensajes":[{"rol":"usuario","contenido":"Responde solo: ok"}]}' || true)"
+          echo "HTTP ${codigo}: $(head -c 300 /tmp/mayordomo)"
+          case "${codigo}" in
+            200) grep -q '"respuesta"' /tmp/mayordomo || { echo "::error::/api/mayordomo 200 sin campo respuesta"; exit 1; }; echo "OK: mayordomo con LLM" ;;
+            503) grep -q 'OPENROUTER_API_KEY' /tmp/mayordomo || { echo "::error::/api/mayordomo 503 con otro error"; exit 1; }; echo "Mayordomo sin clave: solo reglas locales (ver docs/planificacion/plan-maydom.md, deuda D1)" >> "$GITHUB_STEP_SUMMARY"; echo "OK: 503 esperado sin clave" ;;
+            *) echo "::error::/api/mayordomo devolvio HTTP ${codigo}"; exit 1 ;;
+          esac
+          cabeceras="$(curl -sS --max-time 20 -D - -o /dev/null -X OPTIONS "${url}")"
+          printf '%s' "${cabeceras}" | grep -qi '^access-control-allow-origin: \*' || { echo "::error::/api/mayordomo sin CORS en OPTIONS"; exit 1; }
+
       - name: Resumen del despliegue
         if: success() && steps.fly.outputs.configurado == 'true'
         env:
@@ -140,6 +159,7 @@ jobs:
             echo "- URL: https://${FLY_APP}.fly.dev/"
             echo "- Salud: https://${FLY_APP}.fly.dev/salud"
             echo "- Hola mundo: https://${FLY_APP}.fly.dev/holamundo"
+            echo "- Mayordomo: POST https://${FLY_APP}.fly.dev/api/mayordomo"
             echo "- Comprobacion desde Pages: https://${GITHUB_REPOSITORY%%/*}.github.io/${GITHUB_REPOSITORY#*/}/holamundo.html"
             echo "- Build (SHA): \`${GITHUB_SHA}\`"
           } >> "$GITHUB_STEP_SUMMARY"

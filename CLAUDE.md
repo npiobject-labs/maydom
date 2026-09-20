@@ -36,6 +36,7 @@ La carpeta local del PC es un espejo de solo lectura. Nunca la trates como orige
 | Mock estático (Pages) | https://npiobject-labs.github.io/maydom/ | `.github/workflows/pages.yml` en push a `main` |
 | Bitácora (Pages) | https://npiobject-labs.github.io/maydom/bitacora.html | idem; el índice lo genera `pages.yml` |
 | Backend (Fly.io, opcional) | `https://<app de Fly>.fly.dev/` · `/salud` · `/holamundo` | `.github/workflows/deploy.yml` en push a `main` que toque `app/**` |
+| App maydom (Pages) | https://npiobject-labs.github.io/maydom/ | la PWA; misma URL que el mock vivo |
 | Comprobación del backend (Pages) | https://npiobject-labs.github.io/maydom/holamundo.html | página estática que llama a `/holamundo` y `/salud` desde el navegador |
 
 Pages está siempre activo. Fly también: `FLY_API_TOKEN` es un secreto de la organización `npiobject-labs` y lo heredan sus repos **públicos**, así que `deploy.yml` despliega sin configurar nada. Si el repo fuera privado (plan Free) o viviera fuera de la organización, el secreto no llega y `deploy.yml` termina en verde con el aviso "Fly no configurado" sin desplegar nada.
@@ -45,6 +46,8 @@ Pages está siempre activo. Fly también: `FLY_API_TOKEN` es un secreto de la or
 - Todo cambio termina en commit + push a `main`. Mensajes de commit en español, imperativo.
 - Backend en `app/` (Rust, axum + tokio). `GET /` devuelve texto plano; `GET /salud` devuelve `{"ok":true,"build":"<BUILD_ID>"}`, donde `BUILD_ID` es el SHA que inyecta el workflow.
 - `GET /holamundo` devuelve `holamundo` en texto plano; `/holamundo` y `/salud` llevan `Access-Control-Allow-Origin: *` porque los consume `docs/holamundo.html` desde Pages (otro origen). Si añades más rutas para el frontend, ponles la misma cabecera. `deploy.yml` verifica las dos rutas y falla si cambian.
+- `POST /api/mayordomo` recibe `{contexto, mensajes:[{rol, contenido}]}` y lo reenvía a OpenRouter con la clave del secreto `OPENROUTER_API_KEY` de Fly (nunca en el cliente); opcionales `OPENROUTER_MODEL` (por defecto `openrouter/auto`) y `OPENROUTER_URL` (pruebas). Sin clave responde 503 con JSON `{error}` y la app sigue con el motor de reglas. `deploy.yml` verifica la ruta (200 o 503) y su CORS. La clave se pone a mano: `flyctl secrets set OPENROUTER_API_KEY=... --app maydom-npiobject-labs`.
+- La app es una PWA en `docs/`: `docs/index.html` (shell) + `docs/app/` (núcleo, secciones, semillas), `docs/manifest.webmanifest` y `docs/sw.js`. Sin framework ni build; datos en `localStorage` (clave `maydom.v1`). Al subir el `build` cambia también la constante `CACHE` de `docs/sw.js`. Prueba de humo en local: servir `docs/` y recorrer `#/seccion` con Playwright (ver sesión 20260920).
 - `docs/holamundo.html` toma el nombre de la app de Fly del `<meta name="fly-app">` (`<repo>-<owner>`, como lo deriva `deploy.yml`). Si el proyecto define `FLY_APP` con otro nombre, actualiza ese `content` en el mismo commit.
 - `app/fly.toml` no lleva clave `app`: el nombre se pasa con `--app` desde `deploy.yml`.
 - El backend escucha en 8080, que es lo que espera Fly; la variable de entorno `PUERTO` solo la usa `tools/arrancar.ps1` para probar en el PC.
@@ -56,6 +59,8 @@ Pages está siempre activo. Fly también: `FLY_API_TOKEN` es un secreto de la or
 ## Documentación
 
 - Cada documento de planificación, decisión o resumen de sesión se escribe en `docs/planificacion/` de este repo, y solo ahí se edita.
+- Planificación de la app en `docs/planificacion/plan-maydom.md` (secciones, menú por apartados, arquitectura, fases y deuda de desarrollo D1–D11). Se actualiza ahí cuando una fase o una deuda cambia de estado.
+- `docs/planificacion/memoria/` es una bóveda de Obsidian con la memoria del mayordomo: `decisiones/` (ADR) y `preferencias/` (una nota por fecha, nunca se edita una anterior). **Léela al empezar cada sesión** (todas las decisiones y la última nota de preferencias) antes de recomendar o cambiar nada; una recomendación que contradiga un ADR aceptado lo dice y propone un ADR nuevo. La app exporta su memoria en ese formato (Mayordomo → Exportar memoria); se pega en `preferencias/` y se hace commit.
 - Si existe `docs/plantilla/`, es el historial de la plantilla de origen que apartó `init-plantilla.yml`: referencia de solo lectura, nunca se edita ni se mezcla con `docs/planificacion/`.
 - Si hay id de Drive en **Parámetros**, al cerrar sesión se sube copia como fichero, sin conversión a formato Google (`disableConversionToGoogleType=true`), tanto `.md` como `.html/.png/.svg`.
 - No hay edición incremental en Drive: se vuelve a subir el fichero completo con el mismo nombre, o con sufijo de versión (`-v2`, `-v3`) si quieres conservar la copia anterior.

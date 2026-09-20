@@ -116,14 +116,14 @@ Se revisa si aparece un segundo usuario, si hace falta sincronizar varios dispos
 | Fase | Contenido | Estado |
 |---|---|---|
 | F0 | Plantilla: Pages, Fly, bitácora, tools | Hecha (plantilla) |
-| F1 | Planificación (este documento), memoria Obsidian, mock de la app | Esta sesión |
-| F2 | Núcleo PWA: shell, menú por apartados, almacenamiento local, Hoy, Calendario con regla de carga y conflictos, Notas, Preferencias, Ajustes con exportar/importar | Esta sesión |
-| F3 | Cuerpo: Ejercicio (catálogo, tablas, seguimiento, píldoras), Sueño (registro, objetivo 7 h, técnicas), Meditación (guiones, temporizador, modo nocturno) | Esta sesión |
-| F4 | Mesa: Alimentación (menús, seguimiento, stock), Suplementos (stock, hora, umbral 10 %), Compra unificada | Esta sesión |
-| F5 | Vida: Proyectos (horas, semáforo, bloques con píldoras), Ocio (fijas, propuestas, conflictos, presupuesto), Finanzas (movimientos, CSV, recurrentes, balances) | Esta sesión |
-| F6 | Mayordomo: consejos con estados, motor de reglas local, motor LLM vía backend, Buscador con catálogo de tiendas, exportar memoria | Esta sesión |
-| F7 | PWA: manifest, service worker, instalación, notificaciones locales | Esta sesión |
-| F8 | Backend: `POST /api/mayordomo` proxy a OpenRouter con CORS, sin clave en el cliente | Esta sesión (la clave se pone a mano en Fly, ver §7) |
+| F1 | Planificación (este documento), memoria Obsidian, mock de la app | Hecha 20-sep (mock 003, `docs/mocks/002-mock1.html`) |
+| F2 | Núcleo PWA: shell, menú por apartados, almacenamiento local, Hoy, Calendario con regla de carga y conflictos, Notas, Preferencias, Ajustes con exportar/importar | Hecha 20-sep (build 004) |
+| F3 | Cuerpo: Ejercicio (catálogo, tablas, seguimiento, píldoras), Sueño (registro, objetivo 7 h, técnicas), Meditación (guiones, temporizador, modo nocturno) | Hecha 20-sep (build 004) |
+| F4 | Mesa: Alimentación (menús, seguimiento, stock), Suplementos (stock, hora, umbral 10 %), Compra unificada | Hecha 20-sep (build 004) |
+| F5 | Vida: Proyectos (horas, semáforo, bloques con píldoras), Ocio (fijas, propuestas, conflictos, presupuesto), Finanzas (movimientos, CSV, recurrentes, balances) | Hecha 20-sep (build 004) |
+| F6 | Mayordomo: consejos con estados, motor de reglas local, motor LLM vía backend, Buscador con catálogo de tiendas, exportar memoria | Hecha 20-sep (build 004) |
+| F7 | PWA: manifest, service worker, instalación, notificaciones locales | Hecha 20-sep (build 004) |
+| F8 | Backend: `POST /api/mayordomo` proxy a OpenRouter con CORS, sin clave en el cliente | Hecha 20-sep; probado en local con y sin clave. Falta la clave en Fly (D1) |
 | F9 | Deuda de desarrollo (§7) | Pendiente |
 
 ## 7. Deuda de desarrollo
@@ -144,7 +144,11 @@ Lo que las notas piden y no se puede cerrar sin servicios externos, datos reales
 | D10 | **Sincronización automática con Obsidian** | La bóveda vive en el repo; la app en el navegador | Exportar memoria en Markdown (hecho); un workflow que reciba el export es el siguiente paso |
 | D11 | **El agente ejecuta acciones** (finanzas) | Las notas lo dejan para "próximas versiones" | Solo cuando haya aprobación explícita por consejo |
 
-## 8. Verificación
+## 8. Estado tras la sesión del 20-sep
+
+Verificado en el sandbox: prueba de humo con Chromium (Playwright) que recorre las 17 pantallas y ejecuta las acciones principales (evento con conflicto y sustitución, rellenar el día, registro de sueño con tramos, alta de suplemento con hora sugerida y paso a Compra, sesión de trabajo con horas, ideas y aceptación de ocio, movimientos y CSV bancario, menú propuesto y comida registrada, sesión de ejercicio, modo nocturno, consejos por reglas, buscador) sin errores de JS. Backend compilado y probado en local: 503 sin clave, 200 con un OpenRouter simulado, preflight CORS. Pendiente de verificar en Pages y Fly tras fusionar a `main`.
+
+## 9. Verificación
 
 - Pages: run de `pages.yml` en `success` para el SHA publicado; la app en https://npiobject-labs.github.io/maydom/ .
 - Backend: run de `deploy.yml` en `success`; `/salud` devuelve el SHA. `/api/mayordomo` sin clave devuelve 503 con mensaje claro (comprobable con `curl` desde el runner, no desde la sesión).

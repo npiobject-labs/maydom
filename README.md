@@ -1,4 +1,4 @@
-# DesdeMovil
+# maydom
 
 Plantilla del método "PC arranca, móvil continúa":
 

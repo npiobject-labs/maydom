@@ -1,27 +1,187 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="build" content="MA-B1-20260910-002">
-  <title>maydom · mock 0</title>
-  <style>
-    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 2rem; background: #fafafa; color: #1a1a1a; }
-    main { max-width: 40rem; margin: 0 auto; }
-    h1 { font-size: 1.5rem; margin: 0 0 .5rem; }
-    p { color: #555; line-height: 1.5; }
-    code { background: #eee; padding: .15rem .35rem; border-radius: 3px; }
-    a { color: #0b6e7a; text-underline-offset: 2px; }
-    .enlaces { margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid #e2e2e2; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="build" content="MA-B1-20260920-003">
+<meta name="color-scheme" content="light dark">
+<title>maydom · mock 1</title>
+<style>
+:root{--bg:#F6F7F4;--bg2:#FFFFFF;--ink:#1B2430;--ink2:#4B5563;--mute:#8A93A0;--line:#D9DED8;--acc:#0B6E7A;--acc2:#0B6E7A1A;--warn:#B85C1E;--warn2:#B85C1E14;--ok:#2E7D4F;--ok2:#2E7D4F14;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#131A20;--bg2:#1B232B;--ink:#E6EAE7;--ink2:#B7C0C7;--mute:#7F8A94;--line:#2C3740;--acc:#4FB3BF;--acc2:#4FB3BF22;--warn:#E08A4C;--warn2:#E08A4C1F;--ok:#5FBF87;--ok2:#5FBF871F}}
+:root[data-theme="dark"]{--bg:#131A20;--bg2:#1B232B;--ink:#E6EAE7;--ink2:#B7C0C7;--mute:#7F8A94;--line:#2C3740;--acc:#4FB3BF;--acc2:#4FB3BF22;--warn:#E08A4C;--warn2:#E08A4C1F;--ok:#5FBF87;--ok2:#5FBF871F}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans)}
+.app{max-width:30rem;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg)}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:1.1rem;margin:0}
+header small{color:var(--mute);font-size:.75rem}
+main{flex:1;padding:1rem 1rem 5rem}
+.pantalla{display:none}.pantalla.activa{display:block}
+h2{font-size:1.25rem;margin:0 0 .75rem}
+h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:1.25rem 0 .5rem}
+.tarjeta{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:.85rem 1rem;margin:.5rem 0}
+.fila{display:flex;align-items:center;gap:.75rem}
+.fila .t{flex:1}
+.fila .h{color:var(--mute);font-variant-numeric:tabular-nums;font-size:.85rem;min-width:3.2rem}
+.pill{font-size:.72rem;padding:.1rem .5rem;border-radius:999px;background:var(--acc2);color:var(--acc)}
+.pill.w{background:var(--warn2);color:var(--warn)}.pill.ok{background:var(--ok2);color:var(--ok)}
+.barra{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:.4rem 0}
+.barra i{display:block;height:100%;background:var(--acc)}
+.barra i.w{background:var(--warn)}
+.btn{font:500 .85rem var(--sans);color:var(--acc);background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:.4rem .7rem;cursor:pointer}
+.btn.p{background:var(--acc);color:#fff;border-color:var(--acc)}
+.acciones{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem}
+nav.inferior{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:.35rem 0 max(.35rem,env(safe-area-inset-bottom));z-index:6}
+nav.inferior button{background:none;border:0;color:var(--mute);font:.7rem var(--sans);display:flex;flex-direction:column;align-items:center;gap:.15rem;padding:.2rem .6rem;cursor:pointer}
+nav.inferior button.activo{color:var(--acc)}
+nav.inferior button span{font-size:1.25rem}
+.menu{list-style:none;margin:0;padding:0}
+.menu li{padding:.65rem .25rem;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.menu li span{color:var(--mute);font-size:.8rem}
+.dia{display:grid;grid-template-columns:3.2rem 1fr;gap:.25rem .5rem;font-size:.9rem}
+.dia .hh{color:var(--mute);font-variant-numeric:tabular-nums;text-align:right}
+.dia .ev{border-left:3px solid var(--acc);padding:.15rem .5rem;background:var(--acc2);border-radius:0 6px 6px 0}
+.dia .ev.oc{border-color:var(--warn);background:var(--warn2)}
+.dia .ev.pr{border-color:var(--ok);background:var(--ok2)}
+.semana{display:flex;gap:.3rem;margin-bottom:.75rem}
+.semana div{flex:1;text-align:center;font-size:.75rem;padding:.35rem 0;border-radius:6px;border:1px solid var(--line)}
+.semana div.hoy{background:var(--acc);color:#fff;border-color:var(--acc)}
+.semana div b{display:block;font-size:1rem}
+.chat{display:flex;flex-direction:column;gap:.5rem}
+.msg{max-width:88%;padding:.6rem .8rem;border-radius:12px;background:var(--bg2);border:1px solid var(--line);font-size:.92rem}
+.msg.yo{align-self:flex-end;background:var(--acc2);border-color:transparent}
+.pie{color:var(--mute);font-size:.75rem;text-align:center;margin-top:2rem}
+.pie a{color:var(--acc)}
+.grande{font-size:2rem;font-weight:700;line-height:1}
+.mini{color:var(--mute);font-size:.8rem}
+input,select{font:inherit;padding:.5rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--bg2);color:var(--ink);width:100%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+</style>
 </head>
 <body>
-  <main>
-    <h1>maydom · mock 0</h1>
-    <p>Fase 0 del flujo «PC arranca, móvil continúa».</p>
-    <p>Build: <code>MA-B1-20260910-002</code></p>
-    <p class="enlaces"><a href="bitacora.html">Bitácora del proyecto</a> · cada sesión de trabajo, qué se pidió y qué cambió.<br>
-    <a href="holamundo.html">Comprobación del backend</a> · Pages llama a <code>/holamundo</code> y <code>/salud</code> en Fly.</p>
-  </main>
+<div class="app">
+<header><h1 id="titulo">Hoy</h1><small>sábado 20 sep · build 003</small></header>
+<main>
+
+<section class="pantalla activa" id="p-hoy">
+  <div class="tarjeta">
+    <div class="fila"><div class="t"><b>Carga del día</b><div class="mini">4,5 h de 6 h planificadas</div></div><span class="pill ok">holgura</span></div>
+    <div class="barra"><i style="width:75%"></i></div>
+  </div>
+  <h3>Agenda</h3>
+  <div class="tarjeta dia">
+    <div class="hh">08:30</div><div class="ev">Desayuno · menú del día</div>
+    <div class="hh">09:00</div><div class="ev pr">Proyecto maydom · bloque 2 h <span class="pill">píldora cada 60′</span></div>
+    <div class="hh">11:15</div><div class="ev">Tabla calistenia 25′</div>
+    <div class="hh">19:00</div><div class="ev oc">Meetup Madrid · fija</div>
+    <div class="hh">23:00</div><div class="ev">Meditación 3′ + acostarse</div>
+  </div>
+  <h3>Ahora</h3>
+  <div class="tarjeta fila"><div class="t"><b>Píldora de movimiento</b><div class="mini">Sentadillas × 15 · en 12 min</div></div><button class="btn">Hecha</button></div>
+  <div class="tarjeta fila"><div class="t"><b>Magnesio</b><div class="mini">Toma de la noche · 22:30</div></div><span class="pill w">stock 8 %</span></div>
+  <h3>Mayordomo</h3>
+  <div class="tarjeta"><b>Anoche dormiste 5 h 40</b><div class="mini">Sugiero adelantar la meditación nocturna a las 22:45 y cenar antes de las 21:00.</div>
+    <div class="acciones"><button class="btn p">Probar</button><button class="btn">En espera</button><button class="btn">Rechazar</button></div></div>
+  <div class="tarjeta fila"><div class="t"><b>Sueño de anoche</b><div class="mini">Sin registrar</div></div><button class="btn">Registrar</button></div>
+</section>
+
+<section class="pantalla" id="p-calendario">
+  <h2>Calendario</h2>
+  <div class="semana"><div>L<b>15</b></div><div>M<b>16</b></div><div>X<b>17</b></div><div>J<b>18</b></div><div>V<b>19</b></div><div class="hoy">S<b>20</b></div><div>D<b>21</b></div></div>
+  <div class="tarjeta dia">
+    <div class="hh">08:30</div><div class="ev">Desayuno</div>
+    <div class="hh">09:00</div><div class="ev pr">Proyecto maydom</div>
+    <div class="hh">11:15</div><div class="ev">Calistenia</div>
+    <div class="hh">14:00</div><div class="ev">Comida · menú</div>
+    <div class="hh">19:00</div><div class="ev oc">Meetup Madrid</div>
+    <div class="hh">23:00</div><div class="ev">Meditación · acostarse</div>
+  </div>
+  <div class="tarjeta"><b>Conflicto</b><div class="mini">"Concierto Conde Duque 19:30" choca con "Meetup Madrid 19:00". ¿Sustituir?</div>
+    <div class="acciones"><button class="btn p">Sustituir</button><button class="btn">Mantener el meetup</button></div></div>
+  <div class="acciones"><button class="btn p">+ Evento</button><button class="btn">Semana</button></div>
+</section>
+
+<section class="pantalla" id="p-sueno">
+  <h2>Sueño</h2>
+  <div class="tarjeta"><div class="grande">6 h 10</div><div class="mini">media de 7 noches · objetivo 7 h</div>
+    <div class="barra"><i style="width:88%"></i></div></div>
+  <h3>Anoche</h3>
+  <div class="tarjeta grid2">
+    <label>Acostado<input value="23:20"></label><label>Despertar<input value="04:10"></label>
+    <label>Despierto (min)<input value="35"></label><label>Levantado<input value="06:45"></label>
+    <label>Calidad<select><option>3 · regular</option></select></label>
+    <div style="align-self:end"><button class="btn p" style="width:100%">Guardar</button></div>
+  </div>
+  <h3>Modelo aceptado</h3>
+  <div class="tarjeta mini">Tramo largo ≥ 4 h 30 · despertar breve · segundo tramo ~2 h. Anoche: 4 h 50 + 35′ + 2 h 00 ✔</div>
+  <h3>Al despertar de noche</h3>
+  <div class="tarjeta fila"><div class="t"><b>Volver a dormir · 4 min</b><div class="mini">Pantalla oscura, respiración 4-6, sin mirar la hora</div></div><button class="btn p">Empezar</button></div>
+</section>
+
+<section class="pantalla" id="p-suplementos">
+  <h2>Suplementos</h2>
+  <div class="tarjeta fila"><div class="t"><b>Magnesio bisglicinato</b><div class="mini">400 mg · noche 22:30</div><div class="barra"><i class="w" style="width:8%"></i></div></div><span class="pill w">reponer</span></div>
+  <div class="tarjeta fila"><div class="t"><b>Vitamina D3</b><div class="mini">2000 UI · con la comida (grasa)</div><div class="barra"><i style="width:62%"></i></div></div><button class="btn">Tomado</button></div>
+  <div class="tarjeta fila"><div class="t"><b>Omega 3</b><div class="mini">1 g · desayuno</div><div class="barra"><i style="width:35%"></i></div></div><button class="btn">Tomado</button></div>
+  <div class="tarjeta fila"><div class="t"><b>Creatina</b><div class="mini">5 g · a cualquier hora · <i>fijado por mí: post-entreno</i></div><div class="barra"><i style="width:80%"></i></div></div><button class="btn">Tomado</button></div>
+  <div class="acciones"><button class="btn p">+ Suplemento</button><button class="btn">Buscar en tiendas</button><button class="btn">Ver Compra (1)</button></div>
+</section>
+
+<section class="pantalla" id="p-mayordomo">
+  <h2>Mayordomo</h2>
+  <div class="chat">
+    <div class="msg">Esta semana has metido 3 h a <b>maydom</b> y 0 h a <b>inversión</b>: va rezagado 9 días. ¿Bloque de 1 h el lunes a las 10:00?</div>
+    <div class="msg yo">Sí, pero con píldoras cada 45.</div>
+    <div class="msg">Hecho como consejo (estado: probar). Otra cosa: el stock de magnesio está al 8 %; lo he puesto en Compra con tu tienda habitual.</div>
+  </div>
+  <h3>Consejos</h3>
+  <div class="tarjeta fila"><div class="t">Cenar antes de las 21:00 esta semana</div><span class="pill">probar</span></div>
+  <div class="tarjeta fila"><div class="t">Sustituir tabla del jueves por movilidad 15′</div><span class="pill w">en espera</span></div>
+  <div class="tarjeta fila"><div class="t">Concierto Conde Duque, 12 €, jueves</div><span class="pill ok">aceptado → calendario</span></div>
+  <div class="acciones"><input placeholder="Pregunta o cuéntale algo…"><button class="btn p">Enviar</button></div>
+  <p class="mini">Motor: reglas locales + LLM (OpenRouter vía backend). Memoria en Obsidian.</p>
+</section>
+
+<section class="pantalla" id="p-buscar">
+  <h2>Buscador</h2>
+  <div class="tarjeta"><input placeholder="¿Qué buscas? alimento, suplemento, componente, actividad…" value="magnesio bisglicinato 400">
+    <div class="acciones"><span class="pill">alimentación</span><span class="pill ok">suplementos</span><span class="pill">electrónica</span><span class="pill">ocio</span><span class="pill">servicios</span></div></div>
+  <h3>Tiendas (suplementos)</h3>
+  <div class="tarjeta fila"><div class="t">iHerb</div><input type="checkbox" checked style="width:auto"></div>
+  <div class="tarjeta fila"><div class="t">HSN</div><input type="checkbox" checked style="width:auto"></div>
+  <div class="tarjeta fila"><div class="t">Amazon</div><input type="checkbox" style="width:auto"></div>
+  <div class="acciones"><button class="btn p">Buscar en 2 tiendas</button><button class="btn">Gestionar catálogo</button></div>
+</section>
+
+<section class="pantalla" id="p-menu">
+  <h2>Menú</h2>
+  <h3>Agenda</h3><ul class="menu"><li>Calendario<span>hoy 5 eventos</span></li><li>Notas<span>12</span></li></ul>
+  <h3>Cuerpo</h3><ul class="menu"><li>Ejercicio<span>tabla hoy 11:15</span></li><li>Sueño<span>6 h 10 media</span></li><li>Meditación<span>3 guiones</span></li></ul>
+  <h3>Mesa</h3><ul class="menu"><li>Alimentación<span>menú semana</span></li><li>Suplementos<span>1 por reponer</span></li><li>Compra<span>3 líneas</span></li></ul>
+  <h3>Vida</h3><ul class="menu"><li>Proyectos<span>1 rezagado</span></li><li>Ocio<span>2 propuestas</span></li><li>Finanzas<span>sep: −1.240 €</span></li></ul>
+  <h3>Mayordomo</h3><ul class="menu"><li>Consejos<span>3 nuevos</span></li><li>Preferencias<span>horizonte: semana</span></li><li>Buscador<span>6 tiendas</span></li></ul>
+  <h3>Ajustes</h3><ul class="menu"><li>Datos y catálogos</li><li>Exportar / importar</li><li>Backend<span>maydom-npiobject-labs</span></li></ul>
+  <p class="pie">Mock 1 · build MA-B1-20260920-003 · <a href="bitacora.html">Bitácora</a> · <a href="holamundo.html">Backend</a> · <a href="mocks/">Mocks</a></p>
+</section>
+
+</main>
+<nav class="inferior">
+  <button class="activo" data-p="hoy"><span>☀︎</span>Hoy</button>
+  <button data-p="calendario"><span>▦</span>Calendario</button>
+  <button data-p="mayordomo"><span>✦</span>Mayordomo</button>
+  <button data-p="buscar"><span>⌕</span>Buscar</button>
+  <button data-p="menu"><span>☰</span>Menú</button>
+</nav>
+</div>
+<script>
+const titulos={hoy:'Hoy',calendario:'Calendario',mayordomo:'Mayordomo',buscar:'Buscador',menu:'Menú',sueno:'Sueño',suplementos:'Suplementos'};
+function ir(p){document.querySelectorAll('.pantalla').forEach(s=>s.classList.toggle('activa',s.id==='p-'+p));
+ document.querySelectorAll('nav.inferior button').forEach(b=>b.classList.toggle('activo',b.dataset.p===p));
+ document.getElementById('titulo').textContent=titulos[p]||p;window.scrollTo(0,0)}
+document.querySelectorAll('nav.inferior button').forEach(b=>b.onclick=()=>ir(b.dataset.p));
+document.querySelectorAll('#p-menu .menu li').forEach(li=>{const n=li.firstChild.textContent.trim();
+ const p={'Sueño':'sueno','Suplementos':'suplementos','Calendario':'calendario','Consejos':'mayordomo','Buscador':'buscar'}[n];if(p)li.style.cursor='pointer',li.onclick=()=>ir(p)});
+</script>
 </body>
 </html>

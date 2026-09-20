@@ -1,0 +1,38 @@
+{
+  "fecha": "2026-09-20T23:20:00+02:00",
+  "titulo": "Planificación, mock y desarrollo completo de maydom",
+  "objetivo": "A partir de las 16 notas de voz del 20-sep, generar la planificación de la app móvil/HTML, un mock, y desarrollar todas las fases posibles dejando el resto como deuda.",
+  "prompts": [
+    {
+      "texto": "Genera la mejor planificación de la app para móvil y .html de maydom basada en las notas del fichero adjunto (Todas_Las_Notas.md). Guarda en carpeta docs. Luego genera un mock y por último desarrolla todas las fases del proyecto, siempre que sea posible, sino déjalo como deuda de desarrollo. Desconecto, trabaja en repo.",
+      "nota": "Único prompt de la sesión; el fichero adjunto eran 16 notas de voz transcritas describiendo cada sección de la app."
+    }
+  ],
+  "cambios": [
+    "docs/planificacion/plan-maydom.md: planificación completa (principios, menú por apartados, secciones, arquitectura, decisión sobre app de gestión, fases F0–F9, deuda D1–D11, estado).",
+    "docs/planificacion/memoria/: bóveda Obsidian con README, ADR-001 (sin app de gestión), ADR-002 (local-first), ADR-003 (menú por apartados) y preferencias/2026-09-20.md.",
+    "docs/mocks/001-mock0.html y 002-mock1.html: mock 0 de la plantilla y mock 003 de maydom, archivados.",
+    "docs/index.html + docs/app/: la app (build MA-B1-20260920-004): nucleo.js, agenda.js, reglas.js, 17 secciones, semillas de catálogos, estilos e icono.",
+    "docs/manifest.webmanifest y docs/sw.js: PWA instalable con caché de respaldo y notificaciones locales.",
+    "app/src/main.rs: POST /api/mayordomo (proxy a OpenRouter con OPENROUTER_API_KEY de Fly, CORS, OPTIONS); Cargo.toml con reqwest y serde.",
+    ".github/workflows/deploy.yml: paso que verifica /api/mayordomo (200 o 503) y su CORS.",
+    "CLAUDE.md y README.md: descripción de la app, del backend y regla de leer la memoria Obsidian al empezar cada sesión."
+  ],
+  "sha": "2029f65",
+  "sha_completo": "2029f6506e95213bc35fefa6441e4dd43b6e44be",
+  "run": null,
+  "mock": "mocks/002-mock1.html",
+  "build": "MA-B1-20260920-004",
+  "pagina": "index.html",
+  "fly": null,
+  "pendiente": [
+    "Fusionar el PR de la rama claude/loving-wozniak-nuwbab a main y comprobar pages.yml y deploy.yml en verde",
+    "D1: poner OPENROUTER_API_KEY en Fly para que el chat del mayordomo responda (sin clave, solo reglas locales)",
+    "Deuda D2–D11 del plan: push real, foto del frigorífico, importación bancaria automática, precios en tiendas, ofertas por ubicación, agenda de Madrid, YouTube dentro de la app, sincronización entre dispositivos, sincronización con Obsidian, acciones del agente"
+  ],
+  "enlaces": [
+    { "texto": "Plan de maydom", "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/plan-maydom.md" },
+    { "texto": "Memoria Obsidian", "url": "https://github.com/npiobject-labs/maydom/tree/main/docs/planificacion/memoria" }
+  ],
+  "notas": "Trabajo en rama con PR en borrador, no directo a main: el run de Pages y la URL de Fly se conocerán al fusionar. Verificación en el sandbox con Playwright (17 pantallas, sin errores de JS) y backend probado en local con un OpenRouter simulado."
+}

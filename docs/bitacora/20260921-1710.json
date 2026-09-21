@@ -1,0 +1,34 @@
+{
+ "fecha": "2026-09-21T17:10:00+02:00",
+ "titulo": "El dictado ya no se corta a la primera pausa",
+ "objetivo": "Que el dictado aguante los silencios mientras piensas, en vez de cerrarse en cuanto callas un segundo.",
+ "prompts": [
+  {
+   "texto": "El dictado dentro de un plato se interrumpe muy rápido: en el momento que dejas de hablar un segundo se cierra. Ese tiempo habría que aumentarlo."
+  }
+ ],
+ "cambios": [
+  "docs/app/voz.js: dictar() vuelve a arrancar el reconocimiento en onend mientras no pasen silencioMs (20 s) desde la última voz, porque la API del navegador no deja alargar su corte por silencio.",
+  "docs/app/voz.js: antes de cada arranque se vuelca lo dictado a la tanda cerrada, así el rearranque no pierde texto ni lo duplica.",
+  "docs/app/voz.js: los errores no-speech y aborted ya no avisan mientras se sigue escuchando; Parar marca la sesión como parada y cierra al instante.",
+  "docs/index.html y docs/sw.js: build MA-B1-20260921-015."
+ ],
+ "sha": "8b0fcef",
+ "sha_completo": "8b0fcef3247820d4d781d5dd3480559d812ad05c",
+ "run": null,
+ "mock": "mocks/002-mock1.html",
+ "build": "MA-B1-20260921-015",
+ "pagina": "index.html",
+ "fly": "https://maydom-npiobject-labs.fly.dev/salud",
+ "pendiente": [
+  "Probar en el móvil cuánto silencio aguanta de verdad y ajustar silencioMs si 20 s se queda corto o largo",
+  "Sigue viva la deuda anterior: D2 push real, D4 importación bancaria, D6 ofertas por ubicación, D7 agenda de Madrid, D9 sincronización entre dispositivos, D11 acciones del agente, D13 dictado sin reconocimiento de voz, D14 y D15 obtención de datos de producto"
+ ],
+ "enlaces": [
+  {
+   "texto": "Resumen de la sesión",
+   "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/sesiones/20260921-1710.md"
+  }
+ ],
+ "notas": "Segunda entrega del mismo rato de trabajo: la anterior quitó las palabras repetidas y esta alarga el dictado. Verificado con un reconocimiento de voz simulado y prueba de humo con Playwright en local; el sandbox no alcanza Pages, la comprobación pública la hace pages.yml al fusionar."
+}

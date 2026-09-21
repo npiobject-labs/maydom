@@ -15,7 +15,7 @@ La clave de OpenRouter no aparece por ningún lado: vive dentro del gateway y ma
 
 En el móvil, https://npiobject-labs.github.io/openrouter/conectar.html . Pide la **clave de administración** del gateway (la de `SERVICIO_CLAVE`, la que ya usas en su consola; el asistente la recuerda si la guardaste allí).
 
-1. Servidor: el VPS (`https://apisor.oracle402.com`), que es el de producción.
+1. Servidor: **el mismo al que apunta maydom**. Hoy es Fly (`openrouter-npiobject-labs.fly.dev`), porque el gateway tiene dos despliegues con **dos juegos de claves que no se sincronizan**: una clave de aplicación solo vale en el servidor donde se creó. Si la creas en el VPS, hay que fijar además la variable `LLM_BASE_URL` a `https://apisor.oracle402.com/v1`.
 2. Nombre de la aplicación: `maydom`.
 3. Topes, antes de la primera llamada real. Punto de partida razonable para uso personal:
 
@@ -51,7 +51,7 @@ Son **secretos**, no variables: las variables se leen en los logs. Opcionales, y
 
 | Variable | Para qué |
 |---|---|
-| `LLM_BASE_URL` | Apuntar a otro servidor del gateway (por defecto `https://apisor.oracle402.com/v1`) |
+| `LLM_BASE_URL` | Apuntar a otro servidor del gateway. Por defecto el de Fly, donde está dada de alta la aplicación |
 | `LLM_MODELO` | Fijar un modelo concreto. Sin ella manda el del gateway. Hace falta uno **multimodal** para la foto del frigorífico |
 
 ## 4. Desplegar para que lleguen a Fly
@@ -78,7 +78,8 @@ Justo debajo, **Estado del LLM** tiene que decir `llm=true` con el modelo. Esa c
 
 | Lo que ves | Qué pasa |
 |---|---|
-| `503 sin_configurar` | `LLM_API_KEY` no llegó a Fly: falta el secreto o falta lanzar `deploy.yml` |
+| `503 falta_llm_api_key` | `LLM_API_KEY` no llegó a Fly: falta el secreto o falta lanzar `deploy.yml` |
+| `503 gateway_sin_configurar` | El servidor del gateway al que se llama no tiene su propia clave de servicio, o la aplicación se creó en el otro servidor |
 | `401` al usar la app | La clave de Ajustes no coincide con `MAYDOM_CLAVE` |
 | `402 presupuesto_agotado` | Se acabó el tope del mes en el gateway. Sube el límite o espera |
 | `429 cuota_superada` | Más de 20 llamadas en un minuto. Espera |

@@ -40,7 +40,11 @@ async fn salud() -> impl IntoResponse {
 // navegador. Opcionales: LLM_MODELO (vacío = el modelo por defecto del gateway) y MAYDOM_CLAVE, la
 // clave que la app envía en X-Clave para que nadie más gaste el presupuesto desde esta URL pública.
 
-const BASE_DEFECTO: &str = "https://apisor.oracle402.com/v1";
+// El gateway tiene dos despliegues con dos bases y dos juegos de claves de aplicacion, que no se
+// sincronizan: una clave solo vale en el servidor donde se dio de alta. La aplicacion de maydom se
+// creo en el de Fly, asi que ahi apunta. Cuando se de de alta tambien en el VPS (produccion), basta
+// con la variable de repositorio LLM_BASE_URL=https://apisor.oracle402.com/v1 y su clave nueva.
+const BASE_DEFECTO: &str = "https://openrouter-npiobject-labs.fly.dev/v1";
 const REFERER: &str = "https://npiobject-labs.github.io/maydom/";
 
 const SISTEMA: &str = "Eres el mayordomo de maydom, el asistente personal de una sola persona. Conoces su calendario, sueño, ejercicio, comidas, suplementos, proyectos, ocio y cuentas por el contexto que recibes. \

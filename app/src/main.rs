@@ -54,18 +54,25 @@ struct Peticion {
     mensajes: Vec<Mensaje>,
 }
 
-fn con_cors(status: StatusCode, cuerpo: Value) -> Response {
-    let mut r = (status, Json(cuerpo)).into_response();
+fn poner_cors(r: &mut Response) {
     let h = r.headers_mut();
     h.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"));
     h.insert(header::ACCESS_CONTROL_ALLOW_HEADERS, HeaderValue::from_static("content-type"));
     h.insert(header::ACCESS_CONTROL_ALLOW_METHODS, HeaderValue::from_static("POST, OPTIONS"));
+}
+
+fn con_cors(status: StatusCode, cuerpo: Value) -> Response {
+    let mut r = (status, Json(cuerpo)).into_response();
+    poner_cors(&mut r);
     r
 }
 
-// Preflight del navegador (POST con JSON desde otro origen).
+// Preflight del navegador (POST con JSON desde otro origen). Un 204 no puede llevar cuerpo ni
+// Content-Length: HTTP/2 (el proxy de Fly) rechaza la respuesta si los lleva.
 async fn mayordomo_options() -> Response {
-    con_cors(StatusCode::NO_CONTENT, Value::Null)
+    let mut r = StatusCode::NO_CONTENT.into_response();
+    poner_cors(&mut r);
+    r
 }
 
 fn recortar(s: &str, max: usize) -> String {

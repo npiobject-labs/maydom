@@ -1,0 +1,44 @@
+{
+  "fecha": "2026-09-21T23:25:00+02:00",
+  "titulo": "Finanzas: extracto en Excel y PDF, resumen del año y clasificación real",
+  "objetivo": "Que Finanzas acepte el fichero que da el banco en cualquiera de sus formatos y que lo importado sirva para algo: un informe del año y conceptos que no sean todos «otros».",
+  "prompts": [
+    { "texto": "En finanzas, a la hora de importar el fichero del banco, admitir los formatos Excel y PDF además del CSV." },
+    { "texto": "Fusiona lo que has hecho." },
+    { "texto": "No veo el botón de subir PDF." },
+    { "texto": "Cómo recargo la app en Android Pixel 10." },
+    { "texto": "Este es el mensaje que me sale ahora y también te mando el PDF para que le eches un vistazo del formato que tiene, repara el error.", "nota": "Adjuntó un extracto real; se analizó solo en el sandbox de la sesión y no se copió al repositorio." },
+    { "texto": "Se ha importado el fichero PDF con los movimientos de 2025; ahora quiero que generes un pequeño resumen, esa será la primera parte, de los ingresos y gastos por mes; luego ya lo depuraremos con muchas más opciones." },
+    { "texto": "De momento por la opción 1 (ampliar las reglas de clasificación con los comercios del extracto)." }
+  ],
+  "cambios": [
+    "docs/app/extracto.js: módulo nuevo. CSV (con preámbulo y Windows-1252), Excel .xlsx (ZIP de XML, cadenas compartidas, fechas en número de serie) y PDF, sin librerías.",
+    "docs/app/extracto.js: los PDF de banco usan fuentes Type0 (Identity-H); textoPDF() recorre las páginas, resuelve /Resources → /Font → /ToUnicode y traduce los códigos de glifo. Sin eso el texto salía en blanco.",
+    "docs/app/secciones/finanzas.js: botón «Importar extracto: CSV · Excel · PDF», vista previa de la primera fila, casilla para invertir el signo y visor del texto leído cuando un PDF no da filas.",
+    "docs/app/secciones/finanzas.js: resumen del año en #/finanzas?vista=anio&anio=AAAA con ingresos, gastos y neto por mes, totales, medias, mes de más gasto y gasto por concepto.",
+    "docs/app/secciones/finanzas.js: tabla REGLAS de clasificación por comercio y concepto bancario, criterio por signo, conceptos neutros (transferencias y efectivo) descontados del gasto real y botón Reclasificar que respeta conceptoManual.",
+    "docs/app/datos/semillas.js: CONCEPTOS ampliado y CONCEPTOS_NEUTROS.",
+    ".github/workflows/pages.yml: app/extracto.js entra en las rutas que se verifican tras publicar.",
+    "CLAUDE.md y docs/planificacion/plan-maydom.md: documentado el lector, la clasificación y el informe; la deuda D4 queda reducida al agregador PSD2.",
+    "Build de MA-B1-20260921-015 a MA-B1-20260921-021."
+  ],
+  "sha": "1bb7f95",
+  "sha_completo": "1bb7f95fa3718d4709d71f72df8096afd221c2a4",
+  "run": "35656676289",
+  "mock": "",
+  "build": "MA-B1-20260921-021",
+  "pagina": "index.html",
+  "fly": null,
+  "pendiente": [
+    "Los pagos con tarjeta de comercios locales siguen en «otros»: aprender por comercio o clasificar en lote con el LLM (necesita LLM_API_KEY, deuda D1)",
+    "Separar traspasos entre cuentas propias de los envíos a terceros",
+    "Filtros y comparación entre años en el informe",
+    "Conexión automática con el banco (agregador PSD2): sigue siendo deuda D4"
+  ],
+  "enlaces": [
+    { "texto": "PR #7 · leer los PDF con fuentes Type0", "url": "https://github.com/npiobject-labs/maydom/pull/7" },
+    { "texto": "PR #8 · resumen del año", "url": "https://github.com/npiobject-labs/maydom/pull/8" },
+    { "texto": "PR #9 · clasificación por reglas", "url": "https://github.com/npiobject-labs/maydom/pull/9" }
+  ],
+  "notas": "Transcripción aproximada de los prompts, en los términos del usuario. El extracto real que sirvió para verificar se leyó solo en el sandbox de la sesión: ni el fichero ni ningún dato suyo (importes, comercios, nombres) se han copiado al repositorio. Las seis publicaciones de la sesión se verificaron con el run de pages.yml en success."
+}

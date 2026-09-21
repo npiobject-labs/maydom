@@ -1,0 +1,78 @@
+# Chequeo de extremo a extremo del catalogo de tiendas del buscador.
+#
+# Desde una sesion de Code no se puede hacer: el proxy del sandbox bloquea las tiendas. El runner
+# de GitHub si tiene salida a internet, asi que entra en cada buscador con un Chromium real y dice
+# si devuelve resultados. Se lanza a mano y, ademas, el dia 1 de cada mes.
+name: Chequear las tiendas del buscador
+
+on:
+  workflow_dispatch:
+    inputs:
+      solo:
+        description: 'Solo estas tiendas (parte del nombre, separadas por comas). Vacio = todas.'
+        required: false
+        default: ''
+  schedule:
+    # El dia 1 de cada mes a las 06:30 UTC. Las tiendas cambian sus buscadores sin avisar.
+    - cron: '30 6 1 * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chequeo-tiendas
+  cancel-in-progress: true
+
+jobs:
+  chequear:
+    name: Entrar en cada buscador
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar Playwright con Chromium
+        run: npm install --no-save playwright@1.56 && npx playwright install --with-deps chromium
+
+      - name: Chequear
+        id: chequeo
+        run: node tools/chequeo-tiendas.mjs --json informe-tiendas.json --solo "${{ inputs.solo }}"
+
+      # El informe se escribe siempre, tambien cuando el paso anterior falla por una tienda rota.
+      - name: Resumen
+        if: always()
+        run: |
+          [ -f informe-tiendas.json ] || { echo "Sin informe: el chequeo no llego a terminar." >> "$GITHUB_STEP_SUMMARY"; exit 0; }
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          d = json.load(open('informe-tiendas.json'))
+          rs = d['resultados']
+          icono = {'ok': '✅', 'error': '❌', 'bloqueado': '🛡️', 'dudoso': '❔'}
+          cuenta = lambda e: sum(1 for r in rs if r['estado'] == e)
+          print('### Chequeo del catalogo de tiendas\n')
+          print(f"{cuenta('ok')} bien · {cuenta('error')} con error · {cuenta('bloqueado')} bloquean al robot · {cuenta('dudoso')} dudosas\n")
+          print('| | Tienda | Estado | Que paso | Buscador |')
+          print('|---|---|---|---|---|')
+          orden = {'error': 0, 'dudoso': 1, 'bloqueado': 2, 'ok': 3}
+          for r in sorted(rs, key=lambda r: (orden[r['estado']], r['nombre'])):
+              suya = 'suyo' if r['url'] else 'en su sitio'
+              marca = ' *(comprobada)*' if r['verificada'] else ''
+              print(f"| {icono[r['estado']]} | {r['nombre']}{marca} | {r['estado']} | {r['detalle']} | {suya} |")
+          print('\nUna tienda **bloqueada** rechaza al robot: no dice nada sobre si su buscador sirve para una persona.')
+          print('Una **dudosa** responde pero no se vio lo buscado, normalmente porque pinta los resultados con JavaScript.')
+          print('\nPara arreglar una tienda rota no hace falta tocar codigo: en la app, boton **no funciona** del resultado, o pega su buscador en la ficha de la tienda.')
+          PY
+
+      - name: Guardar el informe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: informe-tiendas
+          path: informe-tiendas.json
+          if-no-files-found: ignore

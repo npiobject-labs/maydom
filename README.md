@@ -1,5 +1,7 @@
 # maydom
 
+**maydom** (de *mayordomo*) es una app personal para móvil y PC, en HTML: calendario como eje, cuerpo (ejercicio, sueño, meditación), mesa (alimentación, suplementos, compra), vida (proyectos, ocio, finanzas) y un mayordomo que aconseja. Planificación en [`docs/planificacion/plan-maydom.md`](docs/planificacion/plan-maydom.md); la app se publica en https://npiobject-labs.github.io/maydom/ y el backend (proxy al LLM) en Fly.
+
 Plantilla del método "PC arranca, móvil continúa":
 
 - El repositorio es la **única fuente de verdad**: código, planificación y decisiones viven aquí.

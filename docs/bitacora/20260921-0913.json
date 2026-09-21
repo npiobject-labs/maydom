@@ -1,0 +1,42 @@
+{
+  "fecha": "2026-09-21T09:13:00+02:00",
+  "titulo": "El mayordomo por el gateway propio y IA en ocho secciones",
+  "objetivo": "Continuar el desarrollo: consumir los LLM a través de la aplicación openrouter del propio autor, dar funciones con IA a las secciones y tomar buscaproducto como referencia para el buscador.",
+  "prompts": [
+    { "texto": "Continúa el desarrollo. Los LLM los utilizas a través de la app openrouter; te tendremos que dar permiso de acceso a la misma." },
+    { "texto": "No pares. Dame un enlace al mock." },
+    { "texto": "Como referencia para el buscador puedes investigar en una app similar que hay en la carpeta de desarrollo: buscaproducto.", "nota": "El prompt citaba una ruta local del PC; aquí se resume. El repositorio equivalente es npiobject-labs/buscaproducto." },
+    { "texto": "Para OpenRouter tienes información en la carpeta openrouter.", "nota": "Igual que el anterior: ruta local resumida; el repositorio es npiobject-labs/openrouter." }
+  ],
+  "cambios": [
+    "app/src/main.rs: el backend deja de llamar a OpenRouter y pasa a ser cliente del gateway npiobject-labs/openrouter (Authorization con la clave de aplicación, X-Operacion por sección, reintentos solo ante 502/504, errores traducidos con su code); nuevas rutas GET /api/estado y preflight con x-clave; campos tarea, formato, imagen y operacion; límite de cuerpo de 8 MB para las fotos.",
+    "app/src/main.rs: el preflight devuelve 204 sin cuerpo; un 204 con Content-Length lo rechaza HTTP/2 en el proxy de Fly y rompía el despliegue.",
+    "docs/app/llm.js: módulo nuevo con consultar, pedirJSON, conLLM, textoAConsejos, reducirImagen y estadoLLM; manda X-Clave y avisa del presupuesto.",
+    "docs/app/secciones/: menú semanal y foto del frigorífico (alimentacion), catálogo de ejercicios (ejercicio), revisión de horarios (suplementos), propuestas de Madrid (ocio), análisis de noches (sueno), recomendaciones de gasto (finanzas), consulta interpretada (buscador), clave de acceso y estado del LLM (ajustes), exportar memoria a GitHub (mayordomo).",
+    "docs/app/datos/semillas.js: catálogo de fuentes ampliado a 30, siguiendo el patrón de buscaproducto.",
+    ".github/workflows/deploy.yml: vuelca LLM_API_KEY, MAYDOM_CLAVE, LLM_BASE_URL y LLM_MODELO a Fly; verifica /api/estado, /api/mayordomo, el CORS con x-clave y que sin clave responde 401.",
+    "docs/planificacion/plan-maydom.md: apartados 4.1 (el gateway y la tabla de funciones con IA) y 4.2 (el buscador frente a buscaproducto); fase F10; deudas D3, D5, D8 y D10 actualizadas y D1 reescrita.",
+    "docs/planificacion/memoria/decisiones/: ADR-004 (LLM por el gateway) y ADR-005 (buscador en nivel enlace).",
+    "CLAUDE.md: reglas del gateway, de la clave de acceso, del preflight sin cuerpo y de los proyectos hermanos como referencia.",
+    "Build subido a MA-B1-20260921-005 en index.html y en la caché del service worker."
+  ],
+  "sha": "6a804d6",
+  "sha_completo": "6a804d64a388ab390c1e8c0f792caf30d502ceeb",
+  "run": "35570766575",
+  "mock": "mocks/002-mock1.html",
+  "build": "MA-B1-20260921-005",
+  "pagina": "index.html",
+  "fly": null,
+  "pendiente": [
+    "Dar de alta la aplicación maydom en el gateway con presupuesto y guardar LLM_API_KEY y MAYDOM_CLAVE como secretos del repositorio",
+    "Fusionar el PR 1 y comprobar pages.yml y deploy.yml en verde sobre main",
+    "Confirmar que el modelo del gateway acepta imágenes para la foto del frigorífico; si no, fijar la variable LLM_MODELO",
+    "Deuda viva: D2 push real, D4 importación bancaria automática, D6 ofertas por ubicación, D7 agenda real de Madrid, D9 sincronización entre dispositivos, D11 acciones del agente"
+  ],
+  "enlaces": [
+    { "texto": "Gateway openrouter: conectar una aplicación", "url": "https://npiobject-labs.github.io/openrouter/conectar.html" },
+    { "texto": "buscaproducto", "url": "https://npiobject-labs.github.io/buscaproducto/" },
+    { "texto": "ADR-004: el LLM por el gateway", "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/memoria/decisiones/ADR-004-llm-por-el-gateway.md" }
+  ],
+  "notas": "Transcripción de los prompts aproximada: llegaron a lo largo de una sesión larga y dos citaban rutas locales del PC, resumidas aquí porque docs/ es público. Las funciones con IA se verificaron contra un gateway simulado en el sandbox, no contra el gateway real."
+}

@@ -1,27 +1,28 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="build" content="MA-B1-20260910-002">
-  <title>maydom · mock 0</title>
-  <style>
-    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 2rem; background: #fafafa; color: #1a1a1a; }
-    main { max-width: 40rem; margin: 0 auto; }
-    h1 { font-size: 1.5rem; margin: 0 0 .5rem; }
-    p { color: #555; line-height: 1.5; }
-    code { background: #eee; padding: .15rem .35rem; border-radius: 3px; }
-    a { color: #0b6e7a; text-underline-offset: 2px; }
-    .enlaces { margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid #e2e2e2; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="build" content="MA-B1-20260921-005">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0B6E7A">
+<!-- App de Fly: <repo>-<owner>, el mismo nombre que deriva deploy.yml. Si el proyecto usa FLY_APP, cambia este content. -->
+<meta name="fly-app" content="maydom-npiobject-labs">
+<meta name="description" content="maydom: mayordomo personal. Calendario, cuerpo, mesa, vida y consejos.">
+<title>maydom</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="app/icono.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="app/icono.svg">
+<link rel="stylesheet" href="app/estilos.css">
 </head>
 <body>
-  <main>
-    <h1>maydom · mock 0</h1>
-    <p>Fase 0 del flujo «PC arranca, móvil continúa».</p>
-    <p>Build: <code>MA-B1-20260910-002</code></p>
-    <p class="enlaces"><a href="bitacora.html">Bitácora del proyecto</a> · cada sesión de trabajo, qué se pidió y qué cambió.<br>
-    <a href="holamundo.html">Comprobación del backend</a> · Pages llama a <code>/holamundo</code> y <code>/salud</code> en Fly.</p>
-  </main>
+<div class="app">
+  <nav class="inferior" aria-label="Principal"><div class="in" id="nav"></div></nav>
+  <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+    <header class="cab"><h1 id="titulo">maydom</h1><small id="sub"></small></header>
+    <main id="main"><noscript>maydom necesita JavaScript.</noscript></main>
+  </div>
+</div>
+<script type="module" src="app/app.js"></script>
 </body>
 </html>

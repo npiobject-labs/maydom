@@ -30,6 +30,16 @@ function cargar() {
   // Un plato tenía un único momento; ahora puede ser de varios. Se migra al cargar y se persiste,
   // porque una migración que solo vive en memoria vuelve a hacerse en cada arranque.
   for (const p of e.platos || []) if (!Array.isArray(p.momentos)) { p.momentos = p.tipo ? [p.tipo] : []; delete p.tipo; e.__migrado = true; }
+  // Las tiendas ganan dominio (para buscar en el sitio) y marca de verificada. Las tres plantillas
+  // que se comprobaron rotas el 21-sep se vacían: esa tienda pasa a buscarse en su propio sitio.
+  const ROTAS = ['hsnstore.com/buscar', 'naturitas.es/busqueda', 'myprotein.es/elysium.search'];
+  for (const t of e.tiendas || []) {
+    if (t.dominio) continue;
+    try { t.dominio = new URL(String(t.url || '').replace('{q}', 'x')).hostname; } catch { t.dominio = ''; }
+    if (ROTAS.some(r => String(t.url || '').includes(r))) t.url = '';
+    t.verificada = !!t.verificada;
+    e.__migrado = true;
+  }
   e.version = VERSION_ESQUEMA;
   return e;
 }

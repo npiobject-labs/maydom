@@ -111,40 +111,49 @@ export const platos = [
 ];
 
 export const CATEGORIAS_TIENDA = [{ v: 'alimentacion', l: 'Alimentación' }, { v: 'ecologica', l: 'Ecológica' }, { v: 'suplementos', l: 'Suplementos' }, { v: 'electronica', l: 'Electrónica' }, { v: 'ocio', l: 'Ocio' }, { v: 'general', l: 'General' }, { v: 'servicios', l: 'Servicios' }];
-const ti = (nombre, categoria, url) => ({ id: 't_' + nombre.toLowerCase().replace(/[^a-z0-9]+/g, '_'), nombre, categoria, url, activa: true });
-// Catálogo de fuentes. Patrón tomado de npiobject-labs/buscaproducto: cada fuente es una URL de
-// búsqueda con {q}; añadir una es una línea, quitarla es borrarla o desactivarla.
+// Cada tienda tiene su dominio y, si se conoce y se ha comprobado, la plantilla de su buscador
+// con {q}. `verificada` solo es true si se ha visto funcionar de verdad: una plantilla inventada
+// lleva a un 404 y el usuario lo descubre en la tienda, no aquí. Sin plantilla (o con una que
+// falle) se busca en el sitio desde un buscador general, que funciona siempre.
+const ti = (nombre, categoria, dominio, url = '', verificada = false) => ({
+  id: 't_' + nombre.toLowerCase().replace(/[^a-z0-9]+/g, '_'), nombre, categoria, dominio, url, verificada, activa: true,
+});
+export const enElSitio = (dominio, q) => `https://duckduckgo.com/?q=${encodeURIComponent('site:' + dominio + ' ' + q)}`;
+
 export const tiendas = [
-  ti('Mercadona', 'alimentacion', 'https://tienda.mercadona.es/search-results?query={q}'),
-  ti('Carrefour', 'alimentacion', 'https://www.carrefour.es/search-nwx/?query={q}'),
-  ti('Dia', 'alimentacion', 'https://www.dia.es/search?q={q}'),
-  ti('Veritas', 'ecologica', 'https://www.veritas.es/catalogsearch/result/?q={q}'),
-  ti('Herbolario Navarro', 'ecologica', 'https://www.herbolarionavarro.es/search?q={q}'),
-  ti('Planeta Huerto', 'ecologica', 'https://www.planetahuerto.es/buscar?q={q}'),
-  ti('iHerb', 'suplementos', 'https://es.iherb.com/search?kw={q}'),
-  ti('HSN', 'suplementos', 'https://www.hsnstore.com/buscar?q={q}'),
-  ti('Amazon', 'general', 'https://www.amazon.es/s?k={q}'),
-  ti('PcComponentes', 'electronica', 'https://www.pccomponentes.com/buscar/?query={q}'),
-  ti('Mouser', 'electronica', 'https://www.mouser.es/c/?q={q}'),
-  ti('AliExpress', 'electronica', 'https://www.aliexpress.com/wholesale?SearchText={q}'),
-  ti('Agenda Madrid (esmadrid)', 'ocio', 'https://www.esmadrid.com/buscar?search_api_fulltext={q}'),
-  ti('Atrápalo', 'ocio', 'https://www.atrapalo.com/buscar/?q={q}'),
-  ti('Meetup Madrid', 'ocio', 'https://www.meetup.com/es-ES/find/?keywords={q}&location=es--Madrid'),
-  ti('Google', 'general', 'https://www.google.com/search?q={q}'),
-  ti('El Corte Inglés', 'alimentacion', 'https://www.elcorteingles.es/search/?s={q}'),
-  ti('Alcampo', 'alimentacion', 'https://www.compraonline.alcampo.es/search?q={q}'),
-  ti('Naturitas', 'suplementos', 'https://www.naturitas.es/busqueda?q={q}'),
-  ti('MyProtein', 'suplementos', 'https://www.myprotein.es/elysium.search?search={q}'),
-  ti('Decathlon', 'general', 'https://www.decathlon.es/search?Ntt={q}'),
-  ti('Idealo (comparador)', 'general', 'https://www.idealo.es/resultados.html?q={q}'),
-  ti('Amazon (histórico de precio)', 'general', 'https://es.camelcamelcamel.com/search?sq={q}'),
-  ti('Chollometro', 'general', 'https://www.chollometro.com/search?q={q}'),
-  ti('PcComponentes', 'electronica', 'https://www.pccomponentes.com/buscar/?query={q}'),
-  ti('Wallapop', 'general', 'https://es.wallapop.com/app/search?keywords={q}'),
-  ti('Time Out Madrid', 'ocio', 'https://www.timeout.es/madrid/es/buscar?q={q}'),
-  ti('Eventbrite Madrid', 'ocio', 'https://www.eventbrite.es/d/spain--madrid/{q}/'),
-  ti('YouTube', 'servicios', 'https://www.youtube.com/results?search_query={q}'),
-  ti('OpenFoodFacts', 'alimentacion', 'https://es.openfoodfacts.org/cgi/search.pl?search_terms={q}'),
+  // Verificadas a mano el 21-sep-2026: se comprobó que devuelven resultados.
+  ti('iHerb', 'suplementos', 'es.iherb.com', 'https://es.iherb.com/search?kw={q}', true),
+  ti('Amazon', 'general', 'www.amazon.es', 'https://www.amazon.es/s?k={q}', true),
+  ti('Google', 'general', 'www.google.com', 'https://www.google.com/search?q={q}', true),
+  ti('YouTube', 'servicios', 'www.youtube.com', 'https://www.youtube.com/results?search_query={q}', true),
+  // Comprobadas como ROTAS el 21-sep-2026: sin plantilla, se buscan en su sitio.
+  ti('HSN', 'suplementos', 'www.hsnstore.com'),
+  ti('Naturitas', 'suplementos', 'www.naturitas.es'),
+  ti('MyProtein', 'suplementos', 'www.myprotein.es'),
+  // Sin comprobar: la plantilla es un punto de partida. Si alguna falla, el botón "no funciona"
+  // de la propia app la pasa a búsqueda en el sitio sin tocar código.
+  ti('Mercadona', 'alimentacion', 'tienda.mercadona.es', 'https://tienda.mercadona.es/search-results?query={q}'),
+  ti('Carrefour', 'alimentacion', 'www.carrefour.es', 'https://www.carrefour.es/search-nwx/?query={q}'),
+  ti('Dia', 'alimentacion', 'www.dia.es', 'https://www.dia.es/search?q={q}'),
+  ti('El Corte Inglés', 'alimentacion', 'www.elcorteingles.es', 'https://www.elcorteingles.es/search/?s={q}'),
+  ti('Alcampo', 'alimentacion', 'www.compraonline.alcampo.es', 'https://www.compraonline.alcampo.es/search?q={q}'),
+  ti('OpenFoodFacts', 'alimentacion', 'es.openfoodfacts.org', 'https://es.openfoodfacts.org/cgi/search.pl?search_terms={q}'),
+  ti('Veritas', 'ecologica', 'www.veritas.es', 'https://www.veritas.es/catalogsearch/result/?q={q}'),
+  ti('Herbolario Navarro', 'ecologica', 'www.herbolarionavarro.es', 'https://www.herbolarionavarro.es/search?q={q}'),
+  ti('Planeta Huerto', 'ecologica', 'www.planetahuerto.es', 'https://www.planetahuerto.es/buscar?q={q}'),
+  ti('PcComponentes', 'electronica', 'www.pccomponentes.com', 'https://www.pccomponentes.com/buscar/?query={q}'),
+  ti('Mouser', 'electronica', 'www.mouser.es', 'https://www.mouser.es/c/?q={q}'),
+  ti('AliExpress', 'electronica', 'www.aliexpress.com', 'https://www.aliexpress.com/wholesale?SearchText={q}'),
+  ti('Decathlon', 'general', 'www.decathlon.es', 'https://www.decathlon.es/search?Ntt={q}'),
+  ti('Idealo (comparador)', 'general', 'www.idealo.es', 'https://www.idealo.es/resultados.html?q={q}'),
+  ti('Histórico de precio (Camel)', 'general', 'es.camelcamelcamel.com', 'https://es.camelcamelcamel.com/search?sq={q}'),
+  ti('Chollometro', 'general', 'www.chollometro.com', 'https://www.chollometro.com/search?q={q}'),
+  ti('Wallapop', 'general', 'es.wallapop.com', 'https://es.wallapop.com/app/search?keywords={q}'),
+  ti('Agenda Madrid (esmadrid)', 'ocio', 'www.esmadrid.com', 'https://www.esmadrid.com/buscar?search_api_fulltext={q}'),
+  ti('Atrápalo', 'ocio', 'www.atrapalo.com', 'https://www.atrapalo.com/buscar/?q={q}'),
+  ti('Meetup Madrid', 'ocio', 'www.meetup.com', 'https://www.meetup.com/es-ES/find/?keywords={q}&location=es--Madrid'),
+  ti('Time Out Madrid', 'ocio', 'www.timeout.es', 'https://www.timeout.es/madrid/es/buscar?q={q}'),
+  ti('Eventbrite Madrid', 'ocio', 'www.eventbrite.es', 'https://www.eventbrite.es/d/spain--madrid/{q}/'),
 ];
 
 export const CONCEPTOS = ['vivienda', 'alimentación', 'suplementos', 'ocio', 'servicios web', 'IA / LLM', 'hosting', 'transporte', 'salud', 'ropa', 'ingresos', 'otros'];

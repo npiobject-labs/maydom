@@ -1,0 +1,29 @@
+{
+  "fecha": "2026-09-21T22:35:00+02:00",
+  "titulo": "El extracto del banco entra también en Excel y PDF",
+  "objetivo": "Que Finanzas admita el fichero que da el banco, sea CSV, Excel o PDF, sin pedirle al usuario que lo convierta.",
+  "prompts": [
+    { "texto": "En finanzas, a la hora de importar el fichero del banco, admitir los formatos Excel y PDF además del CSV." }
+  ],
+  "cambios": [
+    "docs/app/extracto.js: módulo nuevo. Lee CSV, Excel (.xlsx) y PDF sin librerías (ZIP mínimo + DecompressionStream + DOMParser) y devuelve siempre {cab, filas, origen, texto}.",
+    "docs/app/secciones/finanzas.js: el botón pasa a «Importar extracto» (.csv, .xlsx, .pdf); el diálogo de columnas trae vista previa de la primera fila y casilla para invertir el signo; plan B con el LLM (operación finanzas-extracto) si de un PDF no sale ninguna fila.",
+    "docs/sw.js y docs/index.html: build MA-B1-20260921-016 y extracto.js en el caché.",
+    ".github/workflows/pages.yml: app/extracto.js entra en la lista de rutas que se verifican tras publicar.",
+    "docs/planificacion/plan-maydom.md y CLAUDE.md: documentada la importación en tres formatos y la operación finanzas-extracto; la deuda D4 queda reducida al agregador PSD2."
+  ],
+  "sha": "9eba9dc",
+  "sha_completo": "9eba9dca8303cf104f8b0574d44e09d3689a5a18",
+  "run": "",
+  "mock": "",
+  "build": "MA-B1-20260921-016",
+  "pagina": "index.html",
+  "fly": null,
+  "pendiente": [
+    "Probar con extractos reales del banco: los del sandbox son sintéticos",
+    "El plan B del PDF ilegible necesita LLM_API_KEY (deuda D1)",
+    "Conexión automática con el banco (agregador PSD2): sigue siendo deuda D4"
+  ],
+  "enlaces": [],
+  "notas": "Prompt transcrito de la petición de la sesión. Verificado con Playwright en local: CSV en Windows-1252 con preámbulo, .xlsx con cadenas compartidas y fechas en número de serie, y el mismo PDF comprimido y sin comprimir."
+}

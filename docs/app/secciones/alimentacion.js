@@ -1,4 +1,4 @@
-import { estado, guardar, h, lista, crudo, delegar, uid, hoyISO, sumarDias, fechaCorta, fechaLarga, pedir, confirmar, toast, aviso, navegar } from '../nucleo.js';
+import { estado, guardar, h, lista, crudo, esc, delegar, uid, hoyISO, sumarDias, fechaCorta, fechaLarga, pedir, confirmar, toast, aviso, navegar } from '../nucleo.js';
 import { sincronizarCompra } from './compra.js';
 import { pedirJSON, conLLM, reducirImagen, lista as listaLLM } from '../llm.js';
 
@@ -24,7 +24,54 @@ export function proponerMenu(fecha) {
   return menu;
 }
 const camposAlimento = [{ n: 'nombre', l: 'Alimento', req: true }, { n: 'stock', l: 'Cantidad en casa', t: 'number', v: 1, min: 0, step: 0.5 }, { n: 'unidad', l: 'Unidad', v: 'ud' }, { n: 'umbral', l: 'Avisar cuando quede menos de', t: 'number', v: 1, min: 0, step: 0.5 }, { n: 'tienda', l: 'Tienda habitual' }];
-const camposPlato = [{ n: 'nombre', l: 'Plato', req: true }, { n: 'tipo', l: 'Momento', t: 'select', o: TIPOS }, { n: 'tags', l: 'Etiquetas', t: 'tags', ayuda: 'ligera, proteina, vegetal, rapida, sin_gluten, sin_lactosa, pescado, carne' }, { n: 'min', l: 'Minutos', t: 'number', v: 20 }];
+const ETIQUETAS_PLATO = ['ligera', 'proteina', 'vegetal', 'rapida', 'sin_gluten', 'sin_lactosa', 'pescado', 'carne'];
+// La descripción va justo debajo del nombre: ingredientes, preparación, nutrientes y notas, todo junto.
+const camposPlato = [
+  { n: 'nombre', l: 'Plato', req: true },
+  { n: 'descripcion', l: 'Ingredientes, preparación y nutrientes', t: 'textarea', filas: 7, ph: 'vacío = lo redacta el mayordomo a partir del nombre' },
+  { n: 'tipo', l: 'Momento', t: 'select', o: [{ v: '', l: '— lo decide el mayordomo —' }, ...TIPOS.map(t => ({ v: t, l: t }))] },
+  { n: 'tags', l: 'Etiquetas', t: 'tags', ayuda: ETIQUETAS_PLATO.join(', ') },
+  { n: 'min', l: 'Minutos', t: 'number', v: 20 },
+];
+// Rellena lo que el usuario dejó vacío; nunca pisa lo escrito a mano.
+export async function analizarPlato(plato, { forzar = false } = {}) {
+  const faltaDesc = forzar || !plato.descripcionManual;
+  const faltanTags = forzar || !(plato.tags || []).length;
+  if (!faltaDesc && !faltanTags) return false;
+  const j = await pedirJSON({
+    operacion: 'plato', contexto: false,
+    tarea: `Eres cocinero y sabes de nutrición. Para el plato que te digan, devuelve {"descripcion":"","etiquetas":[],"tipo":"desayuno|comida|cena","min":0}.
+La descripción, en español y en texto plano, con estas cuatro partes en este orden y cada una en su línea, sin markdown:
+Ingredientes: para una ración, con cantidades.
+Preparación: los pasos en dos o tres frases seguidas.
+Por ración: kilocalorías y gramos aproximados de proteína, hidratos y grasa.
+Nota: una indicación útil (a qué hora sienta mejor, cómo aligerarlo, conservación) o la línea entera vacía si no aplica.
+Si el plato que te dan ya trae una descripción o varios pasos, respétalos y complétalos, no los inventes de cero.
+Las etiquetas, de 1 a 4 de esta lista: ${ETIQUETAS_PLATO.join(', ')}. min es el tiempo total en minutos.`,
+    mensaje: `Plato: ${plato.nombre}\n${plato.descripcion ? 'Lo que ya tengo escrito:\n' + String(plato.descripcion).slice(0, 2000) : ''}`,
+  });
+  let cambio = false;
+  if (faltaDesc && j?.descripcion) { plato.descripcion = String(j.descripcion).trim().slice(0, 2500); cambio = true; }
+  if (faltanTags && Array.isArray(j?.etiquetas) && j.etiquetas.length) { plato.tags = j.etiquetas.map(e => String(e).toLowerCase().trim()).filter(Boolean).slice(0, 4); cambio = true; }
+  if (!plato.tipoManual && TIPOS.includes(j?.tipo) && j.tipo !== plato.tipo) { plato.tipo = j.tipo; cambio = true; }
+  if (!plato.min && Number(j?.min) > 0) { plato.min = Math.round(Number(j.min)); cambio = true; }
+  if (cambio) { plato.analizado = true; guardar(); }
+  return cambio;
+}
+// Guarda ya y completa después, como en Notas: escribir el nombre basta.
+function guardarPlato(datos, previo = null) {
+  const p = previo || { id: uid(), tags: [] };
+  const tipoAntes = p.tipo;
+  Object.assign(p, datos);
+  p.descripcionManual = !!(datos.descripcion || '').trim();
+  // Momento elegido a mano: se respeta. Vacío: lo pone el mayordomo y queda como suyo.
+  if (datos.tipo) { if (!previo || datos.tipo !== tipoAntes) p.tipoManual = true; }
+  else { p.tipo = p.tipo || ''; }
+  if (!previo) estado.platos.push(p);
+  guardar();
+  analizarPlato(p).catch(e => console.warn('plato sin completar:', e.message));
+  return p;
+}
 
 function render(cont, params) {
   const vista = params.v || 'menu';
@@ -51,7 +98,20 @@ function render(cont, params) {
         <button class="btn mini" data-a="menos" data-id="${a.id}">−</button><button class="btn mini" data-a="mas" data-id="${a.id}">+</button></div>`).join('') || aviso('Sin alimentos en el stock. Añade los básicos que repones a menudo.').__crudo}
       <div class="acciones"><button class="btn p" data-a="nuevoAl">+ Alimento</button><button class="btn" data-a="buscar">Buscar en tiendas</button><button class="btn" data-a="compra">Ver Compra</button></div>`)
     : crudo(`
-      ${estado.platos.map(p => h`<div class="tarjeta fila" data-a="editarPl" data-id="${p.id}"><div class="t"><b>${p.nombre}</b><div class="mini">${p.tipo} · ${p.min} min · ${p.tags.join(', ')}</div></div></div>`).join('') || aviso('Sin platos. Carga las semillas en Ajustes o añade los tuyos.').__crudo}
+      ${(() => {
+        const q = (params.q || '').toLowerCase(), mom = params.mom || '', orden = params.orden || 'nombre';
+        let ps = estado.platos.filter(p => (!mom || p.tipo === mom) && (!q || (p.nombre + ' ' + (p.descripcion || '') + ' ' + (p.tags || []).join(' ')).toLowerCase().includes(q)));
+        ps.sort((a, b) => orden === 'tiempo' ? (a.min || 0) - (b.min || 0) : orden === 'reciente' ? String(b.id).localeCompare(String(a.id)) : a.nombre.localeCompare(b.nombre));
+        const sinCompletar = estado.platos.filter(p => !p.descripcion);
+        return `<div class="acciones"><input type="search" placeholder="Buscar plato, ingrediente o etiqueta" value="${esc(q)}" data-i="buscarPl"></div>
+        <div class="chips">${[{ v: '', l: 'todos' }, ...TIPOS.map(t => ({ v: t, l: t }))].map(t => h`<button class="pill ${t.v === mom ? 'sel' : ''}" data-a="momPl" data-m="${t.v}">${t.l}</button>`).join('')}</div>
+        <div class="chips">${[['nombre', 'A-Z'], ['tiempo', 'más rápido'], ['reciente', 'recientes']].map(([v, l]) => h`<button class="pill ${v === orden ? 'sel' : ''}" data-a="ordenPl" data-o="${v}">${l}</button>`).join('')}</div>
+        ${sinCompletar.length > 1 ? `<div class="tarjeta fila"><div class="t mini">${sinCompletar.length} platos sin ficha</div><button class="btn" data-a="lotePl">Completarlas</button></div>` : ''}
+        <div class="mini">${ps.length} de ${estado.platos.length} platos</div>
+        ${ps.map(p => h`<div class="tarjeta" data-a="editarPl" data-id="${p.id}"><b>${p.nombre}</b>
+          <div class="mini">${p.tipo || 'sin momento'} · ${p.min || '?'} min${(p.tags || []).length ? ' · ' + p.tags.join(', ') : ''}</div>
+          ${p.descripcion ? h`<div class="cuerpo mini">${p.descripcion}</div>` : crudo('<div class="mini">sin ficha todavía</div>')}</div>`).join('') || aviso('Ningún plato encaja con esa búsqueda.').__crudo}`;
+      })()}
       <div class="acciones"><button class="btn p" data-a="nuevoPl">+ Plato</button></div>`)}`;
   delegar(cont, {
     vista: el => navegar('alimentacion', { v: el.dataset.v, fecha }),
@@ -92,8 +152,24 @@ function render(cont, params) {
     mas: el => { const a = estado.alimentos.find(x => x.id === el.dataset.id); a.stock = Number(a.stock) + 1; sincronizarCompra(); guardar(); },
     buscar: () => navegar('buscador', { cat: 'alimentacion' }),
     compra: () => navegar('compra'),
-    nuevoPl: async () => { const v = await pedir('Nuevo plato', camposPlato); if (v) { estado.platos.push({ id: uid(), ...v }); guardar(); } },
-    editarPl: async el => { const p = estado.platos.find(x => x.id === el.dataset.id); const v = await pedir('Editar plato', camposPlato, p, { extra: 'Borrar' }); if (!v) return; if (v.__extra) { if (await confirmar('¿Borrar el plato?')) estado.platos = estado.platos.filter(x => x.id !== p.id); } else Object.assign(p, v); guardar(); },
+    buscarPl: el => { params.q = el.value; render(cont, params); },
+    momPl: el => { params.mom = el.dataset.m; render(cont, params); },
+    ordenPl: el => { params.orden = el.dataset.o; render(cont, params); },
+    nuevoPl: async () => { const v = await pedir('Nuevo plato', camposPlato, {}, { dictar: 'descripcion' }); if (v) { guardarPlato(v); toast('Guardado; el mayordomo completa la ficha'); } },
+    editarPl: async el => {
+      const p = estado.platos.find(x => x.id === el.dataset.id);
+      const v = await pedir('Editar plato', camposPlato, p, { extra: 'Borrar', dictar: 'descripcion', otro: 'Rehacer ficha' });
+      if (!v) return;
+      if (v.__extra) { if (await confirmar('¿Borrar el plato?')) { estado.platos = estado.platos.filter(x => x.id !== p.id); guardar(); } return; }
+      if (v.__otro) { p.descripcionManual = false; if (await analizarPlato(p, { forzar: true })) toast('Ficha rehecha'); return; }
+      guardarPlato(v, p);
+    },
+    lotePl: async el => {
+      el.disabled = true; el.textContent = 'Completando…';
+      let n = 0;
+      for (const p of estado.platos.filter(x => !x.descripcion).slice(0, 15)) { try { if (await analizarPlato(p)) n++; } catch (e) { toast('LLM: ' + e.message, 5000); break; } }
+      toast(n ? n + ' fichas completadas' : 'Ninguna cambió'); render(cont, params);
+    },
   });
 }
 export default { id: 'alimentacion', titulo: 'Alimentación', grupo: 'Mesa', icono: '🥗', render };

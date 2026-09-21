@@ -149,8 +149,25 @@ export function confirmar(texto, aceptar = 'Sí') {
   return pedir('Confirmar', [], {}, { texto, aceptar }).then(v => !!v);
 }
 
-// Delegación de eventos: elementos con data-a="accion" (click) y data-c="accion" (change/input).
+// Delegación de eventos: data-a (click), data-c (change) y data-i (mientras se escribe).
 export function delegar(cont, acciones) {
+  // Un buscador tiene que filtrar según se teclea, no al salir del campo. Como la acción vuelve a
+  // pintar la sección entera, hay que devolver el foco y el cursor al campo recién creado.
+  let temporizador = null;
+  cont.oninput = e => {
+    const el = e.target.closest('[data-i]'); if (!el) return;
+    const fn = acciones[el.dataset.i]; if (!fn) return;
+    const clave = el.dataset.i, pos = el.selectionStart;
+    clearTimeout(temporizador);
+    temporizador = setTimeout(() => {
+      fn(el, e);
+      const nuevo = cont.querySelector(`[data-i="${clave}"]`);
+      if (nuevo && nuevo !== document.activeElement) {
+        nuevo.focus();
+        try { nuevo.setSelectionRange(pos ?? nuevo.value.length, pos ?? nuevo.value.length); } catch { }
+      }
+    }, 220);
+  };
   cont.onclick = e => {
     const el = e.target.closest('[data-a]'); if (!el || !cont.contains(el)) return;
     const fn = acciones[el.dataset.a]; if (fn) { e.preventDefault(); fn(el, e); }

@@ -59,7 +59,7 @@ function render(cont, params) {
   const usadas = [...new Set(estado.notas.flatMap(n => n.etiquetas || []))];
   const sinAnalizar = estado.notas.filter(n => !n.analizada && !n.tituloManual);
   cont.innerHTML = h`
-    <div class="acciones"><input type="search" placeholder="Buscar en las notas" value="${filtro}" data-c="buscar"><button class="btn p" data-a="nueva">+ Nota</button></div>
+    <div class="acciones"><input type="search" placeholder="Buscar en las notas" value="${filtro}" data-i="buscar"><button class="btn p" data-a="nueva">+ Nota</button></div>
     <div class="chips">${lista([h`<button class="pill ${etq ? '' : 'sel'}" data-a="etq" data-e="">todas</button>`, ...usadas.map(e => h`<button class="pill ${e === etq ? 'sel' : ''}" data-a="etq" data-e="${e}">${e}</button>`)])}</div>
     ${sinAnalizar.length > 1 ? h`<div class="tarjeta fila"><div class="t mini">${sinAnalizar.length} notas sin título propio</div><button class="btn" data-a="lote">Titularlas</button></div>` : ''}
     ${notas.length ? lista(notas.map(n => h`<div class="tarjeta nota t-${n.tipo}" data-a="editar" data-id="${n.id}">

@@ -56,6 +56,7 @@ Guiones **sencillos** (2–5 min) sin preparar nada: respiración 4-6, escaneo c
 ### Alimentación
 - **Menús recomendados** (saludables, según preferencias) por día/semana; el usuario acepta o cambia.
 - **Seguimiento pequeño**: ¿la comida fue la del menú u otra? Registro de una línea.
+- **Catálogo de platos**: cada plato tiene nombre y una **ficha** con ingredientes, preparación, nutrientes por ración y una nota; si se deja vacía, la redacta el mayordomo a partir del nombre (y respeta lo que se escriba a mano). El momento se elige o lo decide él. Búsqueda en vivo por nombre, ingrediente o etiqueta, filtro por momento y orden por nombre, tiempo o novedad. Un desayuno de varios pasos cabe en un solo plato, con los pasos en su ficha.
 - **Stock** de alimentos en casa con umbral de reposición; cuando baja, entra en Compra. La foto del frigorífico para inferir stock queda como deuda (§7).
 - Búsqueda de productos en tiendas ecológicas y supermercados (usa el Buscador con el catálogo de tiendas de alimentación).
 - Ofertas por ubicación: deuda.
@@ -122,6 +123,7 @@ El backend de maydom manda `Authorization: Bearer <clave de aplicación>` y `X-O
 | Finanzas | Recomendaciones sobre el gasto del mes | `finanzas` |
 | Buscador | Interpretar la petición → consulta corta + categoría | `buscador` |
 | Notas | Título, etiquetas y tipo al guardar (y en lote para las antiguas) | `nota` |
+| Alimentación | Ficha del plato: ingredientes, preparación, nutrientes, nota, etiquetas, momento y minutos | `plato` |
 | Mayordomo | Chat y tanda de consejos | `chat` |
 
 ### 4.2 El buscador, mirando a buscaproducto
@@ -158,6 +160,7 @@ Se revisa si aparece un segundo usuario, si hace falta sincronizar varios dispos
 | F9 | Deuda de desarrollo (§7) | Pendiente |
 | F10 | LLM por el gateway propio: funciones con IA en 8 secciones, clave de acceso, `X-Operacion`, foto del frigorífico, buscador interpretado, exportar memoria a GitHub | Hecha 21-sep (build 005) |
 | F11 | Notas dictadas y tituladas por el mayordomo; dictado también en la nota rápida y en el chat | Hecha 21-sep (build 006) |
+| F12 | Ficha del plato redactada por el mayordomo, con búsqueda en vivo, filtros y orden en el catálogo | Hecha 21-sep (build 007) |
 
 ## 7. Deuda de desarrollo
 
@@ -172,7 +175,7 @@ Lo que las notas piden y no se puede cerrar sin servicios externos, datos reales
 | D5 | **Precios y ofertas reales en tiendas** | Es un proyecto en sí mismo, y ya existe: `npiobject-labs/buscaproducto` | maydom se queda en enlace + consulta interpretada (§4.2); si algún día hace falta agregar precios dentro de maydom, se llama a la API de buscaproducto en vez de reimplementarla |
 | D6 | **Ofertas por ubicación** | Requiere geolocalización en segundo plano y fuente de ofertas | Deuda hasta tener D2 y D5 |
 | D7 | **Agenda real de ocio de Madrid** | Sin fuente estable | El mayordomo propone desde catálogo y preferencias; integrar una fuente (p. ej. datos abiertos del Ayuntamiento) más adelante |
-| D12 | **Platos con título y descripción** | Pedido el 21-sep: hoy un plato es solo un nombre; hace falta separar título y descripción (preparación, ingredientes), con búsqueda, orden y etiquetas generadas por el LLM, como en Notas | Mismo patrón que `analizarNota`: guardado inmediato y análisis después. Pendiente |
+| D12 | ~~Platos con ficha~~ | **Hecho** (21-sep, build 007): cada plato tiene ficha con ingredientes, preparación, nutrientes por ración y una nota; la redacta el mayordomo a partir del nombre. Búsqueda en vivo por nombre, ingrediente o etiqueta, filtro por momento y tres órdenes | — |
 | D13 | **Dictado en navegadores sin reconocimiento de voz** | Safari en iOS y DuckDuckGo pueden no traerlo; entonces el botón no aparece | Escribir a mano, o usar Chrome. Grabar audio y transcribirlo con el LLM sería la alternativa, pero encarece cada nota |
 | D8 | **Búsqueda de ejercicios en YouTube con resultados dentro de la app** | YouTube Data API con clave y cuota | Enlaces de búsqueda y catálogo ampliado por el LLM (hecho); resultados embebidos, pendiente |
 | D9 | **Sincronización entre dispositivos** | Backend sin estado | Exportar/importar JSON (hecho); volumen en Fly + endpoint de estado si hace falta |

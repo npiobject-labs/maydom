@@ -1,5 +1,5 @@
 import { estado, guardar, h, lista, crudo, delegar, uid, hoyISO, mesISO, fechaCorta, euros, pedir, confirmar, toast, aviso, navegar } from '../nucleo.js';
-import { CONCEPTOS } from '../datos/semillas.js';
+import { CONCEPTOS, CONCEPTOS_NEUTROS } from '../datos/semillas.js';
 import { consultar, conLLM, pedirJSON, textoAConsejos, lista as listaJSON } from '../llm.js';
 import { leerExtracto, num, fechaNorm } from '../extracto.js';
 
@@ -23,10 +23,48 @@ export function balanceAnio(anio) {
   }
   const filas = [...meses.values()].sort((a, b) => a.mes.localeCompare(b.mes)).map(f => ({ ...f, neto: f.ing - f.gas }));
   const ing = filas.reduce((s, f) => s + f.ing, 0), gas = filas.reduce((s, f) => s + f.gas, 0);
-  return { filas, ing, gas, neto: ing - gas, n: ms.length, por, mesesConDatos: filas.length };
+  // Traspasos entre cuentas y retiradas de cajero no son gasto: se enseñan aparte para que el
+  // informe no diga que se gastó un dinero que solo cambió de sitio.
+  const neutro = CONCEPTOS_NEUTROS.reduce((t, c) => t + (por[c] || 0), 0);
+  return { filas, ing, gas, neto: ing - gas, n: ms.length, por, neutro, gasReal: gas - neutro, mesesConDatos: filas.length };
 }
-// Adivina concepto por la descripción del extracto.
-function adivinar(desc) { const d = desc.toLowerCase(); const t = [[/mercadona|carrefour|dia |lidl|aldi|alcampo|veritas|super/, 'alimentación'], [/iherb|hsn|suplement/, 'suplementos'], [/openrouter|openai|anthropic|claude|gpt|llm/, 'IA / LLM'], [/fly\.io|hetzner|ovh|vercel|aws|digitalocean|github|hosting|dominio/, 'hosting'], [/netflix|spotify|google|apple|icloud|dropbox|notion|suscrip/, 'servicios web'], [/metro|renfe|uber|cabify|gasolina|repsol|bp /, 'transporte'], [/farmacia|clinica|médic|dentista/, 'salud'], [/alquiler|hipoteca|luz|agua|gas natural|endesa|iberdrola|comunidad/, 'vivienda'], [/nomina|nómina|transferencia recibida|ingreso/, 'ingresos'], [/cine|teatro|concierto|entrada|museo|bar |restaurante/, 'ocio']]; for (const [re, c] of t) if (re.test(d)) return c; return 'otros'; }
+// Adivina el concepto por la descripción del extracto. Las reglas salen de extractos reales: el
+// orden importa, porque «adeudo comunidad» tiene que ganar a «comunidad» y un traspaso entre
+// cuentas propias no es un gasto aunque el importe sea negativo. Solo patrones genéricos de
+// comercios y conceptos bancarios: nunca nombres de personas.
+const REGLAS = [
+  [/bizum|traspaso|transferencia (realizada|enviada|recibida)|trans\. (a|de) favor/, 'transferencias'],
+  [/ret\. ?efectivo|reintegro|cajero|disposicion efectivo|retirada de efectivo/, 'efectivo'],
+  [/ayuntamiento|impuesto|tributo|hacienda|agencia tributaria|\bibi\b|\biae\b|tasa municipal|recaudacion|seguridad social/, 'impuestos'],
+  [/iberdrola|endesa|naturgy|curenergia|repsol luz|holaluz|totalenergies|canal isabel|aqualia|hidraulica|comunidad propietarios|alquiler|hipoteca|\bgas natural\b/, 'suministros'],
+  [/telefonica|movistar|vodafone|orange|jazztel|yoigo|masmovil|pepephone|digi movil|\bo2\b|simyo|finetwork/, 'telefonía'],
+  [/mutua|seguros?\b|mapfre|axa|allianz|generali|linea directa|zurich|caser|sanitas|adeslas|asisa/, 'seguros'],
+  [/farmacia|fcia|parafarmacia|clinica|dentista|dental|optica|podolog|fisio|hospital|analisis clinicos|medic/, 'salud'],
+  [/iherb|hsn|suplement|herbolario|myprotein|naturitas|prozis/, 'suplementos'],
+  [/mercadona|carrefour|\bdia\b|lidl|aldi|alcampo|eroski|consum|ahorramas|alimerka|primaprix|gadis|froiz|bonarea|leclerc|lupa|super|hipermercado|mercado|fruteria|carniceria|pescaderia|panaderia|obrador|charcuteria|pasteleria/, 'alimentación'],
+  [/restaurante|cafeteria|\bcafe\b|\bbar\b|taberna|cerveceria|pizzeria|hamburgues|churreria|asador|tapas|sushi|kebab|glovo|just ?eat|uber ?eats/, 'restauración'],
+  [/metro |renfe|\bemt\b|alsa|avanza|taxi|uber|cabify|bolt|gasolinera|repsol|cepsa|\bgalp\b|\bbp\b|shell|parking|aparcamiento|peaje|\bitv\b|autopista|blablacar|iberia|ryanair|vueling|aena/, 'transporte'],
+  [/openrouter|openai|anthropic|claude|\bgpt\b|midjourney|\bllm\b/, 'IA / LLM'],
+  [/fly\.io|hetzner|ovh|vercel|\baws\b|digitalocean|github|hosting|dominio|namecheap|cloudflare|godaddy/, 'hosting'],
+  [/netflix|spotify|disney|hbo|\bmax\b|prime video|filmin|movistar\+|google|apple|icloud|dropbox|notion|microsoft|adobe|canva|suscrip/, 'servicios web'],
+  [/corte ingles|amazon|aliexpress|decathlon|ikea|leroy|bricomart|mediamarkt|worten|\bfnac\b|action |bazar|ferreteria|papeleria/, 'compras'],
+  [/zara|primark|\bh&m\b|mango|bershka|pull&bear|stradivarius|springfield|calzado|zapateria|\bmoda\b|textil/, 'ropa'],
+  [/cine|teatro|concierto|entrada|museo|espectaculo|gimnasio|\bpadel\b|eventos?\b|festival|libreria|casa del libro/, 'ocio'],
+  [/nomina|pension|paga|subsidio|prestacion|devolucion|abono|finiquito|dividendo|intereses/, 'ingresos'],
+];
+const sinTildes = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+export function adivinar(desc, importe = -1) {
+  const d = sinTildes(desc);
+  for (const [re, c] of REGLAS) if (re.test(d)) {
+    // En un abono, el patrón del comercio solo vale si mueve dinero (traspaso, cajero): lo demás
+    // que entra es un ingreso, no un gasto de esa categoría. Una devolución de Hacienda no es
+    // «impuestos» en la columna de ingresos.
+    if (importe > 0 && !CONCEPTOS_NEUTROS.includes(c) && c !== 'ingresos') return 'ingresos';
+    return c;
+  }
+  // Un ingreso sin patrón conocido es un ingreso; un cargo sin patrón, «otros».
+  return importe > 0 ? 'ingresos' : 'otros';
+}
 // Plan B del PDF: el texto suelto al mayordomo, que devuelve los movimientos en JSON.
 async function interpretarLLM(texto) {
   toast('El mayordomo está leyendo el extracto…', 5000);
@@ -40,7 +78,7 @@ async function interpretarLLM(texto) {
       const fecha = fechaNorm(m.fecha), importe = num(m.importe), descripcion = String(m.descripcion || '').trim();
       if (!fecha || importe == null) continue;
       if (estado.movimientos.some(x => x.fecha === fecha && x.descripcion === descripcion && x.importe === importe)) { dup++; continue; }
-      estado.movimientos.push({ id: uid(), fecha, descripcion, importe, concepto: adivinar(descripcion) }); n++;
+      estado.movimientos.push({ id: uid(), fecha, descripcion, importe, concepto: adivinar(descripcion, importe) }); n++;
     }
     guardar(); toast(`${n} importados por el mayordomo · ${dup} duplicados`, 5000);
   } catch (e) { toast('LLM: ' + e.message, 6000); }
@@ -53,11 +91,13 @@ function render(cont, params) {
   const [y, m] = mes.split('-').map(Number); const prev = `${m === 1 ? y - 1 : y}-${String(m === 1 ? 12 : m - 1).padStart(2, '0')}`, next = `${m === 12 ? y + 1 : y}-${String(m === 12 ? 1 : m + 1).padStart(2, '0')}`;
   const movs = estado.movimientos.filter(x => mesISO(x.fecha) === mes).sort((a, c) => c.fecha.localeCompare(a.fecha));
   const recAplicadas = estado.recurrentes.filter(r => estado.movimientos.some(x => x.recurrenteId === r.id && mesISO(x.fecha) === mes)).length;
+  // Cuántos movimientos cambiarían de concepto si se volviesen a pasar por las reglas de hoy.
+  const porClasificar = estado.movimientos.filter(x => !x.conceptoManual && adivinar(x.descripcion, x.importe) !== x.concepto).length;
   cont.innerHTML = h`
     <div class="fila cab"><button class="btn" data-a="mes" data-m="${prev}">‹</button><div class="t centro"><b>${mes}</b> <button class="btn mini" data-a="anio">año ${y}</button></div><button class="btn" data-a="mes" data-m="${next}">›</button></div>
     <div class="tarjeta"><div class="grande ${b.neto >= 0 ? 'pos' : 'neg'}">${euros(b.neto)}</div><div class="mini">ingresos ${euros(b.ing)} · gastos ${euros(b.gas)} · ${b.n} movimientos</div>
       ${Object.keys(b.por).length ? crudo('<table class="tabla">' + Object.entries(b.por).sort((x, z) => z[1] - x[1]).map(([c, v]) => h`<tr><td>${c}</td><td class="n">${euros(v)}</td><td style="width:40%"><div class="barra"><i style="width:${Math.round(v / b.gas * 100)}%"></i></div></td></tr>`).join('') + '</table>') : ''}</div>
-    <div class="acciones"><button class="btn p" data-a="nuevo">+ Movimiento</button><label class="btn">Importar extracto: CSV · Excel · PDF <input type="file" accept=".csv,.xlsx,.xls,.pdf,text/csv,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" data-c="extracto" hidden></label><button class="btn" data-a="aplicarRec">Aplicar recurrentes (${recAplicadas}/${estado.recurrentes.length})</button>${b.n ? crudo('<button class="btn" data-a="analizarLLM">Recomendaciones con LLM</button>') : ''}</div>
+    <div class="acciones"><button class="btn p" data-a="nuevo">+ Movimiento</button><label class="btn">Importar extracto: CSV · Excel · PDF <input type="file" accept=".csv,.xlsx,.xls,.pdf,text/csv,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" data-c="extracto" hidden></label><button class="btn" data-a="aplicarRec">Aplicar recurrentes (${recAplicadas}/${estado.recurrentes.length})</button>${porClasificar ? h`<button class="btn" data-a="reclasificar">Reclasificar (${porClasificar})</button>` : ''}${b.n ? crudo('<button class="btn" data-a="analizarLLM">Recomendaciones con LLM</button>') : ''}</div>
     <h3>Movimientos</h3>
     ${movs.length ? crudo('<table class="tabla">' + movs.slice(0, 60).map(x => h`<tr data-a="editar" data-id="${x.id}"><td class="mini">${fechaCorta(x.fecha)}</td><td>${x.descripcion}<div class="mini">${x.concepto}</div></td><td class="n ${x.importe >= 0 ? 'pos' : 'neg'}">${euros(x.importe)}</td></tr>`).join('') + '</table>') : aviso('Sin movimientos este mes. Importa el extracto del banco (CSV, Excel o PDF) o añade a mano.')}
     <h3>Recurrentes (servicios que consumo)</h3>
@@ -73,9 +113,16 @@ function render(cont, params) {
       toast(textoAConsejos(j.respuesta, 'finanzas') + ' recomendaciones en Consejos'); navegar('mayordomo');
     }),
     nuevo: async () => { const v = await pedir('Movimiento', campos, { fecha: hoyISO(), concepto: 'otros' }); if (v) { estado.movimientos.push({ id: uid(), ...v }); guardar(); } },
-    editar: async el => { const x = estado.movimientos.find(z => z.id === el.dataset.id); const v = await pedir('Editar', campos, x, { extra: 'Borrar' }); if (!v) return; if (v.__extra) estado.movimientos = estado.movimientos.filter(z => z.id !== x.id); else Object.assign(x, v); guardar(); },
+    editar: async el => { const x = estado.movimientos.find(z => z.id === el.dataset.id); const v = await pedir('Editar', campos, x, { extra: 'Borrar' }); if (!v) return; if (v.__extra) estado.movimientos = estado.movimientos.filter(z => z.id !== x.id); else { if (v.concepto !== x.concepto) v.conceptoManual = true; Object.assign(x, v); } guardar(); },
     nuevoRec: async () => { const v = await pedir('Recurrente', camposRec); if (v) { estado.recurrentes.push({ id: uid(), ...v }); guardar(); } },
     editarRec: async el => { const r = estado.recurrentes.find(z => z.id === el.dataset.id); const v = await pedir('Editar recurrente', camposRec, r, { extra: 'Borrar' }); if (!v) return; if (v.__extra) estado.recurrentes = estado.recurrentes.filter(z => z.id !== r.id); else Object.assign(r, v); guardar(); },
+    reclasificar: async () => {
+      const cambian = estado.movimientos.filter(x => !x.conceptoManual && adivinar(x.descripcion, x.importe) !== x.concepto);
+      const n = cambian.length;
+      if (!await confirmar(`${n} ${n === 1 ? 'movimiento cambia' : 'movimientos cambian'} de concepto con las reglas de ahora. Los que hayas editado a mano no se tocan.`, 'Reclasificar')) return;
+      for (const x of cambian) x.concepto = adivinar(x.descripcion, x.importe);
+      guardar(); toast(n === 1 ? '1 reclasificado' : n + ' reclasificados');
+    },
     aplicarRec: () => { let n = 0; for (const r of estado.recurrentes) { if (estado.movimientos.some(x => x.recurrenteId === r.id && mesISO(x.fecha) === mes)) continue; estado.movimientos.push({ id: uid(), fecha: `${mes}-${String(r.dia || 1).padStart(2, '0')}`, descripcion: r.descripcion, importe: r.importe, concepto: r.concepto, recurrenteId: r.id }); n++; } guardar(); toast(n + ' aplicados'); },
     extracto: async el => {
       const f = el.files[0]; if (!f) return; el.value = '';
@@ -108,7 +155,7 @@ function render(cont, params) {
         if (!fecha || importe == null) { mal++; continue; }
         if (v.inv) importe = -importe;
         if (estado.movimientos.some(x => x.fecha === fecha && x.descripcion === descripcion && x.importe === importe)) { dup++; continue; }
-        estado.movimientos.push({ id: uid(), fecha, descripcion, importe, concepto: adivinar(descripcion) }); n++;
+        estado.movimientos.push({ id: uid(), fecha, descripcion, importe, concepto: adivinar(descripcion, importe) }); n++;
       }
       guardar(); toast(`${n} importados · ${dup} duplicados · ${mal} ilegibles`, 5000);
     },
@@ -128,6 +175,7 @@ function renderAnio(cont, params) {
     ${b.n ? crudo('') : aviso('Sin movimientos en ' + anio + '. Importa el extracto del banco o cambia de año con las flechas.')}
     ${b.n ? h`<div class="tarjeta"><div class="grande ${b.neto >= 0 ? 'pos' : 'neg'}">${euros(b.neto)}</div>
       <div class="mini">ingresos ${euros(b.ing)} · gastos ${euros(b.gas)} · ${b.n} movimientos en ${b.mesesConDatos} meses</div>
+      ${b.neutro ? h`<div class="mini">de esos gastos, ${euros(b.neutro)} son traspasos y efectivo (no salen de tu bolsillo): gasto real ${euros(b.gasReal)}, ${euros(b.gasReal / b.mesesConDatos)} al mes</div>` : ''}
       <div class="mini">media mensual: ingresos ${euros(b.ing / b.mesesConDatos)} · gastos ${euros(b.gas / b.mesesConDatos)}${peor ? ' · mes de más gasto ' + mesLargo(peor.mes) + ' (' + euros(peor.gas) + ')' : ''}${mejor ? ' · mejor mes ' + mesLargo(mejor.mes) + ' (' + euros(mejor.neto) + ')' : ''}</div></div>` : ''}
     ${b.n ? crudo('<h3>Ingresos y gastos por mes</h3><table class="tabla"><tr><th>Mes</th><th class="n">Ingresos</th><th class="n">Gastos</th><th class="n">Neto</th></tr>'
       + b.filas.map(f => h`<tr data-a="ir" data-m="${f.mes}"><td>${mesLargo(f.mes)}<div class="barra"><i class="ok" style="width:${Math.round(f.ing / tope * 100)}%"></i></div><div class="barra"><i class="mal" style="width:${Math.round(f.gas / tope * 100)}%"></i></div></td><td class="n pos">${euros(f.ing)}</td><td class="n neg">${euros(f.gas)}</td><td class="n ${f.neto >= 0 ? 'pos' : 'neg'}"><b>${euros(f.neto)}</b></td></tr>`).join('')

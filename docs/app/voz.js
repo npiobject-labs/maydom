@@ -23,8 +23,10 @@ const pegarTrozo = (texto, trozo) => {
 const compactar = lista => lista.reduce((t, x) => pegarTrozo(t, x || ''), '');
 
 // Abre un dictado y va entregando el texto por `alTexto(parcial, definitivo)`.
-// Devuelve un objeto con parar(); el reconocimiento se corta solo tras un silencio largo.
-export function dictar({ alTexto, alFin, alError, idioma = 'es-ES' } = {}) {
+// Devuelve un objeto con parar(). El motor del navegador cierra solo en cuanto callas un segundo,
+// así que aquí se vuelve a arrancar mientras no pase `silencioMs` sin oír nada: el dictado dura
+// lo que el usuario quiera y solo termina si él pulsa Parar o se queda callado de verdad.
+export function dictar({ alTexto, alFin, alError, idioma = 'es-ES', silencioMs = 20000 } = {}) {
   const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!Rec) { alError?.(new Error('Este navegador no tiene dictado')); return null; }
   const rec = new Rec();
@@ -34,7 +36,19 @@ export function dictar({ alTexto, alFin, alError, idioma = 'es-ES' } = {}) {
   // reinicia su lista de resultados (Android lo hace tras cada pausa larga).
   let cerrado = '', trozos = [];
   const textoFinal = () => compactar([cerrado, ...trozos]);
+  // `parado` lo pone parar(); `ultimaVoz` marca cuándo se oyó algo por última vez.
+  let parado = false, ultimaVoz = Date.now(), reintento = 0;
+  const seguirEscuchando = () => !parado && Date.now() - ultimaVoz < silencioMs;
+  const rearrancar = () => {
+    cerrado = textoFinal(); trozos = [];              // cada arranque trae su propia lista de resultados
+    setTimeout(() => {
+      if (!seguirEscuchando()) { alFin?.(textoFinal()); return; }
+      try { rec.start(); reintento = 0; }
+      catch { if (++reintento < 5) rearrancar(); else { parado = true; alFin?.(textoFinal()); } }
+    }, 150);
+  };
   rec.onresult = e => {
+    ultimaVoz = Date.now();
     // ¿El motor empezó una lista nueva? Pasa tras una pausa larga en Android: vuelve a resultIndex 0
     // con otro texto. Si el nuevo primer trozo continúa al viejo, es una reemisión, no un reinicio.
     if (e.resultIndex === 0 && trozos.length) {
@@ -50,12 +64,15 @@ export function dictar({ alTexto, alFin, alError, idioma = 'es-ES' } = {}) {
     alTexto?.(parcial.trim(), definitivo);
   };
   rec.onerror = e => {
+    // Con el rearranque automático, quedarse callado un momento o cortar el reconocimiento
+    // deja de ser un error que enseñar: lo resuelve `onend`.
+    if ((e.error === 'no-speech' || e.error === 'aborted') && seguirEscuchando()) return;
     const motivos = { 'not-allowed': 'Falta permiso de micrófono para esta página', 'service-not-allowed': 'El navegador no permite el dictado aquí', 'no-speech': 'No se oyó nada', 'audio-capture': 'No hay micrófono disponible', 'network': 'Sin conexión para el dictado' };
     alError?.(new Error(motivos[e.error] || ('Dictado: ' + e.error)));
   };
-  rec.onend = () => alFin?.(textoFinal());
+  rec.onend = () => { if (seguirEscuchando()) rearrancar(); else alFin?.(textoFinal()); };
   try { rec.start(); } catch (e) { alError?.(e); return null; }
-  return { parar: () => { try { rec.stop(); } catch { } } };
+  return { parar: () => { parado = true; try { rec.stop(); } catch { } } };
 }
 
 // Añade un botón de micrófono que escribe en un <textarea> o <input>, dentro de un formulario abierto.

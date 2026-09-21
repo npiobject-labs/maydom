@@ -128,12 +128,12 @@ El backend de maydom manda `Authorization: Bearer <clave de aplicación>` y `X-O
 
 ### 4.2 El buscador, mirando a buscaproducto
 
-**Una plantilla de búsqueda no verificada es una promesa rota.** El 21-sep se comprobó en el móvil que tres de las plantillas del catálogo llevaban a un error: HSN daba 404, Naturitas decía que no encontraba la página y MyProtein buscaba en blanco; solo iHerb devolvía resultados. Desde la sesión no se pueden verificar (el proxy bloquea esas tiendas), así que el catálogo deja de depender de acertar la URL de cada tienda:
+**Una plantilla de búsqueda no verificada es una promesa rota.** El 21-sep se probaron cinco en el móvil y **cuatro fallaron**: HSN daba 404, Naturitas no encontraba la página, MyProtein buscaba en blanco y Carrefour respondía «Service Unavailable»; solo iHerb devolvía resultados. Desde la sesión no se pueden verificar (el proxy bloquea esas tiendas), y con esa proporción el defecto honesto es **no inventarlas**: de fábrica una tienda se busca dentro de su web y solo las comprobadas llevan plantilla.
 
-- Cada tienda guarda su **dominio** además de la plantilla, y una marca de **verificada**.
-- Sin plantilla, o con una que falle, se busca **dentro del sitio** (`site:dominio` en un buscador general), que responde siempre.
-- Cada resultado lleva un botón **«no funciona»**: un toque pasa esa tienda a búsqueda en el sitio, sin tocar código ni esperar a una sesión.
-- Abrir una tienda con plantilla sin comprobar la da por buena, así que el catálogo se verifica solo con el uso.
+- Cada tienda guarda su **dominio** y una marca de **verificada**; la plantilla es opcional.
+- Sin plantilla se busca **dentro del sitio** (`site:dominio` en un buscador general), que responde siempre. De las 29 tiendas, solo 4 llevan plantilla: las comprobadas.
+- Cada resultado lleva un botón **«no funciona»**: un toque retira esa plantilla, sin tocar código ni esperar a una sesión.
+- Quien conozca el buscador de una tienda lo pega en su ficha con `{q}`, y al abrirla queda marcada como comprobada.
 
 
 `npiobject-labs/buscaproducto` ya resuelve el problema completo (agrega ofertas reales de más de 40 fuentes, extrae atributos, puntúa, deduplica, guarda histórico y alerta). maydom no lo reimplementa: su buscador es el **nivel D** de aquel proyecto —catálogo de fuentes con `{q}`, una pestaña por tienda— más la **interpretación de la consulta** por el LLM, que es lo barato y lo que más aporta. Para comparar precios de verdad, el enlace lleva a buscaproducto. Ver [`ADR-005`](memoria/decisiones/ADR-005-buscador-nivel-enlace.md).
@@ -170,7 +170,7 @@ Se revisa si aparece un segundo usuario, si hace falta sincronizar varios dispos
 | F11 | Notas dictadas y tituladas por el mayordomo; dictado también en la nota rápida y en el chat | Hecha 21-sep (build 006) |
 | F12 | Ficha del plato redactada por el mayordomo, con búsqueda en vivo, filtros y orden en el catálogo | Hecha 21-sep (build 007) |
 | F13 | Un plato vale para varios momentos (casillas) y los filtros del catálogo pasan a desplegables | Hecha 21-sep (build 008) |
-| F14 | Cruz de cerrar en todas las ventanas; catálogo de tiendas con dominio, verificación y búsqueda en el sitio como respaldo | Hecha 21-sep (builds 009 y 010) |
+| F14 | Cruz de cerrar en todas las ventanas; catálogo de tiendas con dominio, verificación y búsqueda en el sitio por defecto | Hecha 21-sep (builds 009 a 011) |
 
 ## 7. Deuda de desarrollo
 

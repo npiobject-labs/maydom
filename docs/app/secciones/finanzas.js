@@ -9,6 +9,22 @@ const campos = [
 ];
 const camposRec = [{ n: 'descripcion', l: 'Servicio', req: true }, { n: 'importe', l: 'Importe mensual (negativo = gasto)', t: 'number', step: 0.01, req: true }, { n: 'concepto', l: 'Concepto', t: 'select', o: CONCEPTOS, v: 'servicios web' }, { n: 'dia', l: 'Día del mes', t: 'number', v: 1, min: 1, max: 28 }];
 export function balanceMes(mes) { const ms = estado.movimientos.filter(m => mesISO(m.fecha) === mes); const ing = ms.filter(m => m.importe > 0).reduce((s, m) => s + m.importe, 0), gas = ms.filter(m => m.importe < 0).reduce((s, m) => s - m.importe, 0); const por = {}; for (const m of ms) if (m.importe < 0) por[m.concepto] = (por[m.concepto] || 0) - m.importe; return { ing, gas, neto: ing - gas, por, n: ms.length }; }
+// Resumen del año: una fila por mes con ingresos, gastos y neto, más totales y conceptos del año.
+export function balanceAnio(anio) {
+  const ms = estado.movimientos.filter(m => String(m.fecha).startsWith(anio + '-'));
+  const meses = new Map();
+  const por = {};
+  for (const m of ms) {
+    const k = mesISO(m.fecha);
+    if (!meses.has(k)) meses.set(k, { mes: k, ing: 0, gas: 0, n: 0 });
+    const f = meses.get(k);
+    if (m.importe > 0) f.ing += m.importe; else { f.gas -= m.importe; por[m.concepto] = (por[m.concepto] || 0) - m.importe; }
+    f.n++;
+  }
+  const filas = [...meses.values()].sort((a, b) => a.mes.localeCompare(b.mes)).map(f => ({ ...f, neto: f.ing - f.gas }));
+  const ing = filas.reduce((s, f) => s + f.ing, 0), gas = filas.reduce((s, f) => s + f.gas, 0);
+  return { filas, ing, gas, neto: ing - gas, n: ms.length, por, mesesConDatos: filas.length };
+}
 // Adivina concepto por la descripción del extracto.
 function adivinar(desc) { const d = desc.toLowerCase(); const t = [[/mercadona|carrefour|dia |lidl|aldi|alcampo|veritas|super/, 'alimentación'], [/iherb|hsn|suplement/, 'suplementos'], [/openrouter|openai|anthropic|claude|gpt|llm/, 'IA / LLM'], [/fly\.io|hetzner|ovh|vercel|aws|digitalocean|github|hosting|dominio/, 'hosting'], [/netflix|spotify|google|apple|icloud|dropbox|notion|suscrip/, 'servicios web'], [/metro|renfe|uber|cabify|gasolina|repsol|bp /, 'transporte'], [/farmacia|clinica|médic|dentista/, 'salud'], [/alquiler|hipoteca|luz|agua|gas natural|endesa|iberdrola|comunidad/, 'vivienda'], [/nomina|nómina|transferencia recibida|ingreso/, 'ingresos'], [/cine|teatro|concierto|entrada|museo|bar |restaurante/, 'ocio']]; for (const [re, c] of t) if (re.test(d)) return c; return 'otros'; }
 // Plan B del PDF: el texto suelto al mayordomo, que devuelve los movimientos en JSON.
@@ -31,13 +47,14 @@ async function interpretarLLM(texto) {
 }
 
 function render(cont, params) {
+  if (params.vista === 'anio') return renderAnio(cont, params);
   const mes = params.mes || mesISO(hoyISO());
   const b = balanceMes(mes);
   const [y, m] = mes.split('-').map(Number); const prev = `${m === 1 ? y - 1 : y}-${String(m === 1 ? 12 : m - 1).padStart(2, '0')}`, next = `${m === 12 ? y + 1 : y}-${String(m === 12 ? 1 : m + 1).padStart(2, '0')}`;
   const movs = estado.movimientos.filter(x => mesISO(x.fecha) === mes).sort((a, c) => c.fecha.localeCompare(a.fecha));
   const recAplicadas = estado.recurrentes.filter(r => estado.movimientos.some(x => x.recurrenteId === r.id && mesISO(x.fecha) === mes)).length;
   cont.innerHTML = h`
-    <div class="fila cab"><button class="btn" data-a="mes" data-m="${prev}">‹</button><div class="t centro"><b>${mes}</b></div><button class="btn" data-a="mes" data-m="${next}">›</button></div>
+    <div class="fila cab"><button class="btn" data-a="mes" data-m="${prev}">‹</button><div class="t centro"><b>${mes}</b> <button class="btn mini" data-a="anio">año ${y}</button></div><button class="btn" data-a="mes" data-m="${next}">›</button></div>
     <div class="tarjeta"><div class="grande ${b.neto >= 0 ? 'pos' : 'neg'}">${euros(b.neto)}</div><div class="mini">ingresos ${euros(b.ing)} · gastos ${euros(b.gas)} · ${b.n} movimientos</div>
       ${Object.keys(b.por).length ? crudo('<table class="tabla">' + Object.entries(b.por).sort((x, z) => z[1] - x[1]).map(([c, v]) => h`<tr><td>${c}</td><td class="n">${euros(v)}</td><td style="width:40%"><div class="barra"><i style="width:${Math.round(v / b.gas * 100)}%"></i></div></td></tr>`).join('') + '</table>') : ''}</div>
     <div class="acciones"><button class="btn p" data-a="nuevo">+ Movimiento</button><label class="btn">Importar extracto: CSV · Excel · PDF <input type="file" accept=".csv,.xlsx,.xls,.pdf,text/csv,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" data-c="extracto" hidden></label><button class="btn" data-a="aplicarRec">Aplicar recurrentes (${recAplicadas}/${estado.recurrentes.length})</button>${b.n ? crudo('<button class="btn" data-a="analizarLLM">Recomendaciones con LLM</button>') : ''}</div>
@@ -49,6 +66,7 @@ function render(cont, params) {
     <p class="mini">El mayordomo hace recomendaciones a partir de esto; ejecutarlas queda para versiones futuras (D11). Importa el extracto en CSV, Excel o PDF; la conexión automática con el banco sigue siendo deuda D4.</p>`;
   delegar(cont, {
     mes: el => navegar('finanzas', { mes: el.dataset.m }),
+    anio: () => navegar('finanzas', { vista: 'anio', anio: y }),
     analizarLLM: el => conLLM(el, async () => {
       const bp = balanceMes(prev);
       const j = await consultar({ operacion: 'finanzas', tarea: `Analiza las finanzas de ${mes}: ingresos ${euros(b.ing)}, gastos ${euros(b.gas)}, por concepto ${Object.entries(b.por).map(([k, v]) => k + ' ' + euros(v)).join(', ')}; mes anterior gastos ${euros(bp.gas)} (${Object.entries(bp.por).map(([k, v]) => k + ' ' + euros(v)).join(', ') || 'sin datos'}); recurrentes: ${estado.recurrentes.map(r => r.descripcion + ' ' + euros(r.importe)).join(', ') || 'ninguno'}. Da 3 recomendaciones concretas y accionables, cada una en una línea que empiece por "- ". Solo recomendar, nunca ejecutar.` });
@@ -95,6 +113,32 @@ function render(cont, params) {
       guardar(); toast(`${n} importados · ${dup} duplicados · ${mal} ilegibles`, 5000);
     },
 
+  });
+}
+// Informe del año: el primer nivel de análisis sobre lo importado. Cada mes lleva a su detalle.
+function renderAnio(cont, params) {
+  const anio = Number(params.anio) || Number(hoyISO().slice(0, 4));
+  const b = balanceAnio(String(anio));
+  const tope = Math.max(1, ...b.filas.map(f => Math.max(f.ing, f.gas)));
+  const mesLargo = m => ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][Number(m.slice(5)) - 1];
+  const peor = b.filas.slice().sort((x, z) => z.gas - x.gas)[0];
+  const mejor = b.filas.slice().sort((x, z) => z.neto - x.neto)[0];
+  cont.innerHTML = h`
+    <div class="fila cab"><button class="btn" data-a="anio" data-y="${anio - 1}">‹</button><div class="t centro"><b>${anio}</b> <button class="btn mini" data-a="volver">ver por meses</button></div><button class="btn" data-a="anio" data-y="${anio + 1}">›</button></div>
+    ${b.n ? crudo('') : aviso('Sin movimientos en ' + anio + '. Importa el extracto del banco o cambia de año con las flechas.')}
+    ${b.n ? h`<div class="tarjeta"><div class="grande ${b.neto >= 0 ? 'pos' : 'neg'}">${euros(b.neto)}</div>
+      <div class="mini">ingresos ${euros(b.ing)} · gastos ${euros(b.gas)} · ${b.n} movimientos en ${b.mesesConDatos} meses</div>
+      <div class="mini">media mensual: ingresos ${euros(b.ing / b.mesesConDatos)} · gastos ${euros(b.gas / b.mesesConDatos)}${peor ? ' · mes de más gasto ' + mesLargo(peor.mes) + ' (' + euros(peor.gas) + ')' : ''}${mejor ? ' · mejor mes ' + mesLargo(mejor.mes) + ' (' + euros(mejor.neto) + ')' : ''}</div></div>` : ''}
+    ${b.n ? crudo('<h3>Ingresos y gastos por mes</h3><table class="tabla"><tr><th>Mes</th><th class="n">Ingresos</th><th class="n">Gastos</th><th class="n">Neto</th></tr>'
+      + b.filas.map(f => h`<tr data-a="ir" data-m="${f.mes}"><td>${mesLargo(f.mes)}<div class="barra"><i class="ok" style="width:${Math.round(f.ing / tope * 100)}%"></i></div><div class="barra"><i class="mal" style="width:${Math.round(f.gas / tope * 100)}%"></i></div></td><td class="n pos">${euros(f.ing)}</td><td class="n neg">${euros(f.gas)}</td><td class="n ${f.neto >= 0 ? 'pos' : 'neg'}"><b>${euros(f.neto)}</b></td></tr>`).join('')
+      + h`<tr><td><b>Total</b></td><td class="n pos"><b>${euros(b.ing)}</b></td><td class="n neg"><b>${euros(b.gas)}</b></td><td class="n ${b.neto >= 0 ? 'pos' : 'neg'}"><b>${euros(b.neto)}</b></td></tr>`
+      + '</table>') : ''}
+    ${Object.keys(b.por).length ? crudo('<h3>Gasto por concepto</h3><table class="tabla">' + Object.entries(b.por).sort((x, z) => z[1] - x[1]).map(([c, v]) => h`<tr><td>${c}</td><td class="n">${euros(v)}</td><td class="n mini">${Math.round(v / b.gas * 100)}%</td><td style="width:35%"><div class="barra"><i style="width:${Math.round(v / b.gas * 100)}%"></i></div></td></tr>`).join('') + '</table>') : ''}
+    <p class="mini">Toca un mes para ver sus movimientos. Este informe es la base: filtros, comparación entre años y presupuesto vendrán después.</p>`;
+  delegar(cont, {
+    anio: el => navegar('finanzas', { vista: 'anio', anio: el.dataset.y }),
+    volver: () => navegar('finanzas', { mes: (b.filas[b.filas.length - 1] || {}).mes || mesISO(hoyISO()) }),
+    ir: el => navegar('finanzas', { mes: el.dataset.m }),
   });
 }
 export default { id: 'finanzas', titulo: 'Finanzas', grupo: 'Vida', icono: '€', render };

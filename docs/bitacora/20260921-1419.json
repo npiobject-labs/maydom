@@ -1,0 +1,100 @@
+{
+ "fecha": "2026-09-21T14:19:00+02:00",
+ "titulo": "El mayordomo cobra vida: notas dictadas, fichas de plato y buscador que no miente",
+ "objetivo": "Activar el LLM con los secretos del gateway y seguir el desarrollo con lo que fue apareciendo al usar la app en el móvil.",
+ "prompts": [
+  {
+   "texto": "Ayúdame a generar los dos secretos. Genera en Drive la documentación para generar los secretos, para luego continuar con conectar.html.",
+   "nota": "La URL del documento de Drive se omite aquí por ser un enlace privado."
+  },
+  {
+   "texto": "Pues crea un fichero nuevo en Drive para la documentación de las claves."
+  },
+  {
+   "texto": "¿Cuáles son LLM_API_KEY y MAYDOM_CLAVE?"
+  },
+  {
+   "texto": "¿Cómo consigo la clave de administración que me pide la página de conectar?"
+  },
+  {
+   "texto": "Utiliza los menos tecnicismos posibles."
+  },
+  {
+   "texto": "Ya tengo las claves. Siguiente paso, solamente un paso."
+  },
+  {
+   "texto": "Estoy corriendo maydom en el móvil y al grabar una nota me dice que esta aplicación no admite micrófono. ¿Qué puedo hacer?"
+  },
+  {
+   "texto": "Esta es la pantalla de editar una nota y no hay título. En una app de notas que ya tengo, el título lo pone una llamada a un LLM que analiza lo escrito, y además le pone etiquetas. Mira a ver cómo planificas esto para incorporarlo a las notas de maydom."
+  },
+  {
+   "texto": "Tengo una tarea para cuando acabes: en alimentación, al introducir un plato, el cuadro de texto debería permitir la descripción del plato. La alimentación tendrá dos partes, el nombre del plato como título y abajo su descripción, preparación, componentes. También hace falta ordenación o búsqueda en la lista de platos, y etiquetas tipo desayuno, comida, ligero, vegano. Esto con un LLM igual que las notas."
+  },
+  {
+   "texto": "Entre el plato y el momento falta un cuadro de texto para introducir todo lo referente a ese plato: ingredientes, cómo se prepara, calorías, proteínas y demás nutrientes, y alguna indicación especial."
+  },
+  {
+   "texto": "Cambiar el momento para que no sea un desplegable, sino un check en el que se puedan elegir una o varias opciones: desayuno, comida y cena."
+  },
+  {
+   "texto": "En alimentación, las etiquetas de todos, desayuno, comida, etcétera, que sean un desplegable para que no ocupen pantalla."
+  },
+  {
+   "texto": "En editar plato y en general en todas las ventanas emergentes, poner una cruz arriba a la derecha que equivalga a cancelar."
+  },
+  {
+   "texto": "Te paso los resultados del buscador al buscar creatina: en HSN error 404, en Naturitas dice que no pudo encontrar la página, en MyProtein no busca creatina y en iHerb sí encuentra la creatina monohidrato."
+  },
+  {
+   "texto": "Error.",
+   "nota": "Con una captura de Carrefour respondiendo «Service Unavailable» a la búsqueda de yogur griego."
+  },
+  {
+   "texto": "Haz un chequeo de los enlaces del buscador de todas las tiendas para ver si funcionan correctamente; lo del chequeo creo que sería un test e2e, de forma que compruebes que entra correctamente."
+  },
+  {
+   "texto": "Cierra la sesión con el resumen y la bitácora."
+  }
+ ],
+ "cambios": [
+  "app/src/main.rs: el backend apunta al servidor del gateway donde está dada de alta la aplicación (los dos despliegues del gateway tienen claves distintas que no se sincronizan) y distingue su propio 503 (falta_llm_api_key) de los del gateway, que van prefijados con gateway_.",
+  ".github/workflows/deploy.yml: falla si hay clave configurada y la llamada al mayordomo no devuelve 200; antes un 503 del gateway se contaba como «aún no hay clave» y el run salía verde con el mayordomo sin funcionar.",
+  "docs/app/voz.js: dictado con el reconocimiento de voz del navegador, en el texto de la nota, la nota rápida de Hoy y el chat; donde el navegador no lo trae, el botón no aparece.",
+  "docs/app/secciones/notas.js: la nota gana título; al guardar, una llamada devuelve título, etiquetas y tipo. Guarda primero y analiza después, y no pisa lo escrito a mano. Botón para titular en lote las anteriores.",
+  "docs/app/secciones/alimentacion.js: ficha del plato con ingredientes, preparación, nutrientes por ración y nota, redactada por el mayordomo a partir del nombre; búsqueda en vivo por nombre, ingrediente o etiqueta; filtros en desplegable; un plato vale para varios momentos con casillas.",
+  "docs/app/nucleo.js: campo de casillas múltiples, cruz de cerrar en todos los modales, buscadores que filtran al teclear sin perder el foco, y migraciones que se persisten al arrancar en vez de rehacerse en cada carga.",
+  "docs/app/datos/semillas.js: el catálogo de tiendas guarda dominio y marca de comprobada; solo cuatro llevan plantilla de buscador y el resto se busca dentro de su web, tras comprobarse que cuatro de cinco plantillas escritas a ojo llevaban a un error.",
+  "docs/app/secciones/buscador.js: botón «no funciona» que retira una plantilla rota sin tocar código, y ficha de tienda donde pegar la buena.",
+  "tools/chequeo-tiendas.mjs y .github/workflows/tiendas.yml: prueba de extremo a extremo que entra con un Chromium real en cada tienda; mide el buscador de las que tienen uno guardado y que siga viva la web de las demás. A mano o el día 1 de cada mes.",
+  "docs/planificacion/secretos-mayordomo.md: guía para activar el mayordomo con sus dos secretos.",
+  "Builds del 005 al 013."
+ ],
+ "sha": "6750e4a",
+ "sha_completo": "6750e4aa34fc8b701bb04bf83188dd8ffacb411d",
+ "run": "35598215486",
+ "mock": "mocks/002-mock1.html",
+ "build": "MA-B1-20260921-013",
+ "pagina": "index.html",
+ "fly": "https://maydom-npiobject-labs.fly.dev/salud",
+ "pendiente": [
+  "Confirmar que el modelo del gateway acepta imágenes para la foto del frigorífico; si no, fijar la variable LLM_MODELO a uno multimodal",
+  "Poner topes de gasto a la aplicación maydom en el gateway: se creó sin límite",
+  "Deuda viva: D2 push real, D4 importación bancaria automática, D6 ofertas por ubicación, D7 agenda real de Madrid, D9 sincronización entre dispositivos, D11 acciones del agente, D13 dictado en navegadores sin reconocimiento de voz"
+ ],
+ "enlaces": [
+  {
+   "texto": "Chequeo de las tiendas (run)",
+   "url": "https://github.com/npiobject-labs/maydom/actions/runs/35598220846"
+  },
+  {
+   "texto": "Guía de los dos secretos",
+   "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/secretos-mayordomo.md"
+  },
+  {
+   "texto": "Plan de maydom",
+   "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/plan-maydom.md"
+  }
+ ],
+ "notas": "Transcripción de los prompts aproximada: sesión larga y buena parte dictada por voz desde el móvil. Se omiten el enlace privado del documento de Drive y cualquier valor de clave, porque docs/ es público. Tres fallos propios quedaron corregidos por el camino: un preflight con cuerpo que rompía el despliegue en el proxy de Fly, un 503 del gateway que se contaba como falta de clave dejando el run verde, y una migración que solo vivía en memoria."
+}

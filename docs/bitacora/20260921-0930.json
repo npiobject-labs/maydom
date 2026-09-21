@@ -1,0 +1,31 @@
+{
+  "fecha": "2026-09-21T09:30:00+02:00",
+  "titulo": "App publicada y verificación real de Pages",
+  "objetivo": "Fusionar el PR con todo el desarrollo y comprobar que GitHub Pages sirve la app de verdad, no solo que el artefacto se subió.",
+  "prompts": [
+    { "texto": "Fusiona el PR y verifica Pages." }
+  ],
+  "cambios": [
+    "PR 1 fusionado en squash a main: planificación, memoria Obsidian, mock, la app entera (17 pantallas, build MA-B1-20260921-005) y el backend como cliente del gateway openrouter.",
+    ".github/workflows/pages.yml: paso final «Verificar que Pages sirve la app», que hace curl a la URL publicada desde el runner y falla si la portada no trae el build esperado, si se está sirviendo el README o si alguno de los nueve recursos de la app no responde 200.",
+    ".github/workflows/pages.yml: corregido un fallo del propio paso antes de subirlo; con bash -e, un test falso como última sentencia del bucle de espera abortaba el paso.",
+    "CLAUDE.md: la comprobación de que Pages no está sirviendo el README deja de ser manual y pasa a describir el paso que la hace."
+  ],
+  "sha": "a168158",
+  "sha_completo": "a1681586182a7eee3947d90ab49f8d3f7bc997d1",
+  "run": "35572635262",
+  "mock": "mocks/002-mock1.html",
+  "build": "MA-B1-20260921-005",
+  "pagina": "index.html",
+  "fly": "https://maydom-npiobject-labs.fly.dev/salud",
+  "pendiente": [
+    "Dar de alta maydom en el gateway y guardar los secretos LLM_API_KEY y MAYDOM_CLAVE; hasta entonces el mayordomo va con reglas locales",
+    "Confirmar que el modelo del gateway acepta imágenes para la foto del frigorífico; si no, fijar la variable LLM_MODELO",
+    "Deuda viva: D2 push real, D4 importación bancaria automática, D6 ofertas por ubicación, D7 agenda real de Madrid, D9 sincronización entre dispositivos, D11 acciones del agente"
+  ],
+  "enlaces": [
+    { "texto": "La app", "url": "https://npiobject-labs.github.io/maydom/" },
+    { "texto": "Run de Pages con la verificación nueva", "url": "https://github.com/npiobject-labs/maydom/actions/runs/35572635262" }
+  ],
+  "notas": "El paso de verificación se probó antes de subirlo contra un servidor local en tres casos: app correcta, README servido y build antiguo; los dos últimos fallan con su mensaje."
+}

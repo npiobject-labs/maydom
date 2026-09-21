@@ -56,7 +56,7 @@ Guiones **sencillos** (2–5 min) sin preparar nada: respiración 4-6, escaneo c
 ### Alimentación
 - **Menús recomendados** (saludables, según preferencias) por día/semana; el usuario acepta o cambia.
 - **Seguimiento pequeño**: ¿la comida fue la del menú u otra? Registro de una línea.
-- **Catálogo de platos**: cada plato tiene nombre y una **ficha** con ingredientes, preparación, nutrientes por ración y una nota; si se deja vacía, la redacta el mayordomo a partir del nombre (y respeta lo que se escriba a mano). El momento se elige o lo decide él. Búsqueda en vivo por nombre, ingrediente o etiqueta, filtro por momento y orden por nombre, tiempo o novedad. Un desayuno de varios pasos cabe en un solo plato, con los pasos en su ficha.
+- **Catálogo de platos**: cada plato tiene nombre y una **ficha** con ingredientes, preparación, nutrientes por ración y una nota; si se deja vacía, la redacta el mayordomo a partir del nombre (y respeta lo que se escriba a mano). Un plato vale para **uno o varios momentos** (casillas de desayuno, comida y cena); si no se marca ninguno, los decide el mayordomo. Búsqueda en vivo por nombre, ingrediente o etiqueta, y dos desplegables compactos para filtrar por momento y ordenar por nombre, tiempo o novedad. Un desayuno de varios pasos cabe en un solo plato, con los pasos en su ficha.
 - **Stock** de alimentos en casa con umbral de reposición; cuando baja, entra en Compra. La foto del frigorífico para inferir stock queda como deuda (§7).
 - Búsqueda de productos en tiendas ecológicas y supermercados (usa el Buscador con el catálogo de tiendas de alimentación).
 - Ofertas por ubicación: deuda.
@@ -161,6 +161,7 @@ Se revisa si aparece un segundo usuario, si hace falta sincronizar varios dispos
 | F10 | LLM por el gateway propio: funciones con IA en 8 secciones, clave de acceso, `X-Operacion`, foto del frigorífico, buscador interpretado, exportar memoria a GitHub | Hecha 21-sep (build 005) |
 | F11 | Notas dictadas y tituladas por el mayordomo; dictado también en la nota rápida y en el chat | Hecha 21-sep (build 006) |
 | F12 | Ficha del plato redactada por el mayordomo, con búsqueda en vivo, filtros y orden en el catálogo | Hecha 21-sep (build 007) |
+| F13 | Un plato vale para varios momentos (casillas) y los filtros del catálogo pasan a desplegables | Hecha 21-sep (build 008) |
 
 ## 7. Deuda de desarrollo
 

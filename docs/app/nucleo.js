@@ -27,11 +27,15 @@ function cargar() {
   for (const k of Object.keys(base)) if (!(k in e)) e[k] = base[k];
   e.preferencias = { ...base.preferencias, ...(e.preferencias || {}) };
   e.ajustes = { ...base.ajustes, ...(e.ajustes || {}) };
+  // Un plato tenía un único momento; ahora puede ser de varios. Se migra al cargar y se persiste,
+  // porque una migración que solo vive en memoria vuelve a hacerse en cada arranque.
+  for (const p of e.platos || []) if (!Array.isArray(p.momentos)) { p.momentos = p.tipo ? [p.tipo] : []; delete p.tipo; e.__migrado = true; }
   e.version = VERSION_ESQUEMA;
   return e;
 }
 
 export const estado = cargar();
+if (estado.__migrado) { delete estado.__migrado; try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch { } }
 const oyentes = new Set();
 export function alCambiar(fn) { oyentes.add(fn); return () => oyentes.delete(fn); }
 export function guardar() {
@@ -118,12 +122,13 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
       const out = {};
       for (const c of campos) {
         const el = form.elements[c.n];
-        if (!el) continue;
-        if (c.t === 'check') out[c.n] = !!el.checked;
+        if (!el && c.t !== 'checks') continue;
+        if (c.t === 'checks') out[c.n] = [...form.querySelectorAll(`[name="${c.n}"]:checked`)].map(x => x.value);
+        else if (c.t === 'check') out[c.n] = !!el.checked;
         else if (c.t === 'number') out[c.n] = el.value === '' ? null : Number(el.value);
         else if (c.t === 'tags') out[c.n] = el.value.split(',').map(s => s.trim()).filter(Boolean);
         else out[c.n] = el.value;
-        if (c.req && (out[c.n] === '' || out[c.n] == null)) { el.focus(); toast('Falta: ' + c.l); return; }
+        if (c.req && (out[c.n] === '' || out[c.n] == null)) { el.focus?.(); toast('Falta: ' + c.l); return; }
       }
       cerrar(out);
     };
@@ -135,6 +140,13 @@ function campoHTML(c, v) {
   const id = 'c_' + c.n;
   const ayuda = c.ayuda ? `<small class="mini">${esc(c.ayuda)}</small>` : '';
   if (c.t === 'check') return `<label class="check"><input type="checkbox" name="${c.n}" ${v ? 'checked' : ''}> ${esc(c.l)}</label>${ayuda}`;
+  // Varias opciones a la vez: casillas en fila, que en el móvil se tocan mejor que un desplegable.
+  if (c.t === 'checks') {
+    const marcadas = Array.isArray(v) ? v.map(String) : [];
+    const ops = (c.o || []).map(o => { const ov = typeof o === 'object' ? o.v : o, ol = typeof o === 'object' ? o.l : o;
+      return `<label class="check opcion"><input type="checkbox" name="${c.n}" value="${esc(ov)}" ${marcadas.includes(String(ov)) ? 'checked' : ''}> ${esc(ol)}</label>`; }).join('');
+    return `<label>${esc(c.l)}</label><div class="opciones">${ops}</div>${ayuda}`;
+  }
   if (c.t === 'select') {
     const ops = (c.o || []).map(o => { const ov = typeof o === 'object' ? o.v : o, ol = typeof o === 'object' ? o.l : o; return `<option value="${esc(ov)}" ${String(ov) === String(v) ? 'selected' : ''}>${esc(ol)}</option>`; }).join('');
     return `<label for="${id}">${esc(c.l)}</label><select id="${id}" name="${c.n}">${ops}</select>${ayuda}`;

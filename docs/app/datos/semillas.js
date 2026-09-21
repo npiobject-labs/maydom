@@ -83,7 +83,8 @@ export const criteriosSuplemento = [
 export const MOMENTOS = [{ v: 'manana', l: 'Mañana' }, { v: 'comida', l: 'Con la comida' }, { v: 'tarde', l: 'Tarde' }, { v: 'noche', l: 'Noche' }, { v: 'personal', l: 'Fijado por mí' }];
 
 // Platos para proponer menús. tags: ligera, proteina, vegetal, rapida, sin_gluten, sin_lactosa, pescado, carne
-const pl = (nombre, tipo, tags, min = 20) => ({ id: 'p_' + nombre.toLowerCase().replace(/[^a-z0-9]+/g, '_'), nombre, tipo, tags, min });
+// Un plato puede valer para varios momentos: `momentos` es una lista.
+const pl = (nombre, momentos, tags, min = 20) => ({ id: 'p_' + nombre.toLowerCase().replace(/[^a-z0-9]+/g, '_'), nombre, momentos: [].concat(momentos), tags, min });
 export const platos = [
   pl('Avena con fruta y nueces', 'desayuno', ['vegetal', 'rapida', 'sin_lactosa'], 10),
   pl('Tostada integral con aguacate y huevo', 'desayuno', ['proteina', 'rapida'], 10),

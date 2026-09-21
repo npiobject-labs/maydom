@@ -41,6 +41,11 @@ input,select,textarea{font:inherit;padding:.5rem .6rem;border:1px solid var(--li
 input[type=checkbox]{width:auto}
 label{display:block;font-size:.82rem;color:var(--ink2);margin-top:.55rem}
 label.check{display:flex;align-items:center;gap:.5rem;font-size:.95rem;color:var(--ink)}
+.filtros{display:flex;gap:.45rem;margin:.5rem 0}
+.filtros select{flex:1;padding:.35rem .5rem;font-size:.85rem}
+.opciones{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.3rem}
+.opciones label.opcion{flex:1 1 7rem;margin:0;padding:.5rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--bg2);cursor:pointer}
+.opciones label.opcion:has(input:checked){border-color:var(--acc);background:var(--acc2);color:var(--acc)}
 .form small{display:block;margin-top:.15rem}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
 nav.inferior{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--line);display:flex;justify-content:center;z-index:6;padding-bottom:env(safe-area-inset-bottom)}

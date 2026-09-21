@@ -15,8 +15,8 @@ export function proponerMenu(fecha) {
   const recientes = new Set(estado.menus.filter(m => Math.abs(new Date(m.fecha) - new Date(fecha)) < 4 * 86400000).flatMap(m => TIPOS.map(t => m[t])));
   const menu = { id: uid(), fecha };
   for (const t of TIPOS) {
-    let pool = estado.platos.filter(p => p.tipo === t && !excluye.some(f => f(p.tags)));
-    if (!pool.length) pool = estado.platos.filter(p => p.tipo === t);
+    let pool = estado.platos.filter(p => momentosDe(p).includes(t) && !excluye.some(f => f(p.tags)));
+    if (!pool.length) pool = estado.platos.filter(p => momentosDe(p).includes(t));
     const puntua = p => (quiere.filter(q => p.tags.includes(q)).length) + (t === 'cena' && p.tags.includes('ligera') ? 1 : 0) - (recientes.has(p.id) ? 2 : 0) + Math.random() * 0.5;
     pool.sort((a, b) => puntua(b) - puntua(a));
     menu[t] = pool[0]?.id || null;
@@ -24,12 +24,14 @@ export function proponerMenu(fecha) {
   return menu;
 }
 const camposAlimento = [{ n: 'nombre', l: 'Alimento', req: true }, { n: 'stock', l: 'Cantidad en casa', t: 'number', v: 1, min: 0, step: 0.5 }, { n: 'unidad', l: 'Unidad', v: 'ud' }, { n: 'umbral', l: 'Avisar cuando quede menos de', t: 'number', v: 1, min: 0, step: 0.5 }, { n: 'tienda', l: 'Tienda habitual' }];
+// Compatibilidad con platos guardados antes de que un plato pudiera ser de varios momentos.
+export const momentosDe = p => Array.isArray(p?.momentos) ? p.momentos : (p?.tipo ? [p.tipo] : []);
 const ETIQUETAS_PLATO = ['ligera', 'proteina', 'vegetal', 'rapida', 'sin_gluten', 'sin_lactosa', 'pescado', 'carne'];
 // La descripción va justo debajo del nombre: ingredientes, preparación, nutrientes y notas, todo junto.
 const camposPlato = [
   { n: 'nombre', l: 'Plato', req: true },
   { n: 'descripcion', l: 'Ingredientes, preparación y nutrientes', t: 'textarea', filas: 7, ph: 'vacío = lo redacta el mayordomo a partir del nombre' },
-  { n: 'tipo', l: 'Momento', t: 'select', o: [{ v: '', l: '— lo decide el mayordomo —' }, ...TIPOS.map(t => ({ v: t, l: t }))] },
+  { n: 'momentos', l: 'Momento', t: 'checks', o: TIPOS, ayuda: 'uno o varios; si no marcas ninguno, lo decide el mayordomo' },
   { n: 'tags', l: 'Etiquetas', t: 'tags', ayuda: ETIQUETAS_PLATO.join(', ') },
   { n: 'min', l: 'Minutos', t: 'number', v: 20 },
 ];
@@ -40,20 +42,23 @@ export async function analizarPlato(plato, { forzar = false } = {}) {
   if (!faltaDesc && !faltanTags) return false;
   const j = await pedirJSON({
     operacion: 'plato', contexto: false,
-    tarea: `Eres cocinero y sabes de nutrición. Para el plato que te digan, devuelve {"descripcion":"","etiquetas":[],"tipo":"desayuno|comida|cena","min":0}.
+    tarea: `Eres cocinero y sabes de nutrición. Para el plato que te digan, devuelve {"descripcion":"","etiquetas":[],"momentos":["desayuno"],"min":0}.
 La descripción, en español y en texto plano, con estas cuatro partes en este orden y cada una en su línea, sin markdown:
 Ingredientes: para una ración, con cantidades.
 Preparación: los pasos en dos o tres frases seguidas.
 Por ración: kilocalorías y gramos aproximados de proteína, hidratos y grasa.
 Nota: una indicación útil (a qué hora sienta mejor, cómo aligerarlo, conservación) o la línea entera vacía si no aplica.
 Si el plato que te dan ya trae una descripción o varios pasos, respétalos y complétalos, no los inventes de cero.
-Las etiquetas, de 1 a 4 de esta lista: ${ETIQUETAS_PLATO.join(', ')}. min es el tiempo total en minutos.`,
+Las etiquetas, de 1 a 4 de esta lista: ${ETIQUETAS_PLATO.join(', ')}. Los momentos, uno o varios de: desayuno, comida, cena, según cuándo encaje el plato de verdad. min es el tiempo total en minutos.`,
     mensaje: `Plato: ${plato.nombre}\n${plato.descripcion ? 'Lo que ya tengo escrito:\n' + String(plato.descripcion).slice(0, 2000) : ''}`,
   });
   let cambio = false;
   if (faltaDesc && j?.descripcion) { plato.descripcion = String(j.descripcion).trim().slice(0, 2500); cambio = true; }
   if (faltanTags && Array.isArray(j?.etiquetas) && j.etiquetas.length) { plato.tags = j.etiquetas.map(e => String(e).toLowerCase().trim()).filter(Boolean).slice(0, 4); cambio = true; }
-  if (!plato.tipoManual && TIPOS.includes(j?.tipo) && j.tipo !== plato.tipo) { plato.tipo = j.tipo; cambio = true; }
+  if (!plato.momentosManual) {
+    const ms = (Array.isArray(j?.momentos) ? j.momentos : [j?.tipo]).map(String).filter(m => TIPOS.includes(m));
+    if (ms.length) { plato.momentos = [...new Set(ms)]; cambio = true; }
+  }
   if (!plato.min && Number(j?.min) > 0) { plato.min = Math.round(Number(j.min)); cambio = true; }
   if (cambio) { plato.analizado = true; guardar(); }
   return cambio;
@@ -61,12 +66,11 @@ Las etiquetas, de 1 a 4 de esta lista: ${ETIQUETAS_PLATO.join(', ')}. min es el 
 // Guarda ya y completa después, como en Notas: escribir el nombre basta.
 function guardarPlato(datos, previo = null) {
   const p = previo || { id: uid(), tags: [] };
-  const tipoAntes = p.tipo;
   Object.assign(p, datos);
   p.descripcionManual = !!(datos.descripcion || '').trim();
-  // Momento elegido a mano: se respeta. Vacío: lo pone el mayordomo y queda como suyo.
-  if (datos.tipo) { if (!previo || datos.tipo !== tipoAntes) p.tipoManual = true; }
-  else { p.tipo = p.tipo || ''; }
+  // Momentos marcados a mano: se respetan. Ninguno: los pone el mayordomo.
+  p.momentos = Array.isArray(datos.momentos) ? datos.momentos : momentosDe(p);
+  p.momentosManual = p.momentos.length > 0;
   if (!previo) estado.platos.push(p);
   guardar();
   analizarPlato(p).catch(e => console.warn('plato sin completar:', e.message));
@@ -100,16 +104,19 @@ function render(cont, params) {
     : crudo(`
       ${(() => {
         const q = (params.q || '').toLowerCase(), mom = params.mom || '', orden = params.orden || 'nombre';
-        let ps = estado.platos.filter(p => (!mom || p.tipo === mom) && (!q || (p.nombre + ' ' + (p.descripcion || '') + ' ' + (p.tags || []).join(' ')).toLowerCase().includes(q)));
+        let ps = estado.platos.filter(p => (!mom || momentosDe(p).includes(mom)) && (!q || (p.nombre + ' ' + (p.descripcion || '') + ' ' + (p.tags || []).join(' ')).toLowerCase().includes(q)));
         ps.sort((a, b) => orden === 'tiempo' ? (a.min || 0) - (b.min || 0) : orden === 'reciente' ? String(b.id).localeCompare(String(a.id)) : a.nombre.localeCompare(b.nombre));
         const sinCompletar = estado.platos.filter(p => !p.descripcion);
+        const opcion = (v, l, sel) => `<option value="${esc(v)}" ${v === sel ? 'selected' : ''}>${esc(l)}</option>`;
         return `<div class="acciones"><input type="search" placeholder="Buscar plato, ingrediente o etiqueta" value="${esc(q)}" data-i="buscarPl"></div>
-        <div class="chips">${[{ v: '', l: 'todos' }, ...TIPOS.map(t => ({ v: t, l: t }))].map(t => h`<button class="pill ${t.v === mom ? 'sel' : ''}" data-a="momPl" data-m="${t.v}">${t.l}</button>`).join('')}</div>
-        <div class="chips">${[['nombre', 'A-Z'], ['tiempo', 'más rápido'], ['reciente', 'recientes']].map(([v, l]) => h`<button class="pill ${v === orden ? 'sel' : ''}" data-a="ordenPl" data-o="${v}">${l}</button>`).join('')}</div>
+        <div class="filtros">
+          <select data-c="momPl" aria-label="Momento">${[['', 'Todos los momentos'], ...TIPOS.map(t => [t, t])].map(([v, l]) => opcion(v, l, mom)).join('')}</select>
+          <select data-c="ordenPl" aria-label="Orden">${[['nombre', 'A-Z'], ['tiempo', 'Más rápido'], ['reciente', 'Recientes']].map(([v, l]) => opcion(v, l, orden)).join('')}</select>
+        </div>
         ${sinCompletar.length > 1 ? `<div class="tarjeta fila"><div class="t mini">${sinCompletar.length} platos sin ficha</div><button class="btn" data-a="lotePl">Completarlas</button></div>` : ''}
         <div class="mini">${ps.length} de ${estado.platos.length} platos</div>
         ${ps.map(p => h`<div class="tarjeta" data-a="editarPl" data-id="${p.id}"><b>${p.nombre}</b>
-          <div class="mini">${p.tipo || 'sin momento'} · ${p.min || '?'} min${(p.tags || []).length ? ' · ' + p.tags.join(', ') : ''}</div>
+          <div class="mini">${momentosDe(p).join(' · ') || 'sin momento'} · ${p.min || '?'} min${(p.tags || []).length ? ' · ' + p.tags.join(', ') : ''}</div>
           ${p.descripcion ? h`<div class="cuerpo mini">${p.descripcion}</div>` : crudo('<div class="mini">sin ficha todavía</div>')}</div>`).join('') || aviso('Ningún plato encaja con esa búsqueda.').__crudo}`;
       })()}
       <div class="acciones"><button class="btn p" data-a="nuevoPl">+ Plato</button></div>`)}`;
@@ -123,7 +130,7 @@ function render(cont, params) {
       for (const d of listaLLM(j, 'dias')) {
         if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d.fecha || '')) continue;
         const menu = { id: uid(), fecha: d.fecha };
-        for (const t of TIPOS) { const pl = d[t]; if (!pl || !pl.nombre) continue; let p = estado.platos.find(x => x.nombre.toLowerCase() === String(pl.nombre).toLowerCase()); if (!p) { p = { id: uid(), nombre: String(pl.nombre), tipo: t, tags: Array.isArray(pl.tags) ? pl.tags.map(String) : [], min: Number(pl.min) || 20, origen: 'llm' }; estado.platos.push(p); } menu[t] = p.id; }
+        for (const t of TIPOS) { const pl = d[t]; if (!pl || !pl.nombre) continue; let p = estado.platos.find(x => x.nombre.toLowerCase() === String(pl.nombre).toLowerCase()); if (!p) { p = { id: uid(), nombre: String(pl.nombre), momentos: [t], tags: Array.isArray(pl.tags) ? pl.tags.map(String) : [], min: Number(pl.min) || 20, origen: 'llm' }; estado.platos.push(p); } else if (!momentosDe(p).includes(t)) { p.momentos = [...momentosDe(p), t]; } menu[t] = p.id; }
         estado.menus = estado.menus.filter(m => m.fecha !== d.fecha); estado.menus.push(menu); n++;
       }
       guardar(); toast(n ? `Menú de ${n} días propuesto por el LLM` : 'El LLM no devolvió días válidos');
@@ -140,7 +147,7 @@ function render(cont, params) {
     },
     semana: () => { for (let i = 0; i < 7; i++) { const f = sumarDias(fecha, i); if (!estado.menus.some(m => m.fecha === f)) estado.menus.push(proponerMenu(f)); } guardar(); toast('Semana propuesta'); },
     cambiar: async el => {
-      const t = el.dataset.t; const ops = estado.platos.filter(p => p.tipo === t).map(p => ({ v: p.id, l: p.nombre }));
+      const t = el.dataset.t; const ops = estado.platos.filter(p => momentosDe(p).includes(t)).map(p => ({ v: p.id, l: p.nombre }));
       const v = await pedir('Cambiar ' + t, [{ n: 'p', l: 'Plato', t: 'select', o: ops, v: menu[t] }]); if (v) { menu[t] = v.p; guardar(); }
     },
     hecho: el => { estado.comidas.push({ id: uid(), fecha, tipo: el.dataset.t, segunMenu: true, que: '' }); guardar(); },
@@ -153,8 +160,8 @@ function render(cont, params) {
     buscar: () => navegar('buscador', { cat: 'alimentacion' }),
     compra: () => navegar('compra'),
     buscarPl: el => { params.q = el.value; render(cont, params); },
-    momPl: el => { params.mom = el.dataset.m; render(cont, params); },
-    ordenPl: el => { params.orden = el.dataset.o; render(cont, params); },
+    momPl: el => { params.mom = el.value; render(cont, params); },
+    ordenPl: el => { params.orden = el.value; render(cont, params); },
     nuevoPl: async () => { const v = await pedir('Nuevo plato', camposPlato, {}, { dictar: 'descripcion' }); if (v) { guardarPlato(v); toast('Guardado; el mayordomo completa la ficha'); } },
     editarPl: async el => {
       const p = estado.platos.find(x => x.id === el.dataset.id);

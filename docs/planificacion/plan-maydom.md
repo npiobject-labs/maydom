@@ -74,7 +74,7 @@ Proyectos de **trabajo** o **personales** con estimación de horas, horas regist
 Madrid. Actividades **fijas** (las que ya hace regularmente) y **propuestas** con información, coste, duración y fecha. Preferencias de ocio: tipos y periodicidad (n veces/semana o mes). Al aceptar una propuesta que choca con otra cosa del calendario se pregunta qué se elimina. Presupuesto de ocio mensual conectado con Finanzas. La búsqueda real de eventos (agendas de Madrid) es deuda; el mayordomo propone a partir del catálogo y de lo que el usuario apunta.
 
 ### Finanzas
-Movimientos de ingreso y gasto por **concepto** (categorías: vivienda, alimentación, suplementos, ocio, servicios web, IA/LLM, hosting, otros). Importación de extractos bancarios en CSV (mapeo de columnas). Suscripciones recurrentes (servidor, OpenRouter, etc.) como gastos periódicos. Balances por mes y concepto. Recomendaciones del mayordomo; ejecutar acciones queda para versiones futuras.
+Movimientos de ingreso y gasto por **concepto** (categorías: vivienda, alimentación, suplementos, ocio, servicios web, IA/LLM, hosting, otros). Importación de extractos bancarios en **CSV, Excel (.xlsx) y PDF** (mapeo de columnas, con preselección y detección de la cabecera aunque el fichero traiga preámbulo). El lector vive en `docs/app/extracto.js` y no usa ninguna librería: el `.xlsx` es un ZIP de XML y los flujos del PDF van en deflate, así que basta `DecompressionStream` + `DOMParser`. De un PDF sin tabla reconocible se ofrece, como plan B y solo si el usuario acepta, que lo interprete el LLM (`finanzas-extracto`). Suscripciones recurrentes (servidor, OpenRouter, etc.) como gastos periódicos. Balances por mes y concepto. Recomendaciones del mayordomo; ejecutar acciones queda para versiones futuras.
 
 ### Consejos (mayordomo)
 El superagente. Conoce el estado de todas las secciones y propone: actividades, comidas, ejercicios, ocio, sueño, gasto. Cada consejo tiene estado: **nuevo → probar / rechazar / en espera → hecho**. Dos motores: reglas locales (funcionan sin red) y LLM vía backend (`POST /api/mayordomo` → OpenRouter). Las decisiones tomadas se guardan en la **memoria** (§5).
@@ -120,7 +120,7 @@ El backend de maydom manda `Authorization: Bearer <clave de aplicación>` y `X-O
 | Suplementos | Revisar horas de toma e interacciones (criterio general) | `suplementos` |
 | Ocio | Propuestas en Madrid con coste, duración y enlace | `ocio` |
 | Sueño | Analizar las últimas 14 noches → 3 acciones | `sueno` |
-| Finanzas | Recomendaciones sobre el gasto del mes | `finanzas` |
+| Finanzas | Recomendaciones sobre el gasto del mes · **extracto en PDF que no se deja leer → movimientos** | `finanzas`, `finanzas-extracto` |
 | Buscador | Interpretar la petición → consulta corta + categoría | `buscador` |
 | Notas | Título, etiquetas y tipo al guardar (y en lote para las antiguas) | `nota` |
 | Alimentación | Ficha del plato: ingredientes, preparación, nutrientes, nota, etiquetas, momento y minutos | `plato` |
@@ -163,7 +163,7 @@ Se revisa si aparece un segundo usuario, si hace falta sincronizar varios dispos
 | F2 | Núcleo PWA: shell, menú por apartados, almacenamiento local, Hoy, Calendario con regla de carga y conflictos, Notas, Preferencias, Ajustes con exportar/importar | Hecha 20-sep (build 004) |
 | F3 | Cuerpo: Ejercicio (catálogo, tablas, seguimiento, píldoras), Sueño (registro, objetivo 7 h, técnicas), Meditación (guiones, temporizador, modo nocturno) | Hecha 20-sep (build 004) |
 | F4 | Mesa: Alimentación (menús, seguimiento, stock), Suplementos (stock, hora, umbral 10 %), Compra unificada | Hecha 20-sep (build 004) |
-| F5 | Vida: Proyectos (horas, semáforo, bloques con píldoras), Ocio (fijas, propuestas, conflictos, presupuesto), Finanzas (movimientos, CSV, recurrentes, balances) | Hecha 20-sep (build 004) |
+| F5 | Vida: Proyectos (horas, semáforo, bloques con píldoras), Ocio (fijas, propuestas, conflictos, presupuesto), Finanzas (movimientos, extracto CSV/Excel/PDF, recurrentes, balances) | Hecha 20-sep (build 004); extracto en Excel y PDF el 21-sep (build 016) |
 | F6 | Mayordomo: consejos con estados, motor de reglas local, motor LLM vía backend, Buscador con catálogo de tiendas, exportar memoria | Hecha 20-sep (build 004) |
 | F7 | PWA: manifest, service worker, instalación, notificaciones locales | Hecha 20-sep (build 004) |
 | F8 | Backend: `POST /api/mayordomo` proxy a OpenRouter con CORS, sin clave en el cliente | Hecha 20-sep; probado en local con y sin clave. Falta la clave en Fly (D1) |
@@ -183,7 +183,7 @@ Lo que las notas piden y no se puede cerrar sin servicios externos, datos reales
 | D1 | **Dar de alta maydom en el gateway** y guardar sus secretos | Hay que crear la aplicación en el gateway con la clave de administración, que no está en esta sesión | En https://npiobject-labs.github.io/openrouter/conectar.html: crear la app «maydom», ponerle presupuesto (p. ej. 3 $/mes, aviso 2, cuota 20/min) y guardar su clave como secreto `LLM_API_KEY` del repo; añadir `MAYDOM_CLAVE` (cualquier cadena larga) y escribirla en Ajustes. `deploy.yml` las vuelca a Fly. Sin ellas, el backend responde 503 y la app va con reglas |
 | D2 | **Push real** (avisos con la app cerrada) | Necesita servidor con estado (suscripciones VAPID) | Añadir volumen en Fly + web-push; mientras, notificaciones locales con la app abierta/instalada |
 | D3 | ~~Foto del frigorífico → stock~~ | **Hecho** (21-sep): Alimentación → Stock → «Foto del frigorífico»; la imagen se reduce a 1024 px en el móvil y va al LLM multimodal del gateway | Necesita que el modelo del gateway acepte imágenes; si no, fijar `LLM_MODELO` a uno que sí |
-| D4 | **Importación bancaria automática** | Los bancos no dan API abierta sin agregador | CSV manual (hecho); agregador (PSD2) si compensa |
+| D4 | **Importación bancaria automática** | Los bancos no dan API abierta sin agregador | Extracto manual en CSV, Excel y PDF (hecho 21-sep); agregador (PSD2) si compensa |
 | D5 | **Precios y ofertas reales en tiendas** | Es un proyecto en sí mismo, y ya existe: `npiobject-labs/buscaproducto` | maydom se queda en enlace + consulta interpretada (§4.2); la agregación se consume por la API de buscaproducto. La ficha y el precio de un producto concreto sí entran en maydom, por las fases P1–P5 de [`obtener-datos-de-productos.md`](obtener-datos-de-productos.md) (compartir a maydom + JSON-LD, Open Food Facts, Keepa), sin evadir anti-bot (ADR-006) |
 | D6 | **Ofertas por ubicación** | Requiere geolocalización en segundo plano y fuente de ofertas | Deuda hasta tener D2 y D5 |
 | D7 | **Agenda real de ocio de Madrid** | Sin fuente estable | El mayordomo propone desde catálogo y preferencias; integrar una fuente (p. ej. datos abiertos del Ayuntamiento) más adelante |

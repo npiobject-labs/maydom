@@ -67,7 +67,12 @@ nav.inferior a .n{position:absolute;top:0;right:.1rem;background:var(--warn);col
 .semana div{flex:1;text-align:center;font-size:.7rem;padding:.3rem 0 .1rem;border-radius:6px;border:1px solid var(--line);cursor:pointer;color:var(--mute)}
 .semana div b{display:block;font-size:.95rem;color:var(--ink)}.semana div i{display:block;font-style:normal;color:var(--acc);height:.8rem;line-height:.8rem}
 .semana div.sel{border-color:var(--acc);background:var(--acc2)}.semana div.hoy b{color:var(--acc)}
-.nota{white-space:pre-wrap}.nota.t-preferencia{border-left:3px solid var(--acc)}.nota.t-tendencia{border-left:3px solid var(--warn)}
+.nota b{display:block;margin-bottom:.1rem}
+.nota .cuerpo{white-space:pre-wrap;color:var(--ink2);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.btn.dictar{margin-top:.4rem}
+.btn.dictar.grabando{background:var(--mal);color:#fff;border-color:var(--mal);animation:latido 1.4s ease-in-out infinite}
+@keyframes latido{50%{opacity:.6}}
+.nota{white-space:normal}.nota.t-preferencia{border-left:3px solid var(--acc)}.nota.t-tendencia{border-left:3px solid var(--warn)}
 .chat{display:flex;flex-direction:column;gap:.45rem}
 .msg{max-width:90%;padding:.55rem .8rem;border-radius:12px;background:var(--bg2);border:1px solid var(--line);font-size:.92rem;white-space:pre-wrap}
 .msg.yo{align-self:flex-end;background:var(--acc2);border-color:transparent}

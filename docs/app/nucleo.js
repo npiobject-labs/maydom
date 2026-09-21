@@ -98,6 +98,7 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
       ${opciones.texto ? crudo('<p class="mini">' + esc(opciones.texto) + '</p>') : ''}
       <div class="acciones fin">
         ${opciones.extra ? crudo(`<button type="button" class="btn peligro" data-extra>${esc(opciones.extra)}</button>`) : ''}
+        ${opciones.otro ? crudo(`<button type="button" class="btn" data-otro>${esc(opciones.otro)}</button>`) : ''}
         <button type="button" class="btn" data-cancelar>Cancelar</button>
         <button type="submit" class="btn p">${opciones.aceptar || 'Guardar'}</button></div></form>`;
     document.body.appendChild(dlg);
@@ -105,6 +106,12 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
     const cerrar = v => { dlg.close(); dlg.remove(); resolve(v); };
     dlg.querySelector('[data-cancelar]').onclick = () => cerrar(null);
     const ex = dlg.querySelector('[data-extra]'); if (ex) ex.onclick = () => cerrar({ __extra: true });
+    const ot = dlg.querySelector('[data-otro]'); if (ot) ot.onclick = () => cerrar({ __otro: true });
+    // Dictado: solo aparece si el navegador lo trae; si no, el formulario queda igual que antes.
+    if (opciones.dictar) import('./voz.js').then(v => {
+      const campo = form.elements[opciones.dictar];
+      if (campo) v.botonDictado(campo, campo.parentElement === form ? campo.insertAdjacentElement('afterend', document.createElement('div')) : null);
+    }).catch(() => { });
     dlg.addEventListener('cancel', e => { e.preventDefault(); cerrar(null); });
     form.onsubmit = e => {
       e.preventDefault();

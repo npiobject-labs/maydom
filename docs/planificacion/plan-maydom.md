@@ -39,7 +39,7 @@ Portada. Agenda del día con carga (horas ocupadas vs límite), próximas tomas 
 Vista día y semana. Eventos con sección de origen (ejercicio, comida, meditación, proyecto, ocio, aviso). **Regla de carga**: límite de horas planificadas al día (preferencias, por defecto 6) y aviso al superarlo. **Conflictos**: al añadir algo que choca con otro evento se pregunta si se sustituye o se descarta (nota de ocio). Planificación a corto plazo: se rellena día a día; las plantillas semanales son opcionales.
 
 ### Notas
-Notas rápidas sobre cualquier área, con etiquetas por sección (`ejercicio`, `alimentacion`, `proyecto`, …). Una nota puede marcarse como **preferencia** o **tendencia**, y entonces alimenta a Preferencias. Búsqueda por texto y etiqueta.
+Notas rápidas sobre cualquier área. **Se dictan** (botón de micrófono, donde el navegador lo admita) y **se titulan solas**: al guardar, el mayordomo devuelve título, etiquetas y tipo (nota, preferencia o tendencia) en una llamada. Lo escrito a mano nunca se pisa: el análisis solo rellena lo vacío. El guardado es inmediato y el análisis va después, así que una nota no se pierde por un fallo de red; mientras llega, lleva un título hecho con sus primeras palabras. Las marcadas como preferencia o tendencia alimentan a Preferencias. Búsqueda por texto, título y etiqueta, y un botón para titular en lote las que vengan de antes.
 
 ### Ejercicio
 - **Catálogo** de ejercicios básicos con tipo (calistenia, kettlebell, movilidad, cardio), explicación y enlace de búsqueda en YouTube. Ampliable a mano y por el mayordomo según preferencias ("quiero calistenia" → propone ejercicios de ese tipo).
@@ -121,6 +121,7 @@ El backend de maydom manda `Authorization: Bearer <clave de aplicación>` y `X-O
 | Sueño | Analizar las últimas 14 noches → 3 acciones | `sueno` |
 | Finanzas | Recomendaciones sobre el gasto del mes | `finanzas` |
 | Buscador | Interpretar la petición → consulta corta + categoría | `buscador` |
+| Notas | Título, etiquetas y tipo al guardar (y en lote para las antiguas) | `nota` |
 | Mayordomo | Chat y tanda de consejos | `chat` |
 
 ### 4.2 El buscador, mirando a buscaproducto
@@ -156,6 +157,7 @@ Se revisa si aparece un segundo usuario, si hace falta sincronizar varios dispos
 | F8 | Backend: `POST /api/mayordomo` proxy a OpenRouter con CORS, sin clave en el cliente | Hecha 20-sep; probado en local con y sin clave. Falta la clave en Fly (D1) |
 | F9 | Deuda de desarrollo (§7) | Pendiente |
 | F10 | LLM por el gateway propio: funciones con IA en 8 secciones, clave de acceso, `X-Operacion`, foto del frigorífico, buscador interpretado, exportar memoria a GitHub | Hecha 21-sep (build 005) |
+| F11 | Notas dictadas y tituladas por el mayordomo; dictado también en la nota rápida y en el chat | Hecha 21-sep (build 006) |
 
 ## 7. Deuda de desarrollo
 
@@ -170,6 +172,8 @@ Lo que las notas piden y no se puede cerrar sin servicios externos, datos reales
 | D5 | **Precios y ofertas reales en tiendas** | Es un proyecto en sí mismo, y ya existe: `npiobject-labs/buscaproducto` | maydom se queda en enlace + consulta interpretada (§4.2); si algún día hace falta agregar precios dentro de maydom, se llama a la API de buscaproducto en vez de reimplementarla |
 | D6 | **Ofertas por ubicación** | Requiere geolocalización en segundo plano y fuente de ofertas | Deuda hasta tener D2 y D5 |
 | D7 | **Agenda real de ocio de Madrid** | Sin fuente estable | El mayordomo propone desde catálogo y preferencias; integrar una fuente (p. ej. datos abiertos del Ayuntamiento) más adelante |
+| D12 | **Platos con título y descripción** | Pedido el 21-sep: hoy un plato es solo un nombre; hace falta separar título y descripción (preparación, ingredientes), con búsqueda, orden y etiquetas generadas por el LLM, como en Notas | Mismo patrón que `analizarNota`: guardado inmediato y análisis después. Pendiente |
+| D13 | **Dictado en navegadores sin reconocimiento de voz** | Safari en iOS y DuckDuckGo pueden no traerlo; entonces el botón no aparece | Escribir a mano, o usar Chrome. Grabar audio y transcribirlo con el LLM sería la alternativa, pero encarece cada nota |
 | D8 | **Búsqueda de ejercicios en YouTube con resultados dentro de la app** | YouTube Data API con clave y cuota | Enlaces de búsqueda y catálogo ampliado por el LLM (hecho); resultados embebidos, pendiente |
 | D9 | **Sincronización entre dispositivos** | Backend sin estado | Exportar/importar JSON (hecho); volumen en Fly + endpoint de estado si hace falta |
 | D10 | **Sincronización automática con Obsidian** | La bóveda vive en el repo; la app en el navegador | Mayordomo → Exportar memoria abre GitHub con el fichero prellenado en `memoria/preferencias/`: un commit desde el móvil (hecho). Automatizarlo del todo exigiría un token en el cliente: no compensa |

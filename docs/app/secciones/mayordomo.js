@@ -49,7 +49,7 @@ function render(cont, params) {
     <div class="tarjeta"><div class="chat" id="chat">${lista(estado.chat.slice(-10).map(m => h`<div class="msg ${m.rol === 'usuario' ? 'yo' : ''}">${m.contenido}</div>`))}
       ${estado.chat.length ? '' : crudo('<div class="msg">Soy tu mayordomo. Conozco tu calendario, sueño, ejercicio, comidas, suplementos, proyectos, ocio y cuentas. Aconsejo; tú decides qué probar, rechazar o dejar en espera.</div>')}
       ${pensando ? crudo('<div class="msg mini">pensando…</div>') : ''}</div>
-      <form class="acciones" id="f-chat"><input type="text" name="q" placeholder="Pregunta o cuéntale algo…" autocomplete="off"><button class="btn p" type="submit">Enviar</button></form>
+      <form class="acciones" id="f-chat"><input type="text" name="q" placeholder="Pregunta o cuéntale algo…" autocomplete="off"><span id="dictar-chat"></span><button class="btn p" type="submit">Enviar</button></form>
       <div class="acciones"><button class="btn mini" data-a="consejoLLM">Pedir consejos al LLM</button><button class="btn mini" data-a="limpiarChat">Limpiar chat</button></div></div>
     <div class="chips">${lista(['activos', 'hecho', 'rechazado', 'todos'].map(f => h`<button class="pill ${f === filtro ? 'sel' : ''}" data-a="filtro" data-f="${f}">${f}</button>`))}</div>
     ${cs.length ? lista(cs.map(c => tarjetaConsejo(c))) : aviso('Sin consejos ' + filtro + '. Se generan solos a partir de lo que registras; cuantos más datos, mejores consejos.')}
@@ -69,6 +69,7 @@ function render(cont, params) {
     pensando = false; guardar(); render(cont, params);
     const ch = cont.querySelector('#chat'); if (ch) ch.scrollTop = ch.scrollHeight;
   };
+  import('../voz.js').then(v => v.botonDictado(cont.querySelector('#f-chat input'), cont.querySelector('#dictar-chat'))).catch(() => { });
   cont.querySelector('#f-chat').onsubmit = e => { e.preventDefault(); const q = e.target.q.value.trim(); if (q) { e.target.q.value = ''; enviar(q); } };
   delegar(cont, accionesConsejo({
     filtro: el => navegar('mayordomo', { f: el.dataset.f }),

@@ -5,6 +5,7 @@ import { registrarNoche, registrosOrdenados, calcular } from './sueno.js';
 import { tomadoHoy, bajoStock } from './suplementos.js';
 import { pildoraAleatoria, registrarPildora } from './ejercicio.js';
 import { refrescarConsejos } from '../reglas.js';
+import { guardarNota, campos as camposNota } from './notas.js';
 import { tarjetaConsejo, accionesConsejo, consejosNuevos } from './mayordomo.js';
 import { rezagados } from './proyectos.js';
 
@@ -43,7 +44,11 @@ function render(cont) {
     pildora: async () => { const e = pildoraAleatoria(); if (!e) return toast('Carga el catálogo de ejercicios en Ajustes'); const { pedir } = await import('../nucleo.js'); const ok = await pedir('Píldora: ' + e.nombre, [], {}, { texto: `${e.series} × ${e.reps}. ${e.descripcion}`, aceptar: 'Hecha' }); if (ok) { registrarPildora(e); toast('Anotada'); } },
     tomar: el => { const s = estado.suplementos.find(x => x.id === el.dataset.id); estado.tomas.push({ id: uid(), suplementoId: s.id, fecha: hoy, hora: horaActual() }); if (s.stock != null) s.stock = Math.max(0, Number(s.stock) - 1); guardar(); },
     sueno: async () => { if (await registrarNoche()) toast('Noche registrada'); },
-    nota: async () => { const { pedir } = await import('../nucleo.js'); const v = await pedir('Nota rápida', [{ n: 'texto', l: 'Texto', t: 'textarea', req: true }, { n: 'etiquetas', l: 'Etiquetas', t: 'tags' }]); if (v) { estado.notas.push({ id: uid(), fecha: hoy, tipo: 'nota', ...v }); guardar(); toast('Nota guardada'); } },
+    nota: async () => {
+      const { pedir } = await import('../nucleo.js');
+      const v = await pedir('Nota rápida', camposNota.filter(c => c.n !== 'titulo' && c.n !== 'tipo'), {}, { dictar: 'texto' });
+      if (v) { guardarNota({ tipo: 'nota', ...v }); toast('Guardada; el mayordomo le pone título'); }
+    },
   }));
 }
 export default { id: 'hoy', titulo: 'Hoy', grupo: null, icono: '☀', render };

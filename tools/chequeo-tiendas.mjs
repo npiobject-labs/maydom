@@ -30,7 +30,11 @@ const ERRORES = [
   'service unavailable', 'no se ha encontrado la página', 'page not found', '404 not found',
   'lo sentimos, no hemos encontrado', 'vaya, algo ha salido mal', 'internal server error',
 ];
-const BLOQUEO = ['captcha', 'access denied', 'acceso denegado', 'are you a robot', 'verifica que eres humano', 'cloudflare', 'just a moment'];
+const BLOQUEO = [
+  'captcha', 'access denied', 'acceso denegado', 'are you a robot', 'verifica que eres humano',
+  'cloudflare', 'just a moment', 'automated access', 'not a robot', 'pardon our interruption',
+  'lo sentimos, algo ha ido mal', 'sorry, something went wrong',
+];
 
 // Las tiendas salen del propio catálogo de la app: el chequeo no puede ir por libre.
 function catalogo() {
@@ -43,7 +47,7 @@ function catalogo() {
   return tiendas;
 }
 
-const enElSitio = (dominio, q) => `https://duckduckgo.com/?q=${encodeURIComponent('site:' + dominio + ' ' + q)}`;
+const enElSitio = (dominio, q) => `https://html.duckduckgo.com/html/?q=${encodeURIComponent("site:" + dominio + " " + q)}`;
 
 async function revisar(navegador, tienda) {
   const q = TERMINO[tienda.categoria] || 'creatina';
@@ -64,7 +68,10 @@ async function revisar(navegador, tienda) {
     const todo = (salida.titulo + ' ' + texto).toLowerCase();
     const palabras = q.toLowerCase().split(' ');
 
-    if (BLOQUEO.some(b => todo.includes(b)) || [403, 429].includes(salida.http)) {
+    // Un 503 con la página casi vacía es la forma educada de decir "no me gustan los robots".
+    const antibot = BLOQUEO.some(b => todo.includes(b)) || [403, 429].includes(salida.http)
+      || (salida.http === 503 && texto.length < 1500);
+    if (antibot) {
       salida.estado = 'bloqueado'; salida.detalle = 'la tienda rechaza al robot; no dice nada del buscador';
     } else if (salida.http >= 400) {
       salida.estado = 'error'; salida.detalle = `HTTP ${salida.http}`;

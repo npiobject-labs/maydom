@@ -138,6 +138,8 @@ El backend de maydom manda `Authorization: Bearer <clave de aplicación>` y `X-O
 
 `npiobject-labs/buscaproducto` ya resuelve el problema completo (agrega ofertas reales de más de 40 fuentes, extrae atributos, puntúa, deduplica, guarda histórico y alerta). maydom no lo reimplementa: su buscador es el **nivel D** de aquel proyecto —catálogo de fuentes con `{q}`, una pestaña por tienda— más la **interpretación de la consulta** por el LLM, que es lo barato y lo que más aporta. Para comparar precios de verdad, el enlace lleva a buscaproducto. Ver [`ADR-005`](memoria/decisiones/ADR-005-buscador-nivel-enlace.md).
 
+**Y para leer el precio y la ficha de un producto concreto**, la regla es *el humano abre, la app lee*: el usuario comparte la página a maydom (Web Share Target o enlace pegado) y el backend lee sus datos estructurados (JSON-LD/Open Graph) identificándose y obedeciendo `robots.txt`; los alimentos llegan por Open Food Facts con el código de barras y Amazon por Keepa con clave del usuario. Nada de navegadores «stealth», proxies ni APIs móviles reversadas: el plan completo, con la valoración de los análisis de Grok y Antigravity y las fases P1–P5, está en [`obtener-datos-de-productos.md`](obtener-datos-de-productos.md) y la decisión en [`ADR-006`](memoria/decisiones/ADR-006-obtener-datos-sin-evadir-anti-bot.md).
+
 ## 5. ¿Necesita maydom una app de gestión? — Decisión
 
 **No, de momento.** Razones:
@@ -182,7 +184,7 @@ Lo que las notas piden y no se puede cerrar sin servicios externos, datos reales
 | D2 | **Push real** (avisos con la app cerrada) | Necesita servidor con estado (suscripciones VAPID) | Añadir volumen en Fly + web-push; mientras, notificaciones locales con la app abierta/instalada |
 | D3 | ~~Foto del frigorífico → stock~~ | **Hecho** (21-sep): Alimentación → Stock → «Foto del frigorífico»; la imagen se reduce a 1024 px en el móvil y va al LLM multimodal del gateway | Necesita que el modelo del gateway acepte imágenes; si no, fijar `LLM_MODELO` a uno que sí |
 | D4 | **Importación bancaria automática** | Los bancos no dan API abierta sin agregador | CSV manual (hecho); agregador (PSD2) si compensa |
-| D5 | **Precios y ofertas reales en tiendas** | Es un proyecto en sí mismo, y ya existe: `npiobject-labs/buscaproducto` | maydom se queda en enlace + consulta interpretada (§4.2); si algún día hace falta agregar precios dentro de maydom, se llama a la API de buscaproducto en vez de reimplementarla |
+| D5 | **Precios y ofertas reales en tiendas** | Es un proyecto en sí mismo, y ya existe: `npiobject-labs/buscaproducto` | maydom se queda en enlace + consulta interpretada (§4.2); la agregación se consume por la API de buscaproducto. La ficha y el precio de un producto concreto sí entran en maydom, por las fases P1–P5 de [`obtener-datos-de-productos.md`](obtener-datos-de-productos.md) (compartir a maydom + JSON-LD, Open Food Facts, Keepa), sin evadir anti-bot (ADR-006) |
 | D6 | **Ofertas por ubicación** | Requiere geolocalización en segundo plano y fuente de ofertas | Deuda hasta tener D2 y D5 |
 | D7 | **Agenda real de ocio de Madrid** | Sin fuente estable | El mayordomo propone desde catálogo y preferencias; integrar una fuente (p. ej. datos abiertos del Ayuntamiento) más adelante |
 | D12 | ~~Platos con ficha~~ | **Hecho** (21-sep, build 007): cada plato tiene ficha con ingredientes, preparación, nutrientes por ración y una nota; la redacta el mayordomo a partir del nombre. Búsqueda en vivo por nombre, ingrediente o etiqueta, filtro por momento y tres órdenes | — |

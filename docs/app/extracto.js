@@ -15,8 +15,15 @@ export const num = s => {
   const n = Number(s);
   return isNaN(n) ? null : n;
 };
+const MESES3 = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 export const fechaNorm = s => {
   s = String(s ?? '').trim();
+  // Varios bancos imprimen el mes en letra: «21 sep 2026», «21-SEPT-26».
+  const ml = s.toLowerCase().match(/(\d{1,2})[\s\-\/.]*([a-záéíóú]{3,10})\.?[\s\-\/.]*(\d{2,4})/);
+  if (ml) {
+    const i = MESES3.indexOf(ml[2].slice(0, 3).replace(/[áéíóú]/g, c => 'aeiou'['áéíóú'.indexOf(c)]));
+    if (i >= 0) { const a = ml[3].length === 2 ? '20' + ml[3] : ml[3]; return `${a}-${String(i + 1).padStart(2, '0')}-${ml[1].padStart(2, '0')}`; }
+  }
   // Excel guarda las fechas como número de serie desde el 30-12-1899; llegan así al leer la hoja.
   if (/^\d{5}(\.\d+)?$/.test(s)) return new Date(Date.UTC(1899, 11, 30) + Math.round(Number(s)) * 86400000).toISOString().slice(0, 10);
   const m = s.match(/(\d{1,4})[\/\-.](\d{1,2})[\/\-.](\d{1,4})/);
@@ -140,8 +147,8 @@ async function leerXLSX(bytes) {
 // ---------- PDF ----------
 // Un PDF no tiene tabla: tiene texto colocado. Se infla cada flujo, se reconstruyen las líneas por
 // saltos de posición y se reconoce la fila por «fecha … importe», que es como imprime todo banco.
-const RE_FECHA = /(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}|\d{4}-\d{2}-\d{2})/;
-const RE_IMPORTE = /-?\d{1,3}(?:\.\d{3})*,\d{2}\s?-?(?:€|EUR)?|-?\d+\.\d{2}(?!\d)/g;
+const RE_FECHA = /(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}|\d{4}-\d{2}-\d{2}|\d{1,2}[\s\-]?(?:ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)[a-z]*\.?[\s\-]?\d{2,4})/i;
+const RE_IMPORTE = /-?\d{1,3}(?:[.\s\u00a0]\d{3})*,\d{2}\s?-?(?:€|EUR)?|-?\d+\.\d{2}(?!\d)/g;
 function cadenaPDF(t) {
   if (t[0] === '<') {
     const hx = t.slice(1, -1).replace(/\s/g, '');
@@ -197,7 +204,7 @@ export async function textoPDF(bytes) {
 }
 async function leerPDF(bytes) {
   const lineas = await textoPDF(bytes);
-  const limpia = l => l.replace(new RegExp(RE_FECHA.source, 'g'), ' ').replace(RE_IMPORTE, ' ').replace(/\s+/g, ' ').trim();
+  const limpia = l => l.replace(new RegExp(RE_FECHA.source, 'gi'), ' ').replace(RE_IMPORTE, ' ').replace(/\s+/g, ' ').trim();
   const filas = [];
   for (const l of lineas) {
     const imp = (l.match(RE_IMPORTE) || []).map(x => x.trim());

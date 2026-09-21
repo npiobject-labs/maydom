@@ -1,0 +1,36 @@
+{
+ "fecha": "2026-09-21T16:50:00+02:00",
+ "titulo": "El dictado ya no repite palabras",
+ "objetivo": "Corregir el transcriptor de voz, que al editar un plato iba pegando una y otra vez lo ya dictado.",
+ "prompts": [
+  {
+   "texto": "El transcriptor de editar repite palabras; lo que tienes que hacer es corregir esto.",
+   "nota": "Adjuntaba un pantallazo del modal «Editar plato» con el campo lleno de «esteesteeste eseste es uneste es un plato…»."
+  }
+ ],
+ "cambios": [
+  "docs/app/voz.js: los resultados finales del reconocimiento se guardan por índice en vez de acumularse con +=, así una reemisión del mismo resultado sobrescribe en lugar de duplicar.",
+  "docs/app/voz.js: se detecta cuándo el motor reinicia su lista de resultados tras una pausa larga (vuelve a resultIndex 0 con otro texto) y se cierra la tanda anterior, para no perder lo ya dictado.",
+  "docs/app/voz.js: cada trozo se pega compactando (se descarta si lo acumulado ya termina con él, y lo sustituye si es una ampliación suya), que es el patrón que Chrome en Android usa al ir cerrando finales.",
+  "docs/app/voz.js: el texto que ya hubiera en el campo pasa por la misma compactación, para que el motor no lo duplique al empezar.",
+  "docs/index.html y docs/sw.js: build MA-B1-20260921-014."
+ ],
+ "sha": "a5f99ca",
+ "sha_completo": "a5f99ca2b764cc05b1e876d217e1a0f87d9be6fd",
+ "run": null,
+ "mock": "mocks/002-mock1.html",
+ "build": "MA-B1-20260921-014",
+ "pagina": "index.html",
+ "fly": "https://maydom-npiobject-labs.fly.dev/salud",
+ "pendiente": [
+  "Fusionar el PR en main para que Pages publique el arreglo, y probar el dictado real en el móvil",
+  "Sigue viva la deuda anterior: D2 push real, D4 importación bancaria, D6 ofertas por ubicación, D7 agenda de Madrid, D9 sincronización entre dispositivos, D11 acciones del agente, D13 dictado sin reconocimiento de voz, D14 y D15 obtención de datos de producto"
+ ],
+ "enlaces": [
+  {
+   "texto": "Resumen de la sesión",
+   "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/sesiones/20260921-1650.md"
+  }
+ ],
+ "notas": "Verificado con Playwright sobre docs/ en local, inyectando un SpeechRecognition falso que reproduce el patrón del pantallazo; el sandbox no alcanza Pages, así que la comprobación en la URL pública la hará pages.yml al fusionar. Transcripción del prompt fiel salvo puntuación."
+}

@@ -57,13 +57,14 @@ jobs:
           cuenta = lambda e: sum(1 for r in rs if r['estado'] == e)
           print('### Chequeo del catalogo de tiendas\n')
           print(f"{cuenta('ok')} bien · {cuenta('error')} con error · {cuenta('bloqueado')} bloquean al robot · {cuenta('dudoso')} dudosas\n")
-          print('| | Tienda | Estado | Que paso | Buscador |')
+          print('| | Tienda | Estado | Que paso | Que se midio |')
           print('|---|---|---|---|---|')
           orden = {'error': 0, 'dudoso': 1, 'bloqueado': 2, 'ok': 3}
           for r in sorted(rs, key=lambda r: (orden[r['estado']], r['nombre'])):
-              suya = 'suyo' if r['url'] else 'en su sitio'
+              suya = 'busca su web' if r['url'] else 'vive el dominio'
               marca = ' *(comprobada)*' if r['verificada'] else ''
               print(f"| {icono[r['estado']]} | {r['nombre']}{marca} | {r['estado']} | {r['detalle']} | {suya} |")
+          print('\nSolo se mide el buscador de las tiendas que tienen uno guardado; de las demas se comprueba que la tienda sigue en pie, porque la busqueda la hace DuckDuckGo desde el navegador y a un robot no le contesta.')
           print('\nUna tienda **bloqueada** rechaza al robot: no dice nada sobre si su buscador sirve para una persona.')
           print('Una **dudosa** responde pero no se vio lo buscado, normalmente porque pinta los resultados con JavaScript.')
           print('\nPara arreglar una tienda rota no hace falta tocar codigo: en la app, boton **no funciona** del resultado, o pega su buscador en la ficha de la tienda.')

@@ -4,11 +4,15 @@
 //
 //   node tools/chequeo-tiendas.mjs [--base http://localhost:8099] [--solo hsn,iherb] [--json fichero]
 //
-// Clasifica cada tienda en:
-//   ok         la página responde y enseña lo buscado
-//   error      404, 5xx o la página dice que no encuentra nada
-//   bloqueado   la tienda rechaza al robot (403/429, captcha): no dice nada de si el buscador sirve
-//   dudoso     responde pero no se ve lo buscado (puede necesitar JS que no cargó, o estar vacía)
+// Qué se mide de cada tienda:
+//   - con buscador propio: se hace la búsqueda y se mira si aparece lo buscado. Es el caso que
+//     importa, porque una plantilla mal escrita lleva a un 404 que descubre el usuario.
+//   - sin buscador propio: la app la busca dentro de su web con DuckDuckGo, y los buscadores
+//     rechazan a los robots, así que eso no se puede medir. Se comprueba lo que sí: que el
+//     dominio de la tienda está vivo. Si la tienda ha cerrado, sobra del catálogo.
+//
+// Estados: ok · error (404, 5xx, «no encuentro nada») · bloqueado (rechaza al robot; no dice nada
+// del buscador) · dudoso (responde pero no se ve lo buscado, normalmente por JavaScript).
 
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -47,11 +51,14 @@ function catalogo() {
   return tiendas;
 }
 
-const enElSitio = (dominio, q) => `https://html.duckduckgo.com/html/?q=${encodeURIComponent("site:" + dominio + " " + q)}`;
+
 
 async function revisar(navegador, tienda) {
   const q = TERMINO[tienda.categoria] || 'creatina';
-  const url = tienda.url ? tienda.url.replace('{q}', encodeURIComponent(q)) : enElSitio(tienda.dominio, q);
+  // Sin buscador propio se comprueba que la tienda sigue en pie, no la búsqueda: quien la hace es
+  // DuckDuckGo desde el navegador del usuario, y a un robot no le contesta.
+  const soloDominio = !tienda.url;
+  const url = tienda.url ? tienda.url.replace('{q}', encodeURIComponent(q)) : `https://${tienda.dominio}/`;
   const ctx = await navegador.newContext({
     locale: 'es-ES', viewport: { width: 1280, height: 900 },
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36',
@@ -60,6 +67,7 @@ async function revisar(navegador, tienda) {
   const salida = { ...tienda, q, url, estado: 'dudoso', http: 0, titulo: '', detalle: '' };
   try {
     const r = await pagina.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    salida.mide = soloDominio ? 'el dominio está vivo' : 'su buscador devuelve resultados';
     salida.http = r ? r.status() : 0;
     // Un buscador suele pintar los resultados después; se le da un respiro sin bloquear el chequeo.
     await pagina.waitForLoadState('networkidle', { timeout: 12000 }).catch(() => { });
@@ -77,6 +85,9 @@ async function revisar(navegador, tienda) {
       salida.estado = 'error'; salida.detalle = `HTTP ${salida.http}`;
     } else if (ERRORES.some(e => todo.includes(e))) {
       salida.estado = 'error'; salida.detalle = 'la página dice que no encuentra nada: ' + (ERRORES.find(e => todo.includes(e)) || '');
+    } else if (soloDominio) {
+      salida.estado = texto.length > 200 ? 'ok' : 'dudoso';
+      salida.detalle = texto.length > 200 ? 'la tienda sigue en pie; la búsqueda la hace el navegador' : 'la portada llega casi vacía';
     } else if (texto.length < 400) {
       salida.estado = 'dudoso'; salida.detalle = 'la página llega casi vacía (puede necesitar JS)';
     } else if (palabras.every(p => texto.includes(p))) {

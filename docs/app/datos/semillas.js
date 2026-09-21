@@ -118,10 +118,10 @@ export const CATEGORIAS_TIENDA = [{ v: 'alimentacion', l: 'Alimentación' }, { v
 const ti = (nombre, categoria, dominio, url = '', verificada = false) => ({
   id: 't_' + nombre.toLowerCase().replace(/[^a-z0-9]+/g, '_'), nombre, categoria, dominio, url, verificada, activa: true,
 });
-// Version sin JavaScript de DuckDuckGo: sirve los resultados en el propio HTML, va ligera en el
-// movil y permite que el chequeo de tools/chequeo-tiendas.mjs compruebe de verdad lo que ve el
-// usuario. La web normal de DuckDuckGo los pinta con JS y a un robot no le ensena nada.
-export const enElSitio = (dominio, q) => `https://html.duckduckgo.com/html/?q=${encodeURIComponent('site:' + dominio + ' ' + q)}`;
+// Buscar dentro de la web de la tienda. Los buscadores rechazan a los robots, asi que esto no se
+// puede comprobar automaticamente: tools/chequeo-tiendas.mjs mide lo que si puede, que el dominio
+// de la tienda este vivo, y deja la busqueda en si para el navegador de una persona.
+export const enElSitio = (dominio, q) => `https://duckduckgo.com/?q=${encodeURIComponent('site:' + dominio + ' ' + q)}`;
 
 export const tiendas = [
   // VERIFICADAS: se ha visto que devuelven resultados de verdad.

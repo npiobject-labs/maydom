@@ -63,12 +63,17 @@ function render(cont, params) {
       const f = el.files[0]; if (!f) return; el.value = '';
       let p;
       try { p = await leerExtracto(f); } catch (e) { return toast('No se pudo leer: ' + e.message, 6000); }
-      // Un PDF sin tabla reconocible (columnas raras, texto en imagen) todavía tiene arreglo: el
-      // mayordomo lee el texto suelto. Se pregunta antes porque gasta crédito del gateway.
-      if (!p.filas.length && p.texto && await confirmar(`De ese ${p.origen} no salen movimientos. ¿Que lo interprete el mayordomo? Consume LLM.`, 'Interpretar')) {
-        return interpretarLLM(p.texto);
+      // Un PDF sin tabla reconocible todavía tiene arreglo, pero antes hay que saber qué se leyó:
+      // sin texto es un PDF escaneado y no hay nada que hacer; con texto, o lo interpreta el
+      // mayordomo (se pregunta porque gasta crédito) o se mira el texto para ver por qué falla.
+      if (!p.filas.length) {
+        if (!p.texto) return toast('De ese PDF no sale texto: está escaneado (es una imagen) o usa una fuente sin mapa de caracteres. Descarga el extracto en CSV o Excel desde el banco.', 9000);
+        const muestra = p.texto.split('\n').filter(Boolean).slice(0, 3).map(l => l.slice(0, 70)).join(' ⏎ ');
+        const v = await pedir('Extracto en PDF', [], {}, { texto: `No reconozco ninguna fila de «fecha … importe». Esto es lo que he leído: «${muestra}». Que lo interprete el mayordomo consume LLM.`, aceptar: 'Interpretar', otro: 'Ver el texto' });
+        if (v && v.__otro) return pedir('Texto leído del PDF', [{ n: 't', l: 'Se puede copiar de aquí para ver por qué no se reconoce', t: 'textarea', filas: 14, v: p.texto.slice(0, 4000) }], {}, { aceptar: 'Cerrar' });
+        if (v) return interpretarLLM(p.texto);
+        return;
       }
-      if (!p.filas.length) return toast(`De ese ${p.origen} no he sacado ningún movimiento`, 5000);
       const ops = p.cab.map((c, i) => ({ v: i, l: c || 'columna ' + (i + 1) }));
       const adiv = re => Math.max(0, p.cab.findIndex(c => re.test(c)));
       const m0 = p.filas[0];

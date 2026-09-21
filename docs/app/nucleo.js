@@ -98,7 +98,8 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
     dlg.className = 'modal';
     const f = campos.map(c => campoHTML(c, valores[c.n] ?? c.v)).join('');
     dlg.innerHTML = h`<form method="dialog" class="form">
-      <h2>${titulo}</h2>${crudo(f)}
+      <div class="cabecera-modal"><h2>${titulo}</h2>
+        <button type="button" class="cerrar" data-cancelar aria-label="Cerrar sin guardar" title="Cerrar sin guardar">✕</button></div>${crudo(f)}
       ${opciones.texto ? crudo('<p class="mini">' + esc(opciones.texto) + '</p>') : ''}
       <div class="acciones fin">
         ${opciones.extra ? crudo(`<button type="button" class="btn peligro" data-extra>${esc(opciones.extra)}</button>`) : ''}
@@ -108,7 +109,7 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
     document.body.appendChild(dlg);
     const form = dlg.querySelector('form');
     const cerrar = v => { dlg.close(); dlg.remove(); resolve(v); };
-    dlg.querySelector('[data-cancelar]').onclick = () => cerrar(null);
+    dlg.querySelectorAll('[data-cancelar]').forEach(b => { b.onclick = () => cerrar(null); });
     const ex = dlg.querySelector('[data-extra]'); if (ex) ex.onclick = () => cerrar({ __extra: true });
     const ot = dlg.querySelector('[data-otro]'); if (ot) ot.onclick = () => cerrar({ __otro: true });
     // Dictado: solo aparece si el navegador lo trae; si no, el formulario queda igual que antes.

@@ -160,7 +160,9 @@ export const tiendas = [
   ti('Eventbrite Madrid', 'ocio', 'www.eventbrite.es'),
 ];
 
-export const CONCEPTOS = ['vivienda', 'alimentación', 'suplementos', 'ocio', 'servicios web', 'IA / LLM', 'hosting', 'transporte', 'salud', 'ropa', 'ingresos', 'otros'];
+export const CONCEPTOS = ['vivienda', 'suministros', 'telefonía', 'alimentación', 'restauración', 'suplementos', 'salud', 'transporte', 'compras', 'ropa', 'ocio', 'seguros', 'impuestos', 'servicios web', 'IA / LLM', 'hosting', 'efectivo', 'transferencias', 'ingresos', 'otros'];
+// Movimientos que no son gasto ni ingreso reales: mueven dinero entre cuentas o lo sacan del cajero.
+export const CONCEPTOS_NEUTROS = ['transferencias', 'efectivo'];
 export const TIPOS_OCIO = ['cultura', 'social', 'naturaleza', 'deporte', 'música', 'gastronomía', 'formación'];
 
 export const ocioEjemplos = [

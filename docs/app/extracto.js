@@ -286,7 +286,8 @@ export async function textoPDF(bytes) {
 }
 async function leerPDF(bytes) {
   const lineas = await textoPDF(bytes);
-  const limpia = l => l.replace(new RegExp(RE_FECHA.source, 'gi'), ' ').replace(RE_IMPORTE, ' ').replace(/\s+/g, ' ').trim();
+  // «Fecha valor» es la etiqueta de la columna, no parte del concepto: el banco la repite por fila.
+  const limpia = l => l.replace(new RegExp(RE_FECHA.source, 'gi'), ' ').replace(RE_IMPORTE, ' ').replace(/\bfecha\s+valor\b/gi, ' ').replace(/\s+/g, ' ').trim();
   const filas = [];
   for (const l of lineas) {
     const imp = (l.match(RE_IMPORTE) || []).map(x => x.trim());

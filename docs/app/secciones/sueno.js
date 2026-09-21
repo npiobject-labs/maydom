@@ -1,5 +1,6 @@
 import { estado, guardar, h, lista, crudo, delegar, uid, hoyISO, sumarDias, fechaCorta, minutos, duracionTexto, pedir, aviso, navegar, toast } from '../nucleo.js';
 import { tecnicasSueno } from '../datos/semillas.js';
+import { consultar, conLLM, textoAConsejos } from '../llm.js';
 
 // Calcula los tramos de una noche. Las horas cruzan la medianoche: acostado 23:20, despertar 04:10, levantado 06:45.
 export function calcular(r) {
@@ -37,7 +38,7 @@ function render(cont) {
   cont.innerHTML = h`
     <div class="tarjeta"><div class="grande">${media != null ? duracionTexto(media) : '–'}</div><div class="mini">media de las últimas ${Math.min(7, rs.length)} noches · objetivo ${obj} h</div>
       <div class="barra"><i class="${media != null && media >= objMin ? 'ok' : media != null && media >= objMin * 0.8 ? '' : 'w'}" style="width:${media != null ? Math.min(100, media / objMin * 100) : 0}%"></i></div>
-      <div class="acciones"><button class="btn p" data-a="registrar">Registrar anoche</button><button class="btn" data-a="nocturno">Me he despertado</button></div></div>
+      <div class="acciones"><button class="btn p" data-a="registrar">Registrar anoche</button><button class="btn" data-a="nocturno">Me he despertado</button>${rs.length >= 3 ? crudo('<button class="btn" data-a="analizarLLM">Analizar con LLM</button>') : ''}</div></div>
     ${u ? crudo(`<h3>Última noche · ${fechaCorta(ultimo.fecha)}</h3><div class="tarjeta">
       <div class="fila kv"><span>Total dormido</span><b>${duracionTexto(u.total)}</b></div>
       <div class="fila kv"><span>Primer tramo</span><b>${duracionTexto(u.tramo1)} ${u.tramo1 >= 270 ? '✓' : ''}</b></div>
@@ -51,6 +52,11 @@ function render(cont) {
     <p class="mini">Modelo aceptado: 7 h en total; vale un tramo de 4 h 30–5 h, un despertar breve y ~2 h más ligeras. La meditación nocturna está en Meditación → "Volver a dormir".</p>`;
   delegar(cont, {
     registrar: async () => { const r = await registrarNoche(); if (r) toast('Noche registrada'); },
+    analizarLLM: el => conLLM(el, async () => {
+      const filas = rs.slice(0, 14).map(r => { const c = calcular(r); return `${r.fecha}: acostado ${r.acostado}, latencia ${r.latencia || 0} min, ${r.despertar ? 'despertar ' + r.despertar + ' (' + c.despierto + ' min despierto)' : 'sin despertar'}, levantado ${r.levantado}, total ${duracionTexto(c.total)}, calidad ${r.calidad}${r.nota ? ', nota: ' + r.nota : ''}`; }).join('\n');
+      const j = await consultar({ operacion: 'sueno', tarea: `Analiza estas noches (objetivo ${obj} h; se acepta un tramo de 4,5–5 h + despertar breve + ~2 h ligeras) y detecta patrones (hora de acostarse, despertares, notas). Da 3 acciones concretas para esta semana, cada una en una línea que empiece por "- ", sencillas y sin preparar nada. Sin diagnósticos médicos.\n${filas}` });
+      toast(textoAConsejos(j.respuesta, 'sueno') + ' consejos de sueño nuevos'); navegar('mayordomo');
+    }),
     editar: el => registrarNoche(estado.sueno.find(x => x.id === el.dataset.id)),
     nocturno: () => navegar('meditacion', { guion: 'm_vd', oscuro: '1' }),
   });

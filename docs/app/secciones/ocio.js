@@ -1,6 +1,7 @@
 import { estado, guardar, h, lista, crudo, delegar, uid, hoyISO, fechaCorta, mesISO, euros, duracionTexto, pedir, confirmar, toast, aviso, navegar, sumarDias, diaSemana } from '../nucleo.js';
 import { TIPOS_OCIO, ocioEjemplos } from '../datos/semillas.js';
 import { crearEvento } from '../agenda.js';
+import { pedirJSON, conLLM, lista as listaLLM } from '../llm.js';
 
 const campos = [
   { n: 'titulo', l: 'Actividad', req: true }, { n: 'tipo', l: 'Tipo', t: 'select', o: TIPOS_OCIO },
@@ -25,7 +26,7 @@ function render(cont) {
       <div class="barra"><i class="${gasto > (p.presupuestoOcio || 0) ? 'w' : ''}" style="width:${Math.min(100, p.presupuestoOcio ? gasto / p.presupuestoOcio * 100 : 0)}%"></i></div></div></div></div>
     <h3>Propuestas</h3>
     ${propuestas.length ? lista(propuestas.map(tarjeta)) : aviso('Sin propuestas. Pide ideas o añade algo que hayas visto.')}
-    <div class="acciones"><button class="btn p" data-a="nueva">+ Actividad</button><button class="btn" data-a="ideas">Ideas según preferencias</button><button class="btn" data-a="buscar">Buscar en agendas</button></div>
+    <div class="acciones"><button class="btn p" data-a="nueva">+ Actividad</button><button class="btn" data-a="ideas">Ideas del catálogo</button><button class="btn" data-a="ideasLLM">Ideas con LLM</button><button class="btn" data-a="buscar">Buscar en agendas</button></div>
     <h3>Próximas aceptadas</h3>${aceptadas.length ? lista(aceptadas.map(tarjeta)) : aviso('Nada aceptado todavía.')}
     <h3>Fijas</h3>${fijas.length ? lista(fijas.map(tarjeta)) : aviso('Las actividades que ya haces regularmente (un meetup, una clase) van aquí y se planifican de golpe cada semana.')}
     <p class="mini">Al aceptar una propuesta que choca con otra cosa del calendario, se pregunta qué se sustituye. La agenda real de Madrid es deuda (D7): las ideas salen del catálogo y de lo que apuntes.</p>`;
@@ -37,6 +38,12 @@ function render(cont) {
       for (const e of ocioEjemplos) { if ((tipos.length && !tipos.includes(e.tipo)) || estado.ocio.some(o => o.titulo === e.titulo)) continue; estado.ocio.push({ id: uid(), estado: 'propuesta', fija: false, periodicidad: 'puntual', fecha: '', hora: '18:00', ...e }); nuevas++; }
       guardar(); toast(nuevas ? nuevas + ' ideas añadidas' : 'No hay ideas nuevas para esos tipos; cambia los tipos en Preferencias');
     },
+    ideasLLM: el => conLLM(el, async () => {
+      const j = await pedirJSON({ operacion: 'ocio', tarea: `Propón 6 actividades de ocio en Madrid para los próximos 15 días desde ${hoyISO()}, de tipos ${(p.tiposOcio || []).join(', ') || 'variados'}, con coste total del mes dentro de ${euros(Math.max(0, (p.presupuestoOcio || 0) - gasto))} restantes, evitando chocar con el calendario del contexto y sin repetir estas: ${estado.ocio.map(o => o.titulo).join('; ')}. Si no conoces la agenda concreta de esas fechas, propón actividades genéricas y estables (exposiciones permanentes, rutas, mercados, centros culturales) con su web oficial. Devuelve {"propuestas":[{"titulo":"","tipo":"${TIPOS_OCIO.join('|')}","coste":0,"dur":120,"lugar":"","info":"https://...","fecha":"AAAA-MM-DD o vacío","hora":"HH:MM","nota":"por qué encaja"}]}.` });
+      let n = 0;
+      for (const o of listaLLM(j, 'propuestas')) { if (!o || !o.titulo || estado.ocio.some(x => x.titulo.toLowerCase() === String(o.titulo).toLowerCase())) continue; estado.ocio.push({ id: uid(), estado: 'propuesta', fija: false, periodicidad: 'puntual', titulo: String(o.titulo), tipo: TIPOS_OCIO.includes(o.tipo) ? o.tipo : (p.tiposOcio || [])[0] || 'cultura', coste: Number(o.coste) || 0, dur: Number(o.dur) || 120, lugar: String(o.lugar || 'Madrid'), info: /^https?:\/\//.test(o.info || '') ? o.info : '', fecha: /^\d{4}-\d{2}-\d{2}$/.test(o.fecha || '') ? o.fecha : '', hora: /^\d{2}:\d{2}$/.test(o.hora || '') ? o.hora : '18:00', nota: String(o.nota || ''), origen: 'llm' }); n++; }
+      guardar(); toast(n ? n + ' propuestas del LLM' : 'Nada nuevo');
+    }),
     buscar: () => navegar('buscador', { cat: 'ocio', q: (p.tiposOcio || [])[0] || 'madrid agenda' }),
     aceptar: async el => {
       const o = estado.ocio.find(x => x.id === el.dataset.id);

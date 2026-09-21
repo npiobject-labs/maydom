@@ -1,6 +1,7 @@
 import { estado, guardar, h, lista, crudo, delegar, uid, hoyISO, fechaCorta, pedir, confirmar, toast, aviso, navegar, duracionTexto } from '../nucleo.js';
 import { TIPOS_EJERCICIO, pildoras as PILDORAS } from '../datos/semillas.js';
 import { crearEvento, primerHueco } from '../agenda.js';
+import { pedirJSON, conLLM, lista as listaLLM } from '../llm.js';
 
 const ejercicio = id => estado.ejercicios.find(e => e.id === id);
 const camposEj = [
@@ -39,7 +40,7 @@ function render(cont, params) {
       <p class="mini">Los tipos que has marcado en Preferencias van primero. Cada ejercicio enlaza a una búsqueda en YouTube.</p>
       ${ejs.map(e => h`<div class="tarjeta"><div class="fila"><div class="t"><b>${e.nombre}</b> <span class="pill g">${e.tipo}</span><div class="mini">${e.series} × ${e.reps}</div></div><a class="btn mini" href="${e.video}" target="_blank" rel="noopener">▶ vídeo</a><button class="btn mini" data-a="editarEj" data-id="${e.id}">✎</button></div>
         <div class="mini">${e.descripcion}</div></div>`).join('') || aviso('Sin ejercicios de este tipo.').__crudo}
-      <div class="acciones"><button class="btn p" data-a="nuevoEj">+ Ejercicio</button><button class="btn" data-a="buscarEj">Buscar más (${pref.join(', ') || 'YouTube'})</button></div>`)
+      <div class="acciones"><button class="btn p" data-a="nuevoEj">+ Ejercicio</button><button class="btn" data-a="buscarEj">YouTube (${pref.join(', ') || 'básicos'})</button><button class="btn" data-a="buscarLLM">Buscar con LLM</button></div>`)
     : crudo(`
       <div class="tarjeta"><div class="grande">${total ? Math.round(hechas / total * 100) : 0} %</div><div class="mini">de las series planificadas se hicieron · ${estado.sesionesEjercicio.length} sesiones · ${estado.pildoras.filter(p => p.hecha).length} píldoras</div></div>
       ${sesiones.map(s => h`<div class="tarjeta" data-a="verSesion" data-id="${s.id}"><div class="fila"><div class="t"><b>${fechaCorta(s.fecha)} · ${s.nombre}</b><div class="mini">${s.items.filter(i => i.hecho).length}/${s.items.length} hechos${s.nota ? ' · ' + s.nota : ''}</div></div><span class="pill ${s.items.every(i => i.hecho) ? 'ok' : 'w'}">${s.items.every(i => i.hecho) ? 'completa' : 'parcial'}</span></div></div>`).join('') || aviso('Todavía no hay sesiones registradas.').__crudo}`)}`;
@@ -65,6 +66,13 @@ function render(cont, params) {
     pildora: () => { const e = pildoraAleatoria(); if (!e) return toast('Carga el catálogo primero'); pedir('Píldora: ' + e.nombre, [], {}, { texto: `${e.series} × ${e.reps}. ${e.descripcion}`, aceptar: 'Hecha' }).then(v => { if (v) { registrarPildora(e); toast('Píldora anotada'); } }); },
     nuevoEj: async () => { const v = await pedir('Nuevo ejercicio', camposEj, { tipo: pref[0] || 'calistenia' }); if (v) { if (!v.video) v.video = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(v.nombre + ' técnica'); estado.ejercicios.push({ id: uid(), ...v }); guardar(); } },
     editarEj: async el => { const e = ejercicio(el.dataset.id); const v = await pedir('Editar ejercicio', camposEj, e, { extra: 'Borrar' }); if (!v) return; if (v.__extra) { estado.ejercicios = estado.ejercicios.filter(x => x.id !== e.id); guardar(); return; } Object.assign(e, v); guardar(); },
+    buscarLLM: el => conLLM(el, async () => {
+      const tipos = tipo ? [tipo] : (pref.length ? pref : ['calistenia', 'movilidad']);
+      const j = await pedirJSON({ operacion: 'ejercicios', tarea: `Propón 8 ejercicios de tipo ${tipos.join(' o ')} para hacer en casa sin apenas material, que NO estén en esta lista: ${estado.ejercicios.map(e => e.nombre).join('; ')}. Explicación de 2 frases con la técnica y un error habitual. Devuelve {"ejercicios":[{"nombre":"","tipo":"${tipos[0]}","descripcion":"","series":3,"reps":"10"}]} con tipo entre: ${TIPOS_EJERCICIO.join(', ')}.` });
+      let n = 0;
+      for (const e of listaLLM(j, 'ejercicios')) { if (!e || !e.nombre || estado.ejercicios.some(x => x.nombre.toLowerCase() === String(e.nombre).toLowerCase())) continue; estado.ejercicios.push({ id: uid(), nombre: String(e.nombre), tipo: TIPOS_EJERCICIO.includes(e.tipo) ? e.tipo : tipos[0], descripcion: String(e.descripcion || ''), series: Number(e.series) || 3, reps: String(e.reps || '10'), video: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(e.nombre + ' técnica correcta'), origen: 'llm' }); n++; }
+      guardar(); toast(n ? n + ' ejercicios nuevos en el catálogo' : 'Nada nuevo');
+    }),
     buscarEj: () => window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent((pref[0] || 'ejercicios en casa') + ' ejercicios principiantes'), '_blank'),
   });
 }

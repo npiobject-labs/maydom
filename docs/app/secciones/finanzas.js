@@ -1,5 +1,6 @@
 import { estado, guardar, h, lista, crudo, delegar, uid, hoyISO, mesISO, fechaCorta, euros, pedir, confirmar, toast, aviso, navegar } from '../nucleo.js';
 import { CONCEPTOS } from '../datos/semillas.js';
+import { consultar, conLLM, textoAConsejos } from '../llm.js';
 
 const campos = [
   { n: 'fecha', l: 'Fecha', t: 'date', req: true }, { n: 'descripcion', l: 'Descripción', req: true },
@@ -28,7 +29,7 @@ function render(cont, params) {
     <div class="fila cab"><button class="btn" data-a="mes" data-m="${prev}">‹</button><div class="t centro"><b>${mes}</b></div><button class="btn" data-a="mes" data-m="${next}">›</button></div>
     <div class="tarjeta"><div class="grande ${b.neto >= 0 ? 'pos' : 'neg'}">${euros(b.neto)}</div><div class="mini">ingresos ${euros(b.ing)} · gastos ${euros(b.gas)} · ${b.n} movimientos</div>
       ${Object.keys(b.por).length ? crudo('<table class="tabla">' + Object.entries(b.por).sort((x, z) => z[1] - x[1]).map(([c, v]) => h`<tr><td>${c}</td><td class="n">${euros(v)}</td><td style="width:40%"><div class="barra"><i style="width:${Math.round(v / b.gas * 100)}%"></i></div></td></tr>`).join('') + '</table>') : ''}</div>
-    <div class="acciones"><button class="btn p" data-a="nuevo">+ Movimiento</button><label class="btn">Importar CSV del banco <input type="file" accept=".csv,text/csv" data-c="csv" hidden></label><button class="btn" data-a="aplicarRec">Aplicar recurrentes (${recAplicadas}/${estado.recurrentes.length})</button></div>
+    <div class="acciones"><button class="btn p" data-a="nuevo">+ Movimiento</button><label class="btn">Importar CSV del banco <input type="file" accept=".csv,text/csv" data-c="csv" hidden></label><button class="btn" data-a="aplicarRec">Aplicar recurrentes (${recAplicadas}/${estado.recurrentes.length})</button>${b.n ? crudo('<button class="btn" data-a="analizarLLM">Recomendaciones con LLM</button>') : ''}</div>
     <h3>Movimientos</h3>
     ${movs.length ? crudo('<table class="tabla">' + movs.slice(0, 60).map(x => h`<tr data-a="editar" data-id="${x.id}"><td class="mini">${fechaCorta(x.fecha)}</td><td>${x.descripcion}<div class="mini">${x.concepto}</div></td><td class="n ${x.importe >= 0 ? 'pos' : 'neg'}">${euros(x.importe)}</td></tr>`).join('') + '</table>') : aviso('Sin movimientos este mes. Importa el CSV del banco o añade a mano.')}
     <h3>Recurrentes (servicios que consumo)</h3>
@@ -37,6 +38,11 @@ function render(cont, params) {
     <p class="mini">El mayordomo hace recomendaciones a partir de esto; ejecutarlas queda para versiones futuras (D11). Importación bancaria automática: deuda D4.</p>`;
   delegar(cont, {
     mes: el => navegar('finanzas', { mes: el.dataset.m }),
+    analizarLLM: el => conLLM(el, async () => {
+      const bp = balanceMes(prev);
+      const j = await consultar({ operacion: 'finanzas', tarea: `Analiza las finanzas de ${mes}: ingresos ${euros(b.ing)}, gastos ${euros(b.gas)}, por concepto ${Object.entries(b.por).map(([k, v]) => k + ' ' + euros(v)).join(', ')}; mes anterior gastos ${euros(bp.gas)} (${Object.entries(bp.por).map(([k, v]) => k + ' ' + euros(v)).join(', ') || 'sin datos'}); recurrentes: ${estado.recurrentes.map(r => r.descripcion + ' ' + euros(r.importe)).join(', ') || 'ninguno'}. Da 3 recomendaciones concretas y accionables, cada una en una línea que empiece por "- ". Solo recomendar, nunca ejecutar.` });
+      toast(textoAConsejos(j.respuesta, 'finanzas') + ' recomendaciones en Consejos'); navegar('mayordomo');
+    }),
     nuevo: async () => { const v = await pedir('Movimiento', campos, { fecha: hoyISO(), concepto: 'otros' }); if (v) { estado.movimientos.push({ id: uid(), ...v }); guardar(); } },
     editar: async el => { const x = estado.movimientos.find(z => z.id === el.dataset.id); const v = await pedir('Editar', campos, x, { extra: 'Borrar' }); if (!v) return; if (v.__extra) estado.movimientos = estado.movimientos.filter(z => z.id !== x.id); else Object.assign(x, v); guardar(); },
     nuevoRec: async () => { const v = await pedir('Recurrente', camposRec); if (v) { estado.recurrentes.push({ id: uid(), ...v }); guardar(); } },

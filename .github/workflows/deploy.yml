@@ -24,6 +24,14 @@ jobs:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       # Variable de repositorio opcional; si existe, manda sobre el nombre derivado.
       FLY_APP_VAR: ${{ vars.FLY_APP }}
+      # Clave de APLICACION del gateway npiobject-labs/openrouter (se crea en su conectar.html).
+      # Secreto del repositorio; se vuelca a Fly en cada despliegue y nunca se imprime.
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      # Clave que la app manda en X-Clave para que nadie mas gaste presupuesto desde la URL publica.
+      MAYDOM_CLAVE: ${{ secrets.MAYDOM_CLAVE }}
+      # Variables opcionales de repositorio: URL del gateway y modelo.
+      LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+      LLM_MODELO: ${{ vars.LLM_MODELO }}
     steps:
       # Fly es opcional: sin secreto el workflow termina en verde con un aviso.
       - name: Comprobar si Fly esta configurado
@@ -82,7 +90,25 @@ jobs:
         if: steps.fly.outputs.configurado == 'true'
         env:
           FLY_APP: ${{ steps.app.outputs.app }}
-        run: flyctl secrets set "BUILD_ID=${GITHUB_SHA}" --app "${FLY_APP}" --stage
+        run: |
+          flyctl secrets set "BUILD_ID=${GITHUB_SHA}" --app "${FLY_APP}" --stage
+          if [ -n "${LLM_API_KEY}" ]; then
+            flyctl secrets set "LLM_API_KEY=${LLM_API_KEY}" --app "${FLY_APP}" --stage
+            echo "LLM_API_KEY pasada a Fly (valor oculto)."
+          else
+            echo "Sin secreto LLM_API_KEY en el repo: el mayordomo funciona solo con reglas."
+          fi
+          if [ -n "${MAYDOM_CLAVE}" ]; then
+            flyctl secrets set "MAYDOM_CLAVE=${MAYDOM_CLAVE}" --app "${FLY_APP}" --stage
+            echo "MAYDOM_CLAVE pasada a Fly (valor oculto)."
+          fi
+          for par in "LLM_BASE_URL=${LLM_BASE_URL}" "LLM_MODELO=${LLM_MODELO}"; do
+            valor="${par#*=}"
+            if [ -n "${valor}" ]; then
+              flyctl secrets set "${par}" --app "${FLY_APP}" --stage
+              echo "${par}"
+            fi
+          done
 
       - name: Desplegar en Fly.io
         if: steps.fly.outputs.configurado == 'true'
@@ -127,24 +153,49 @@ jobs:
             || { echo "::error::/holamundo sin cabecera CORS"; exit 1; }
           echo "OK: /holamundo responde 'holamundo' con CORS"
 
-      # El mayordomo de la app llama a esta ruta desde Pages. Sin OPENROUTER_API_KEY responde 503 con
-      # un JSON de error; con clave, 200. Cualquier otra cosa es un fallo del despliegue.
-      - name: Verificar /api/mayordomo
+      # /api/estado dice si hay LLM y si la app necesita clave. No gasta credito del gateway.
+      - name: Verificar /api/estado
         if: steps.fly.outputs.configurado == 'true'
         env:
           FLY_APP: ${{ steps.app.outputs.app }}
         run: |
+          url="https://${FLY_APP}.fly.dev/api/estado"
+          cuerpo="$(curl -fsS --max-time 20 "${url}")"
+          echo "Estado: ${cuerpo}"
+          printf '%s' "${cuerpo}" | grep -q '"ok":true' || { echo "::error::/api/estado sin ok"; exit 1; }
+          if printf '%s' "${cuerpo}" | grep -q '"llm":true'; then
+            echo "Mayordomo con LLM (gateway openrouter)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Sin LLM_API_KEY: el mayordomo funciona solo con reglas locales (deuda D1 del plan)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # El mayordomo de la app llama a esta ruta desde Pages. Sin LLM_API_KEY responde 503; con clave
+      # de aplicacion del gateway, 200 (gasta unos centimos) o el error que devuelva el gateway.
+      - name: Verificar /api/mayordomo
+        if: steps.fly.outputs.configurado == 'true'
+        env:
+          FLY_APP: ${{ steps.app.outputs.app }}
+          MAYDOM_CLAVE: ${{ secrets.MAYDOM_CLAVE }}
+        run: |
           url="https://${FLY_APP}.fly.dev/api/mayordomo"
-          codigo="$(curl -sS --max-time 90 -o /tmp/mayordomo -w '%{http_code}' -X POST "${url}" \
-            -H 'content-type: application/json' -d '{"mensajes":[{"rol":"usuario","contenido":"Responde solo: ok"}]}' || true)"
+          codigo="$(curl -sS --max-time 150 -o /tmp/mayordomo -w '%{http_code}' -X POST "${url}" \
+            -H 'content-type: application/json' -H "x-clave: ${MAYDOM_CLAVE}" \
+            -d '{"operacion":"verificacion","mensajes":[{"rol":"usuario","contenido":"Responde solo: ok"}]}' || true)"
           echo "HTTP ${codigo}: $(head -c 300 /tmp/mayordomo)"
           case "${codigo}" in
-            200) grep -q '"respuesta"' /tmp/mayordomo || { echo "::error::/api/mayordomo 200 sin campo respuesta"; exit 1; }; echo "OK: mayordomo con LLM" ;;
-            503) grep -q 'OPENROUTER_API_KEY' /tmp/mayordomo || { echo "::error::/api/mayordomo 503 con otro error"; exit 1; }; echo "Mayordomo sin clave: solo reglas locales (ver docs/planificacion/plan-maydom.md, deuda D1)" >> "$GITHUB_STEP_SUMMARY"; echo "OK: 503 esperado sin clave" ;;
+            200) grep -q '"respuesta"' /tmp/mayordomo || { echo "::error::/api/mayordomo 200 sin campo respuesta"; exit 1; }; echo "OK: mayordomo respondiendo por el gateway" ;;
+            503) grep -q '"code":"sin_configurar"' /tmp/mayordomo || { echo "::error::/api/mayordomo 503 con otro error"; exit 1; }; echo "OK: 503 esperado sin LLM_API_KEY" ;;
+            402|429) echo "::warning::El gateway corto la llamada (presupuesto o cuota): $(head -c 200 /tmp/mayordomo)" ;;
             *) echo "::error::/api/mayordomo devolvio HTTP ${codigo}"; exit 1 ;;
           esac
           cabeceras="$(curl -sS --max-time 20 -D - -o /dev/null -X OPTIONS "${url}")"
           printf '%s' "${cabeceras}" | grep -qi '^access-control-allow-origin: \*' || { echo "::error::/api/mayordomo sin CORS en OPTIONS"; exit 1; }
+          printf '%s' "${cabeceras}" | grep -qi '^access-control-allow-headers: .*x-clave' || { echo "::error::/api/mayordomo sin x-clave en el preflight"; exit 1; }
+          if [ -n "${MAYDOM_CLAVE}" ]; then
+            codigo="$(curl -sS --max-time 30 -o /tmp/sinclave -w '%{http_code}' -X POST "${url}" -H 'content-type: application/json' -d '{"mensajes":[{"rol":"usuario","contenido":"hola"}]}' || true)"
+            [ "${codigo}" = "401" ] || { echo "::error::con MAYDOM_CLAVE configurada, una llamada sin clave devolvio ${codigo}"; exit 1; }
+            echo "OK: sin X-Clave responde 401"
+          fi
 
       - name: Resumen del despliegue
         if: success() && steps.fly.outputs.configurado == 'true'
@@ -159,7 +210,7 @@ jobs:
             echo "- URL: https://${FLY_APP}.fly.dev/"
             echo "- Salud: https://${FLY_APP}.fly.dev/salud"
             echo "- Hola mundo: https://${FLY_APP}.fly.dev/holamundo"
-            echo "- Mayordomo: POST https://${FLY_APP}.fly.dev/api/mayordomo"
+            echo "- Mayordomo: POST https://${FLY_APP}.fly.dev/api/mayordomo · estado: /api/estado"
             echo "- Comprobacion desde Pages: https://${GITHUB_REPOSITORY%%/*}.github.io/${GITHUB_REPOSITORY#*/}/holamundo.html"
             echo "- Build (SHA): \`${GITHUB_SHA}\`"
           } >> "$GITHUB_STEP_SUMMARY"

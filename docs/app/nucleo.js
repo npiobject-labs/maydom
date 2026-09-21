@@ -15,7 +15,7 @@ const vacio = () => ({
   sueno: [], alimentos: [], platos: [], menus: [], comidas: [],
   suplementos: [], tomas: [], compra: [], proyectos: [], horas: [], sesionTrabajo: null,
   ocio: [], movimientos: [], recurrentes: [], tiendas: [], consejos: [], chat: [], memoria: [],
-  ajustes: { backend: '', avisos: false, tema: 'auto', semillasCargadas: false },
+  ajustes: { backend: '', clave: '', avisos: false, tema: 'auto', semillasCargadas: false, llm: null },
 });
 
 function cargar() {

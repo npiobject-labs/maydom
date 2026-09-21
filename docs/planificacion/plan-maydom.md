@@ -90,12 +90,42 @@ Input de qué busco + tiendas donde buscarlo (catálogo con categoría: alimenta
 |---|---|---|
 | Frontend | PWA estática en `docs/` (HTML + CSS + JS sin framework, módulos ES), servida por Pages y por `tools/arrancar.ps1` en local | Es lo que el flujo del proyecto publica en cada push; instalable en el móvil; sin build |
 | Datos | **Local-first**: todo en `localStorage` del dispositivo (un JSON versionado), con exportar/importar | Un usuario, un móvil; sin cuentas ni servidor con estado; nada real en el sitio público |
-| Backend | Rust (axum) en Fly.io, **sin estado**: `/salud`, `/holamundo`, `POST /api/mayordomo` (proxy a OpenRouter con la clave en secreto de Fly) | La clave de OpenRouter nunca va al navegador; el resto no necesita servidor |
+| Backend | Rust (axum) en Fly.io, **sin estado**: `/salud`, `/holamundo`, `GET /api/estado`, `POST /api/mayordomo` | Cliente del gateway propio (§4.1); ninguna clave llega al navegador |
+| LLM | **Gateway `npiobject-labs/openrouter`** (`https://apisor.oracle402.com/v1`, API de OpenAI), con clave de aplicación propia, presupuesto y `X-Operacion` por sección | Ya existe, mide el gasto por app y por operación, y corta si se pasa del presupuesto |
 | Notificaciones | Notificaciones locales del navegador con la app abierta o instalada (service worker) | Push real requiere servidor con estado y suscripciones: deuda |
 | Memoria del mayordomo | Bóveda **Obsidian** en `docs/planificacion/memoria/` (Markdown con frontmatter y wikilinks), en el repo | El repo es la única fuente de verdad; los agentes la leen en cada sesión; la app exporta decisiones en ese formato |
 | Semillas | Catálogos iniciales en `docs/app/datos/` (ejercicios, meditaciones, técnicas de sueño, tiendas, categorías) | Editables desde Ajustes; nunca datos reales del usuario |
 
 Esquema de datos (clave `maydom.v1` en `localStorage`): `preferencias`, `eventos[]`, `notas[]`, `ejercicios[]`, `tablas[]`, `sesionesEjercicio[]`, `sueno[]`, `alimentos[]`, `menus[]`, `comidas[]`, `suplementos[]`, `tomas[]`, `compra[]`, `proyectos[]`, `horas[]`, `ocio[]`, `movimientos[]`, `tiendas[]`, `consejos[]`, `memoria[]`, `ajustes`.
+
+### 4.1 El LLM: gateway propio, no OpenRouter directo
+
+El mayordomo no habla con OpenRouter: habla con el **servicio `npiobject-labs/openrouter`**, que ya hace de puerta única a OpenRouter para todas las apps del autor. Decidido en [`memoria/decisiones/ADR-004-llm-por-el-gateway.md`](memoria/decisiones/ADR-004-llm-por-el-gateway.md).
+
+| Pieza | Dónde vive | Quién la ve |
+|---|---|---|
+| Clave de OpenRouter | Solo dentro del gateway | Nadie más |
+| Clave de **aplicación** de maydom | Secreto `LLM_API_KEY` del repo → Fly | Solo el backend de maydom |
+| Clave de **acceso** a la app | Secreto `MAYDOM_CLAVE` → Fly, y el usuario la escribe una vez en Ajustes | El navegador del usuario |
+
+El backend de maydom manda `Authorization: Bearer <clave de aplicación>` y `X-Operacion: maydom-<sección>` (chat, menu, foto-stock, ejercicios, suplementos, ocio, sueno, finanzas, buscador), así que `GET /v1/uso/resumen?agrupar=operacion` en el gateway dice cuánto cuesta cada función. Sigue la guía de integración del gateway: reintentos solo ante 502/504 (dos, con espera creciente), timeout del cliente por encima del suyo, y los errores traducidos al español con su código (`sin_configurar`, `presupuesto_agotado`, `cuota_superada`, `bucle`). `GET /api/estado` dice si hay LLM y qué modelo, sin gastar crédito.
+
+**Qué hace cada sección con el LLM** (todo opcional: sin clave, la app funciona con el motor de reglas):
+
+| Sección | Función | Operación |
+|---|---|---|
+| Alimentación | Menú de 7 días según preferencias · **foto del frigorífico → stock** | `menu`, `foto-stock` |
+| Ejercicio | Buscar ejercicios nuevos del tipo que apetece | `ejercicios` |
+| Suplementos | Revisar horas de toma e interacciones (criterio general) | `suplementos` |
+| Ocio | Propuestas en Madrid con coste, duración y enlace | `ocio` |
+| Sueño | Analizar las últimas 14 noches → 3 acciones | `sueno` |
+| Finanzas | Recomendaciones sobre el gasto del mes | `finanzas` |
+| Buscador | Interpretar la petición → consulta corta + categoría | `buscador` |
+| Mayordomo | Chat y tanda de consejos | `chat` |
+
+### 4.2 El buscador, mirando a buscaproducto
+
+`npiobject-labs/buscaproducto` ya resuelve el problema completo (agrega ofertas reales de más de 40 fuentes, extrae atributos, puntúa, deduplica, guarda histórico y alerta). maydom no lo reimplementa: su buscador es el **nivel D** de aquel proyecto —catálogo de fuentes con `{q}`, una pestaña por tienda— más la **interpretación de la consulta** por el LLM, que es lo barato y lo que más aporta. Para comparar precios de verdad, el enlace lleva a buscaproducto. Ver [`ADR-005`](memoria/decisiones/ADR-005-buscador-nivel-enlace.md).
 
 ## 5. ¿Necesita maydom una app de gestión? — Decisión
 
@@ -125,6 +155,7 @@ Se revisa si aparece un segundo usuario, si hace falta sincronizar varios dispos
 | F7 | PWA: manifest, service worker, instalación, notificaciones locales | Hecha 20-sep (build 004) |
 | F8 | Backend: `POST /api/mayordomo` proxy a OpenRouter con CORS, sin clave en el cliente | Hecha 20-sep; probado en local con y sin clave. Falta la clave en Fly (D1) |
 | F9 | Deuda de desarrollo (§7) | Pendiente |
+| F10 | LLM por el gateway propio: funciones con IA en 8 secciones, clave de acceso, `X-Operacion`, foto del frigorífico, buscador interpretado, exportar memoria a GitHub | Hecha 21-sep (build 005) |
 
 ## 7. Deuda de desarrollo
 
@@ -132,16 +163,16 @@ Lo que las notas piden y no se puede cerrar sin servicios externos, datos reales
 
 | # | Qué | Por qué queda | Plan B / cómo se cierra |
 |---|---|---|---|
-| D1 | **Clave de OpenRouter en Fly** | El sandbox no tiene la clave. [SUPUESTO] el usuario tiene cuenta en OpenRouter | `flyctl secrets set OPENROUTER_API_KEY=... --app maydom-npiobject-labs`; opcional `OPENROUTER_MODEL`. Sin clave, el backend responde 503 y la app usa solo el motor de reglas |
+| D1 | **Dar de alta maydom en el gateway** y guardar sus secretos | Hay que crear la aplicación en el gateway con la clave de administración, que no está en esta sesión | En https://npiobject-labs.github.io/openrouter/conectar.html: crear la app «maydom», ponerle presupuesto (p. ej. 3 $/mes, aviso 2, cuota 20/min) y guardar su clave como secreto `LLM_API_KEY` del repo; añadir `MAYDOM_CLAVE` (cualquier cadena larga) y escribirla en Ajustes. `deploy.yml` las vuelca a Fly. Sin ellas, el backend responde 503 y la app va con reglas |
 | D2 | **Push real** (avisos con la app cerrada) | Necesita servidor con estado (suscripciones VAPID) | Añadir volumen en Fly + web-push; mientras, notificaciones locales con la app abierta/instalada |
-| D3 | **Foto del frigorífico → stock** | Requiere modelo de visión y flujo de fotos | Enviar la foto a `/api/mayordomo` con un modelo multimodal cuando D1 esté; mientras, stock a mano |
+| D3 | ~~Foto del frigorífico → stock~~ | **Hecho** (21-sep): Alimentación → Stock → «Foto del frigorífico»; la imagen se reduce a 1024 px en el móvil y va al LLM multimodal del gateway | Necesita que el modelo del gateway acepte imágenes; si no, fijar `LLM_MODELO` a uno que sí |
 | D4 | **Importación bancaria automática** | Los bancos no dan API abierta sin agregador | CSV manual (hecho); agregador (PSD2) si compensa |
-| D5 | **Precios y ofertas reales en tiendas** | Sin API pública; scraping frágil | El buscador abre las búsquedas en cada tienda; catálogo se poda a mano |
+| D5 | **Precios y ofertas reales en tiendas** | Es un proyecto en sí mismo, y ya existe: `npiobject-labs/buscaproducto` | maydom se queda en enlace + consulta interpretada (§4.2); si algún día hace falta agregar precios dentro de maydom, se llama a la API de buscaproducto en vez de reimplementarla |
 | D6 | **Ofertas por ubicación** | Requiere geolocalización en segundo plano y fuente de ofertas | Deuda hasta tener D2 y D5 |
 | D7 | **Agenda real de ocio de Madrid** | Sin fuente estable | El mayordomo propone desde catálogo y preferencias; integrar una fuente (p. ej. datos abiertos del Ayuntamiento) más adelante |
-| D8 | **Búsqueda de ejercicios en YouTube con resultados dentro de la app** | YouTube Data API con clave y cuota | Enlaces de búsqueda (hecho) |
+| D8 | **Búsqueda de ejercicios en YouTube con resultados dentro de la app** | YouTube Data API con clave y cuota | Enlaces de búsqueda y catálogo ampliado por el LLM (hecho); resultados embebidos, pendiente |
 | D9 | **Sincronización entre dispositivos** | Backend sin estado | Exportar/importar JSON (hecho); volumen en Fly + endpoint de estado si hace falta |
-| D10 | **Sincronización automática con Obsidian** | La bóveda vive en el repo; la app en el navegador | Exportar memoria en Markdown (hecho); un workflow que reciba el export es el siguiente paso |
+| D10 | **Sincronización automática con Obsidian** | La bóveda vive en el repo; la app en el navegador | Mayordomo → Exportar memoria abre GitHub con el fichero prellenado en `memoria/preferencias/`: un commit desde el móvil (hecho). Automatizarlo del todo exigiría un token en el cliente: no compensa |
 | D11 | **El agente ejecuta acciones** (finanzas) | Las notas lo dejan para "próximas versiones" | Solo cuando haya aprobación explícita por consejo |
 
 ## 8. Estado tras la sesión del 20-sep

@@ -111,6 +111,8 @@ export const platos = [
 
 export const CATEGORIAS_TIENDA = [{ v: 'alimentacion', l: 'Alimentación' }, { v: 'ecologica', l: 'Ecológica' }, { v: 'suplementos', l: 'Suplementos' }, { v: 'electronica', l: 'Electrónica' }, { v: 'ocio', l: 'Ocio' }, { v: 'general', l: 'General' }, { v: 'servicios', l: 'Servicios' }];
 const ti = (nombre, categoria, url) => ({ id: 't_' + nombre.toLowerCase().replace(/[^a-z0-9]+/g, '_'), nombre, categoria, url, activa: true });
+// Catálogo de fuentes. Patrón tomado de npiobject-labs/buscaproducto: cada fuente es una URL de
+// búsqueda con {q}; añadir una es una línea, quitarla es borrarla o desactivarla.
 export const tiendas = [
   ti('Mercadona', 'alimentacion', 'https://tienda.mercadona.es/search-results?query={q}'),
   ti('Carrefour', 'alimentacion', 'https://www.carrefour.es/search-nwx/?query={q}'),
@@ -128,6 +130,20 @@ export const tiendas = [
   ti('Atrápalo', 'ocio', 'https://www.atrapalo.com/buscar/?q={q}'),
   ti('Meetup Madrid', 'ocio', 'https://www.meetup.com/es-ES/find/?keywords={q}&location=es--Madrid'),
   ti('Google', 'general', 'https://www.google.com/search?q={q}'),
+  ti('El Corte Inglés', 'alimentacion', 'https://www.elcorteingles.es/search/?s={q}'),
+  ti('Alcampo', 'alimentacion', 'https://www.compraonline.alcampo.es/search?q={q}'),
+  ti('Naturitas', 'suplementos', 'https://www.naturitas.es/busqueda?q={q}'),
+  ti('MyProtein', 'suplementos', 'https://www.myprotein.es/elysium.search?search={q}'),
+  ti('Decathlon', 'general', 'https://www.decathlon.es/search?Ntt={q}'),
+  ti('Idealo (comparador)', 'general', 'https://www.idealo.es/resultados.html?q={q}'),
+  ti('Amazon (histórico de precio)', 'general', 'https://es.camelcamelcamel.com/search?sq={q}'),
+  ti('Chollometro', 'general', 'https://www.chollometro.com/search?q={q}'),
+  ti('PcComponentes', 'electronica', 'https://www.pccomponentes.com/buscar/?query={q}'),
+  ti('Wallapop', 'general', 'https://es.wallapop.com/app/search?keywords={q}'),
+  ti('Time Out Madrid', 'ocio', 'https://www.timeout.es/madrid/es/buscar?q={q}'),
+  ti('Eventbrite Madrid', 'ocio', 'https://www.eventbrite.es/d/spain--madrid/{q}/'),
+  ti('YouTube', 'servicios', 'https://www.youtube.com/results?search_query={q}'),
+  ti('OpenFoodFacts', 'alimentacion', 'https://es.openfoodfacts.org/cgi/search.pl?search_terms={q}'),
 ];
 
 export const CONCEPTOS = ['vivienda', 'alimentación', 'suplementos', 'ocio', 'servicios web', 'IA / LLM', 'hosting', 'transporte', 'salud', 'ropa', 'ingresos', 'otros'];

@@ -1,4 +1,6 @@
-import { estado, guardar, reemplazarEstado, h, lista, delegar, pedir, confirmar, toast, urlBackend, pedirPermisoAvisos, hoyISO, CLAVE } from '../nucleo.js';
+import { estado, guardar, reemplazarEstado, h, lista, crudo, delegar, pedir, confirmar, toast, urlBackend, pedirPermisoAvisos, hoyISO, CLAVE } from '../nucleo.js';
+import { estadoLLM } from '../llm.js';
+import { esc } from '../nucleo.js';
 import * as S from '../datos/semillas.js';
 
 // Copia las semillas al estado si el catálogo correspondiente está vacío (o siempre, con forzar).
@@ -29,7 +31,9 @@ function render(cont) {
         <button class="btn" data-a="instalar" id="btn-instalar" ${window.__instalar ? '' : 'hidden'}>Instalar en el móvil</button></div></div>
     <h3>Backend y mayordomo</h3>
     <div class="tarjeta"><div class="mini">URL: ${urlBackend()} ${a.backend ? '(manual)' : '(derivada del meta fly-app o localhost)'}</div>
-      <div class="acciones"><button class="btn" data-a="backend">Cambiar URL</button><button class="btn" data-a="probar">Probar /salud</button></div>
+      <div class="mini">Clave de acceso: ${a.clave ? '••••' + a.clave.slice(-4) : 'sin poner'} · el mayordomo usa el gateway openrouter del propio proyecto; su clave vive en el backend, nunca aquí.</div>
+      ${a.llm ? crudo(`<div class="mini">LLM: <b>${a.llm.llm ? 'disponible' : 'no configurado en el backend'}</b>${a.llm.modelo ? ' · modelo ' + esc(a.llm.modelo) : ''}${a.llm.clave_requerida ? ' · exige clave de acceso' : ''}</div>`) : ''}
+      <div class="acciones"><button class="btn" data-a="backend">Cambiar URL</button><button class="btn p" data-a="clave">Clave de acceso</button><button class="btn" data-a="probar">Probar /salud</button><button class="btn" data-a="estado">Estado del LLM</button></div>
       <div id="salida-backend" class="mini"></div></div>
     <h3>Aspecto</h3>
     <div class="tarjeta"><div class="acciones">${lista(['auto', 'light', 'dark'].map(t => h`<button class="btn ${a.tema === t ? 'p' : ''}" data-a="tema" data-t="${t}">${{ auto: 'Sistema', light: 'Claro', dark: 'Oscuro' }[t]}</button>`))}</div></div>
@@ -47,6 +51,12 @@ function render(cont) {
     semillasForzar: async () => { if (await confirmar('Sobrescribe ejercicios, tablas, platos y tiendas con las semillas.')) { cargarSemillas(true); toast('Semillas restauradas'); } },
     avisos: async () => { if (await pedirPermisoAvisos()) toast('Avisos activados'); else toast('Sin permiso de avisos'); render(cont); },
     instalar: async () => { if (window.__instalar) { window.__instalar.prompt(); await window.__instalar.userChoice; window.__instalar = null; render(cont); } },
+    clave: async () => { const v = await pedir('Clave de acceso al mayordomo', [{ n: 'clave', l: 'Clave', ph: 'la del secreto MAYDOM_CLAVE', ayuda: 'Solo controla quién puede gastar presupuesto desde esta app. La clave del gateway no pasa por el navegador.' }], a); if (v) { a.clave = v.clave.trim(); guardar(); render(cont); } },
+    estado: async () => {
+      const out = cont.querySelector('#salida-backend'); out.textContent = 'Consultando…';
+      try { const j = await estadoLLM(); out.textContent = `llm=${j.llm} modelo=${j.modelo} clave_requerida=${j.clave_requerida} build=${j.build}`; render(cont); }
+      catch (e) { out.textContent = 'Error: ' + e.message; }
+    },
     backend: async () => { const v = await pedir('URL del backend', [{ n: 'backend', l: 'URL (vacío = automática)', ph: 'https://maydom-npiobject-labs.fly.dev' }], a); if (v) { a.backend = v.backend.trim(); guardar(); } },
     probar: async () => {
       const out = cont.querySelector('#salida-backend'); out.textContent = 'Probando…';

@@ -1,5 +1,6 @@
 import { estado, guardar, h, lista, crudo, delegar, uid, hoyISO, fechaCorta, toast, aviso, navegar, urlBackend, seccion, confirmar } from '../nucleo.js';
-import { refrescarConsejos, resumenParaLLM } from '../reglas.js';
+import { refrescarConsejos } from '../reglas.js';
+import { consultar } from '../llm.js';
 
 const ESTADOS = { nuevo: 'nuevo', probar: 'probando', espera: 'en espera', rechazado: 'rechazado', hecho: 'hecho' };
 export function consejosNuevos() { return estado.consejos.filter(c => c.estado === 'nuevo'); }
@@ -22,12 +23,9 @@ export function accionesConsejo(extra = {}) {
   };
 }
 // Llama al backend, que reenvía a OpenRouter con la clave guardada en Fly. Sin clave, el backend contesta 503.
-export async function preguntarLLM(mensajes) {
-  const r = await fetch(urlBackend() + '/api/mayordomo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contexto: resumenParaLLM(), mensajes: mensajes.slice(-12) }), signal: AbortSignal.timeout(90000) });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
-  return j;
-}
+export function preguntarLLM(mensajes) { return consultar({ mensajes: mensajes.slice(-12) }); }
+// Bóveda Obsidian en el repo: la memoria se sube como fichero nuevo en preferencias/ vía la página "new file" de GitHub, prellenada.
+const REPO_MEMORIA = 'https://github.com/npiobject-labs/maydom/new/main/docs/planificacion/memoria/preferencias';
 function exportarMemoria() {
   const p = estado.preferencias;
   const md = [`---\nfecha: ${hoyISO()}\nhorizonte: ${p.horizonte}\ntags: [maydom, preferencias, export-app]\n---\n# Preferencias exportadas el ${hoyISO()}\n`,
@@ -35,8 +33,12 @@ function exportarMemoria() {
     `\n## Consejos decididos\n`, ...estado.consejos.filter(c => c.estado !== 'nuevo').map(c => `- ${c.cambiado || c.fecha} · **${ESTADOS[c.estado]}** · #${c.seccion} · ${c.texto}`),
     `\n## Memoria de la app\n`, ...estado.memoria.slice(-100).map(m => `- ${m.fecha} · ${m.tipo} · ${m.texto}`),
     `\n## Notas marcadas\n`, ...estado.notas.filter(n => n.tipo !== 'nota').map(n => `- ${n.fecha} · ${n.tipo} · ${n.texto} ${(n.etiquetas || []).map(e => '#' + e).join(' ')}`)].join('\n');
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([md], { type: 'text/markdown' })); a.download = `memoria-${hoyISO()}.md`; a.click();
-  navigator.clipboard?.writeText(md).then(() => toast('Memoria descargada y copiada; pégala en docs/planificacion/memoria/preferencias/')).catch(() => toast('Memoria descargada'));
+  const nombre = `${hoyISO()}-app.md`;
+  const url = `${REPO_MEMORIA}?filename=${encodeURIComponent(nombre)}&value=${encodeURIComponent(md)}`;
+  // GitHub prellena el fichero desde la URL hasta unos 8 KB; si es más largo, se descarga y se copia.
+  if (url.length < 8000) { window.open(url, '_blank'); toast('Abierto en GitHub: revisa y haz commit en la bóveda'); return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([md], { type: 'text/markdown' })); a.download = nombre; a.click();
+  navigator.clipboard?.writeText(md).then(() => toast('Memoria larga: descargada y copiada; súbela a memoria/preferencias/')).catch(() => toast('Memoria descargada'));
 }
 let pensando = false;
 function render(cont, params) {

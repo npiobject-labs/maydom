@@ -1,5 +1,6 @@
 import { estado, guardar, h, lista, crudo, delegar, uid, hoyISO, sumarDias, fechaCorta, fechaLarga, pedir, confirmar, toast, aviso, navegar } from '../nucleo.js';
 import { sincronizarCompra } from './compra.js';
+import { pedirJSON, conLLM, reducirImagen, lista as listaLLM } from '../llm.js';
 
 const TIPOS = ['desayuno', 'comida', 'cena'];
 const plato = id => estado.platos.find(p => p.id === id);
@@ -41,10 +42,11 @@ function render(cont, params) {
         ${c ? crudo(`<div class="mini ${c.segunMenu ? 'pos' : 'neg'}">${c.segunMenu ? '✓ según menú' : '≠ ' + c.que}</div>`) : ''}</div>
         ${c ? crudo(`<button class="btn mini" data-a="deshacer" data-id="${c.id}">deshacer</button>`) : crudo(`<button class="btn mini" data-a="hecho" data-t="${t}">Fue esta</button><button class="btn mini" data-a="otra" data-t="${t}">Fue otra</button>`)}
         </div>${p ? crudo(`<div class="acciones"><button class="btn mini" data-a="cambiar" data-t="${t}">Cambiar plato</button></div>`) : ''}</div>`; }).join('')}
-      <div class="acciones"><button class="btn p" data-a="proponer">${menu ? 'Proponer otro menú' : 'Proponer menú del día'}</button><button class="btn" data-a="semana">Proponer la semana</button></div>
+      <div class="acciones"><button class="btn p" data-a="proponer">${menu ? 'Proponer otro menú' : 'Proponer menú del día'}</button><button class="btn" data-a="semana">Proponer la semana</button><button class="btn" data-a="semanaLLM">Semana con LLM</button></div>
       <div class="tarjeta mini">Ajuste al menú en las últimas ${ultimas.length} comidas: <b>${ajuste == null ? '–' : ajuste + ' %'}</b>. Preferencias de alimentación: ${estado.preferencias.restricciones || 'ninguna'} (se cambian en Preferencias).</div>`)
     : vista === 'stock' ? crudo(`
-      <p class="mini">Lo que baja del umbral pasa solo a Compra. La foto del frigorífico para rellenar esto es deuda (D3).</p>
+      <p class="mini">Lo que baja del umbral pasa solo a Compra. Con una foto del frigorífico o la despensa, el LLM propone el stock (requiere clave de OpenRouter).</p>
+      <div class="acciones"><label class="btn p">📷 Foto del frigorífico <input type="file" accept="image/*" capture="environment" data-c="foto" hidden></label></div>
       ${estado.alimentos.slice().sort((a, b) => (a.stock <= a.umbral ? 0 : 1) - (b.stock <= b.umbral ? 0 : 1) || a.nombre.localeCompare(b.nombre)).map(a => h`<div class="tarjeta fila"><div class="t" data-a="editarAl" data-id="${a.id}"><b>${a.nombre}</b> ${Number(a.stock) <= Number(a.umbral) ? crudo('<span class="pill w">reponer</span>') : ''}<div class="mini">${a.stock} ${a.unidad} · aviso &lt; ${a.umbral}${a.tienda ? ' · ' + a.tienda : ''}</div></div>
         <button class="btn mini" data-a="menos" data-id="${a.id}">−</button><button class="btn mini" data-a="mas" data-id="${a.id}">+</button></div>`).join('') || aviso('Sin alimentos en el stock. Añade los básicos que repones a menudo.').__crudo}
       <div class="acciones"><button class="btn p" data-a="nuevoAl">+ Alimento</button><button class="btn" data-a="buscar">Buscar en tiendas</button><button class="btn" data-a="compra">Ver Compra</button></div>`)
@@ -55,6 +57,27 @@ function render(cont, params) {
     vista: el => navegar('alimentacion', { v: el.dataset.v, fecha }),
     dia: el => navegar('alimentacion', { v: 'menu', fecha: el.dataset.f }),
     proponer: () => { estado.menus = estado.menus.filter(m => m.fecha !== fecha); estado.menus.push(proponerMenu(fecha)); guardar(); },
+    semanaLLM: el => conLLM(el, async () => {
+      const j = await pedirJSON({ operacion: 'menu', tarea: `Propón el menú de 7 días a partir de ${fecha} (desayuno, comida y cena), saludable, variado, con cenas ligeras para dormir mejor, respetando las preferencias de alimentación del contexto. Reutiliza platos de esta lista cuando encajen: ${estado.platos.map(p => p.nombre).join('; ')}. Devuelve {"dias":[{"fecha":"AAAA-MM-DD","desayuno":{"nombre":"","min":10,"tags":["ligera"]},"comida":{...},"cena":{...}}]} con tags entre: ligera, proteina, vegetal, rapida, sin_gluten, sin_lactosa, pescado, carne.` });
+      let n = 0;
+      for (const d of listaLLM(j, 'dias')) {
+        if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d.fecha || '')) continue;
+        const menu = { id: uid(), fecha: d.fecha };
+        for (const t of TIPOS) { const pl = d[t]; if (!pl || !pl.nombre) continue; let p = estado.platos.find(x => x.nombre.toLowerCase() === String(pl.nombre).toLowerCase()); if (!p) { p = { id: uid(), nombre: String(pl.nombre), tipo: t, tags: Array.isArray(pl.tags) ? pl.tags.map(String) : [], min: Number(pl.min) || 20, origen: 'llm' }; estado.platos.push(p); } menu[t] = p.id; }
+        estado.menus = estado.menus.filter(m => m.fecha !== d.fecha); estado.menus.push(menu); n++;
+      }
+      guardar(); toast(n ? `Menú de ${n} días propuesto por el LLM` : 'El LLM no devolvió días válidos');
+    }),
+    foto: async el => {
+      const f = el.files[0]; el.value = ''; if (!f) return;
+      await conLLM(null, async () => {
+        const imagen = await reducirImagen(f);
+        const j = await pedirJSON({ operacion: 'foto-stock', contexto: false, imagen, mensaje: 'Esta es una foto de mi frigorífico o despensa.', tarea: 'Enumera los alimentos que se ven con una cantidad aproximada. Devuelve {"alimentos":[{"nombre":"","cantidad":1,"unidad":"ud"}]}. Nombres en español, genéricos (no marcas), sin repetir.' });
+        let nuevos = 0, actualizados = 0;
+        for (const a of listaLLM(j, 'alimentos')) { if (!a || !a.nombre) continue; const nombre = String(a.nombre).trim(); const ex = estado.alimentos.find(x => x.nombre.toLowerCase() === nombre.toLowerCase()); const stock = Number(a.cantidad) || 1; if (ex) { ex.stock = stock; actualizados++; } else { estado.alimentos.push({ id: uid(), nombre, stock, unidad: String(a.unidad || 'ud'), umbral: 1, tienda: '' }); nuevos++; } }
+        sincronizarCompra(); guardar(); toast(`Stock desde la foto: ${nuevos} nuevos, ${actualizados} actualizados`, 5000); navegar('alimentacion', { v: 'stock' });
+      }, 'Leyendo la foto…');
+    },
     semana: () => { for (let i = 0; i < 7; i++) { const f = sumarDias(fecha, i); if (!estado.menus.some(m => m.fecha === f)) estado.menus.push(proponerMenu(f)); } guardar(); toast('Semana propuesta'); },
     cambiar: async el => {
       const t = el.dataset.t; const ops = estado.platos.filter(p => p.tipo === t).map(p => ({ v: p.id, l: p.nombre }));

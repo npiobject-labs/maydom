@@ -171,3 +171,55 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      # deploy-pages solo prueba que el artefacto se subio. Esto comprueba que la URL publica
+      # sirve la app de docs/ y no el README: si el Source de Pages sigue en "Deploy from a
+      # branch", la portada es el README y este paso falla. El sandbox de la sesion no alcanza
+      # *.github.io, asi que la unica verificacion real es esta, desde el runner.
+      - name: Verificar que Pages sirve la app
+        env:
+          URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          url="${URL:-https://${GITHUB_REPOSITORY%%/*}.github.io/${GITHUB_REPOSITORY#*/}/}"
+          esperado="$(sed -n 's/.*<meta name="build" content="\([^"]*\)".*/\1/p' docs/index.html | head -1)"
+          echo "Verificando ${url} (build esperado ${esperado})"
+          for intento in $(seq 1 10); do
+            codigo="$(curl -sS --max-time 20 -o /tmp/portada -w '%{http_code}' "${url}" || true)"
+            if [ "${codigo}" = "200" ] && grep -q "${esperado}" /tmp/portada; then
+              break
+            fi
+            echo "Intento ${intento}/10: HTTP ${codigo}, build aun no visible"
+            # Con bash -e, un test falso como ultima sentencia del bucle aborta el paso.
+            if [ "${intento}" -lt 10 ]; then sleep 15; fi
+          done
+          [ "${codigo}" = "200" ] || { echo "::error::La portada devolvio HTTP ${codigo}"; exit 1; }
+          if grep -qi 'Plantilla del metodo\|Plantilla del método\|Empieza por' /tmp/portada; then
+            echo "::error::Pages esta sirviendo el README, no docs/. Settings -> Pages -> Source: GitHub Actions."
+            exit 1
+          fi
+          grep -q "${esperado}" /tmp/portada \
+            || { echo "::error::La portada no trae el build ${esperado}; Pages sirve una version antigua."; exit 1; }
+          titulo="$(sed -n 's/.*<title>\(.*\)<\/title>.*/\1/p' /tmp/portada | head -1)"
+          echo "Portada OK: <title>${titulo}</title> con build ${esperado}"
+
+          # La app es modular: si un solo modulo no se sirve, la pagina queda en blanco.
+          fallos=0
+          for ruta in app/app.js app/nucleo.js app/llm.js app/estilos.css manifest.webmanifest sw.js bitacora.html bitacora/index.json mocks/index.html; do
+            codigo="$(curl -sS --max-time 20 -o /tmp/recurso -w '%{http_code}' "${url}${ruta}" || true)"
+            if [ "${codigo}" = "200" ]; then
+              echo "  ok  ${ruta}"
+            else
+              echo "::error::${ruta} devolvio HTTP ${codigo}"
+              fallos=$((fallos + 1))
+            fi
+          done
+          [ "${fallos}" -eq 0 ] || exit 1
+
+          {
+            echo "### App publicada"
+            echo ""
+            echo "- URL: ${url}"
+            echo "- Build: \`${esperado}\`"
+            echo "- Commit: \`${GITHUB_SHA}\`"
+            echo "- Bitacora: ${url}bitacora.html"
+          } >> "$GITHUB_STEP_SUMMARY"

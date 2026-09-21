@@ -1,0 +1,50 @@
+{
+ "fecha": "2026-09-21T15:10:00+02:00",
+ "titulo": "Cómo sacar el precio de un producto sin fingir ser humano",
+ "objetivo": "Convertir dos análisis externos sobre cómo esquivar el anti-bot de las tiendas en una planificación propia, y dejar sus dos primeras fases como deuda para mañana.",
+ "prompts": [
+  {
+   "texto": "Te adjunto un documento en el que otras plataformas, Antigravity y Grok, analizan cómo saltarse los buscadores de las tiendas que no dejan acceder. Con lo que dicen ellos más lo que tú aportes, monta una planificación de cómo llegar de la mejor forma posible a obtener información de productos a través de los buscadores online u otros medios. Genera o lleva la documentación, aparte de en el repo, guárdala en Drive como un documento al que tú le pondrás el nombre adecuado."
+  },
+  {
+   "texto": "¿Cuánto tiempo te llevará construir P1 y P2?"
+  },
+  {
+   "texto": "Lo dejamos para mañana, guárdalo como deuda de construcción."
+  }
+ ],
+ "cambios": [
+  "docs/planificacion/obtener-datos-de-productos.md: planificación nueva. Valora lo que proponen Grok y Antigravity, y fija un plan por capas: el humano abre la ficha y la comparte a maydom, que lee sus datos estructurados; alimentos por Open Food Facts con el código de barras; Amazon por Keepa; agregación por la API de buscaproducto. Incluye el mapa de las 29 tiendas del catálogo y las fases P1 a P5.",
+  "docs/planificacion/memoria/decisiones/ADR-006-obtener-datos-sin-evadir-anti-bot.md: queda decidido que maydom no usa navegadores disfrazados, proxies residenciales, navegadores remotos, APIs internas de apps móviles ni cookies del usuario en el servidor. Un bloqueo se anota y se deja de intentar.",
+  "docs/planificacion/plan-maydom.md: el buscador (§4.2) y la deuda D5 enlazan al plan nuevo; se añaden D14 y D15, que son las dos primeras fases aplazadas a petición del usuario.",
+  "CLAUDE.md: regla nueva con la decisión, para que ninguna sesión futura proponga evadir un anti-bot."
+ ],
+ "sha": "f720dd5",
+ "sha_completo": "f720dd53bc3da948208f7e9b6fcdfffb21506344",
+ "run": "35602078801",
+ "mock": "mocks/002-mock1.html",
+ "build": "MA-B1-20260921-013",
+ "pagina": "index.html",
+ "fly": "https://maydom-npiobject-labs.fly.dev/salud",
+ "pendiente": [
+  "D14 (P1): compartir a maydom y leer la ficha del producto. Unas 4-5 h de sesión, nada la bloquea",
+  "D15 (P2): alimentos por código de barras con Open Food Facts y normalización con el LLM. Unas 4 h; el escaneo con cámara solo se puede probar en el móvil",
+  "Sigue viva la deuda anterior: D2 push real, D4 importación bancaria, D6 ofertas por ubicación, D7 agenda de Madrid, D9 sincronización entre dispositivos, D11 acciones del agente, D13 dictado sin reconocimiento de voz",
+  "Poner topes de gasto a la aplicación maydom en el gateway y confirmar que el modelo acepta imágenes"
+ ],
+ "enlaces": [
+  {
+   "texto": "Plan: obtener datos de productos",
+   "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/obtener-datos-de-productos.md"
+  },
+  {
+   "texto": "ADR-006",
+   "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/memoria/decisiones/ADR-006-obtener-datos-sin-evadir-anti-bot.md"
+  },
+  {
+   "texto": "Plan de maydom",
+   "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/plan-maydom.md"
+  }
+ ],
+ "notas": "Sesión de planificación: no se tocó la app, así que el build no cambia. El documento de partida lo aportó el usuario; no se copia aquí su contenido, solo se valora. El enlace privado al documento de Drive se omite porque docs/ es público. Las afirmaciones legales de los análisis externos quedan marcadas como suposición sin verificar: la sentencia que citan dice en realidad lo contrario de lo que sostienen."
+}

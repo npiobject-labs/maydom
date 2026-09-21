@@ -150,7 +150,7 @@ async fn mayordomo(cabeceras: HeaderMap, Json(p): Json<Peticion>) -> Response {
     let clave = match variable("LLM_API_KEY") {
         Some(k) => k,
         None => {
-            return error(StatusCode::SERVICE_UNAVAILABLE, "sin_configurar", "El mayordomo no tiene clave del gateway openrouter: crea la aplicación en conectar.html y guarda su clave como secreto LLM_API_KEY del repositorio")
+            return error(StatusCode::SERVICE_UNAVAILABLE, "falta_llm_api_key", "El mayordomo no tiene clave del gateway openrouter: crea la aplicación en conectar.html y guarda su clave como secreto LLM_API_KEY del repositorio")
         }
     };
     let base = variable("LLM_BASE_URL").unwrap_or_else(|| BASE_DEFECTO.to_string());
@@ -258,7 +258,9 @@ async fn mayordomo(cabeceras: HeaderMap, Json(p): Json<Peticion>) -> Response {
         let codigo = datos.pointer("/error/code").and_then(Value::as_str).unwrap_or("").to_string();
         let mensaje = datos.pointer("/error/message").and_then(Value::as_str).unwrap_or("sin detalle").to_string();
         let texto = match (estado.as_u16(), codigo.as_str()) {
-            (401, _) => "La clave de aplicación del gateway no es válida o está dada de baja (secreto LLM_API_KEY)".to_string(),
+            // El gateway no tiene SU clave configurada: el fallo no es de maydom, es de ese servidor.
+            (503, _) => format!("El gateway de {base} no está configurado ({mensaje}). Comprueba que la aplicación se creó en ese mismo servidor; si la creaste en otro, fija la variable LLM_BASE_URL"),
+            (401, _) => "La clave de aplicación del gateway no es válida o está dada de baja (secreto LLM_API_KEY), o pertenece a otro servidor del gateway distinto del que apunta LLM_BASE_URL".to_string(),
             (402, _) => "Presupuesto del mayordomo agotado en el gateway; hasta el siguiente periodo solo reglas locales".to_string(),
             (429, "bucle") => "El gateway ha cortado una petición repetida; espera un minuto".to_string(),
             (429, _) => "Cuota por minuto superada; espera un minuto".to_string(),
@@ -270,7 +272,9 @@ async fn mayordomo(cabeceras: HeaderMap, Json(p): Json<Peticion>) -> Response {
             }
             _ => format!("El gateway devolvió {} {codigo}: {mensaje}", estado.as_u16()),
         };
-        let salida = error(StatusCode::from_u16(estado.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY), if codigo.is_empty() { "gateway_rechaza" } else { &codigo }, texto);
+        // El codigo del gateway se prefija: un "sin_configurar" suyo no puede leerse como uno nuestro.
+        let codigo_salida = if codigo.is_empty() { "gateway_rechaza".to_string() } else { format!("gateway_{codigo}") };
+        let salida = error(StatusCode::from_u16(estado.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY), &codigo_salida, texto);
         // 502/504 del proveedor: se reintenta; el resto es definitivo.
         if estado.as_u16() == 502 || estado.as_u16() == 504 {
             ultimo = Some(salida);

@@ -176,17 +176,38 @@ jobs:
         env:
           FLY_APP: ${{ steps.app.outputs.app }}
           MAYDOM_CLAVE: ${{ secrets.MAYDOM_CLAVE }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
         run: |
           url="https://${FLY_APP}.fly.dev/api/mayordomo"
           codigo="$(curl -sS --max-time 150 -o /tmp/mayordomo -w '%{http_code}' -X POST "${url}" \
             -H 'content-type: application/json' -H "x-clave: ${MAYDOM_CLAVE}" \
             -d '{"operacion":"verificacion","mensajes":[{"rol":"usuario","contenido":"Responde solo: ok"}]}' || true)"
           echo "HTTP ${codigo}: $(head -c 300 /tmp/mayordomo)"
+          # Con LLM_API_KEY configurada, el unico resultado bueno es 200. Un 503 del gateway
+          # (codigo gateway_sin_configurar) significa que ESE servidor no atiende, y antes se
+          # colaba como si fuera el 503 de "aun no hay clave": el run salia verde mintiendo.
           case "${codigo}" in
-            200) grep -q '"respuesta"' /tmp/mayordomo || { echo "::error::/api/mayordomo 200 sin campo respuesta"; exit 1; }; echo "OK: mayordomo respondiendo por el gateway" ;;
-            503) grep -q '"code":"sin_configurar"' /tmp/mayordomo || { echo "::error::/api/mayordomo 503 con otro error"; exit 1; }; echo "OK: 503 esperado sin LLM_API_KEY" ;;
+            200)
+              grep -q '"respuesta"' /tmp/mayordomo || { echo "::error::/api/mayordomo 200 sin campo respuesta"; exit 1; }
+              echo "OK: mayordomo respondiendo por el gateway" ;;
+            503)
+              if grep -q '"code":"falta_llm_api_key"' /tmp/mayordomo; then
+                if [ -n "${LLM_API_KEY}" ]; then
+                  echo "::error::Hay secreto LLM_API_KEY pero el backend dice que no lo tiene: no llego a Fly."
+                  exit 1
+                fi
+                echo "OK: 503 esperado sin LLM_API_KEY"
+                echo "Sin LLM_API_KEY: el mayordomo funciona solo con reglas locales (deuda D1 del plan)." >> "$GITHUB_STEP_SUMMARY"
+              else
+                echo "::error::El gateway rechaza la llamada: $(head -c 300 /tmp/mayordomo)"
+                echo "Revisa que la aplicacion este creada en el mismo servidor al que apunta LLM_BASE_URL y que ese servidor tenga su clave de servicio."
+                exit 1
+              fi ;;
+            401)
+              echo "::error::El gateway no reconoce la clave de aplicacion (LLM_API_KEY): $(head -c 300 /tmp/mayordomo)"
+              exit 1 ;;
             402|429) echo "::warning::El gateway corto la llamada (presupuesto o cuota): $(head -c 200 /tmp/mayordomo)" ;;
-            *) echo "::error::/api/mayordomo devolvio HTTP ${codigo}"; exit 1 ;;
+            *) echo "::error::/api/mayordomo devolvio HTTP ${codigo}: $(head -c 300 /tmp/mayordomo)"; exit 1 ;;
           esac
           cabeceras="$(curl -sS --max-time 20 -D - -o /dev/null -X OPTIONS "${url}")"
           printf '%s' "${cabeceras}" | grep -qi '^access-control-allow-origin: \*' || { echo "::error::/api/mayordomo sin CORS en OPTIONS"; exit 1; }

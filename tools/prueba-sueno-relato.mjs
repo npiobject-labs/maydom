@@ -61,6 +61,21 @@ console.log('  campos:', orden.join(', '));
 comprobar(orden[0] === 'relato', `«relato» es el primer campo del formulario — ${orden[0]}`);
 comprobar(orden.includes('acostado') && orden.includes('levantado'), 'los campos de horas siguen ahí para repasar');
 comprobar(await pag.locator('dialog.modal [data-accion]').count() === 1, 'hay un botón para interpretar lo escrito');
+const sitio = await pag.evaluate(() => {
+  const f = document.querySelector('dialog.modal form');
+  const hijos = [...f.children];
+  const pos = el => hijos.findIndex(c => c === el || c.contains(el));
+  return {
+    relato: pos(f.elements.relato),
+    boton: pos(f.querySelector('[data-accion]')),
+    fecha: pos(f.elements.fecha),
+    enviar: pos(f.querySelector('button[type="submit"]')),
+  };
+});
+console.log('  posiciones:', JSON.stringify(sitio));
+comprobar(sitio.boton > sitio.relato, 'el botón va debajo de la caja donde se cuenta la noche');
+comprobar(sitio.boton < sitio.fecha, 'y por encima de los campos que rellena, no al final del formulario');
+comprobar(sitio.boton < sitio.enviar, 'antes que el botón de guardar');
 
 console.log('\n--- 2. Escribir la noche y que el agente la traduzca ---');
 respuesta = { fecha: '2026-09-21', acostado: '23:45', latencia: 15, despertar: '04:30', despierto: 40, levantado: '07:20', calidad: 2, nota: 'Cena tarde; desvelado tras el despertar y leyó 40 min.' };

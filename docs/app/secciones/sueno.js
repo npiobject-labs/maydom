@@ -103,9 +103,10 @@ export function registrarNoche(valores = {}) {
   }, {
     dictar: 'relato',
     alDictar: (texto, api) => { toast('Interpretando lo que has contado…', 3000); return traducir(texto, api); },
-    acciones: [{ l: '✨ Interpretar lo escrito', cargando: 'Interpretando…', fn: async api => { ultimoInterpretado = ''; await traducir(api.valores.relato, api); } }],
+    acciones: [{ l: '✨ Interpretar', cargando: 'Interpretando…', fn: async api => { ultimoInterpretado = ''; await traducir(api.valores.relato, api); } }],
+    accionesTras: 'relato',
     aceptar: 'Guardar',
-    texto: 'Dicta o escribe arriba y los campos se rellenan solos. Repasa lo que haya entendido antes de guardar; lo que no hayas contado se queda como esté.',
+    texto: 'Dicta o escribe la noche y los campos de abajo se rellenan solos. Repasa lo que haya entendido antes de guardar; lo que no hayas contado se queda como esté.',
     ...(editando ? { extra: 'Borrar' } : {}),
   }).then(v => {
     if (!v) return null;

@@ -131,7 +131,10 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
     const ex = dlg.querySelector('[data-extra]'); if (ex) ex.onclick = () => cerrar({ __extra: true });
     const ot = dlg.querySelector('[data-otro]'); if (ot) ot.onclick = () => cerrar({ __otro: true });
     const leer = () => Object.fromEntries(campos.map(c => [c.n, form.elements[c.n]?.value]));
-    const escribir = datos => { for (const [k, v] of Object.entries(datos)) { const el = form.elements[k]; if (el && v != null && v !== '') el.value = v; } };
+    // Las cajas de texto crecen con lo que se escribe, se dicta o genera la IA (hasta el 60 % de la pantalla; luego, barra).
+    const crecer = t => { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight + 2, innerHeight * 0.6) + 'px'; };
+    form.addEventListener('input', e => { if (e.target.tagName === 'TEXTAREA') crecer(e.target); });
+    const escribir = datos => { for (const [k, v] of Object.entries(datos)) { const el = form.elements[k]; if (el && v != null && v !== '') { el.value = v; if (el.tagName === 'TEXTAREA') crecer(el); } } };
     const zonaAcciones = dlg.querySelector('[data-acciones]');
     if (zonaAcciones && opciones.accionesTras) {
       const campo = form.elements[opciones.accionesTras];
@@ -169,6 +172,7 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
       cerrar(out);
     };
     dlg.showModal();
+    form.querySelectorAll('textarea').forEach(crecer);
     const primero = form.querySelector('input:not([type=checkbox]),select,textarea'); if (primero) primero.focus();
   });
 }

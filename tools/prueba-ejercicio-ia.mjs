@@ -44,7 +44,7 @@ const fallos = [];
 const comprobar = (ok, msg) => { console.log((ok ? '  ok  ' : '  FALLO ') + msg); if (!ok) fallos.push(msg); };
 const campo = n => pag.locator(`dialog.modal [name="${n}"]`).inputValue();
 await pag.goto('http://localhost:8095/?api=8098#/ejercicio?v=catalogo'); await pag.waitForTimeout(500);
-respuesta = { descripcion: 'De pie, pies al ancho de hombros. Baja la cadera como si te sentaras.', series: 4, reps: '12' };
+respuesta = { descripcion: 'De pie, pies al ancho de hombros. Baja la cadera como si te sentaras.' + ' Mantén la espalda recta y el pecho abierto durante todo el recorrido.'.repeat(8), series: 4, reps: '12' };
 
 console.log('\n--- 1. Nuevo ejercicio: botón bajo «Cómo se hace» ---');
 await pag.locator('[data-a="nuevoEj"]').click();
@@ -60,6 +60,13 @@ comprobar(pedido === null, 'sin nombre no hay llamada');
 
 console.log('\n--- 3. Con nombre rellena el formulario abierto ---');
 await pag.fill('dialog.modal [name="nombre"]', 'Sentadilla');
+const alto = () => pag.locator('dialog.modal [name="descripcion"]').evaluate(t => t.getBoundingClientRect().height);
+const antes = await alto();
+await boton.click(); await pag.waitForTimeout(600);
+const despues = await alto();
+comprobar(despues > antes + 40, `la caja crece con el texto generado (${Math.round(antes)} → ${Math.round(despues)} px)`);
+await pag.fill('dialog.modal [name="descripcion"]', 'corto');
+comprobar(await alto() < despues, 'y encoge al borrar');
 await boton.click(); await pag.waitForTimeout(600);
 comprobar(JSON.stringify(pedido).includes('ejercicios'), 'la llamada lleva la operación ejercicios');
 comprobar((await campo('descripcion')).startsWith('De pie'), 'explicación escrita');

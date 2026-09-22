@@ -91,8 +91,8 @@ export function botonDictado(campo, contenedor, alFin = null) {
     base = campo.value ? campo.value.trimEnd() : '';
     btn.classList.add('grabando'); btn.innerHTML = '⏹ Parar';
     sesion = dictar({
-      alTexto: (parcial, definitivo) => { campo.value = pegar(definitivo, parcial); campo.scrollTop = campo.scrollHeight; },
-      alFin: definitivo => { campo.value = pegar(definitivo); parar(); campo.focus(); if (campo.value.trim()) alFin?.(campo.value.trim()); },
+      alTexto: (parcial, definitivo) => { campo.value = pegar(definitivo, parcial); campo.dispatchEvent(new Event('input', { bubbles: true })); campo.scrollTop = campo.scrollHeight; },
+      alFin: definitivo => { campo.value = pegar(definitivo); campo.dispatchEvent(new Event('input', { bubbles: true })); parar(); campo.focus(); if (campo.value.trim()) alFin?.(campo.value.trim()); },
       alError: e => { import('./nucleo.js').then(m => m.toast(e.message, 5000)); parar(); },
     });
     if (!sesion) parar();

@@ -116,3 +116,4 @@ nav.inferior a .n{position:absolute;top:0;right:.1rem;background:var(--warn);col
 .oscuro button{margin-top:2rem;background:#111;color:#665;border:1px solid #222}
 .tempo{font-size:2.6rem;font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
 @media (min-width:60rem){.app{max-width:none;flex-direction:row}header.cab{position:static;border:0;padding:1.2rem 2rem 0}header.cab h1{font-size:1.5rem}nav.inferior{position:sticky;top:0;height:100dvh;width:12rem;border-top:0;border-right:1px solid var(--line);flex:none}nav.inferior .in{flex-direction:column;justify-content:flex-start;gap:.3rem;padding:1rem .5rem}nav.inferior a{flex-direction:row;font-size:.95rem;gap:.6rem;padding:.5rem .7rem;border-radius:6px}nav.inferior a.activo{background:var(--acc2)}main{max-width:44rem;padding:1.5rem 2rem 3rem;width:100%}}
+textarea{resize:vertical;min-height:4.5rem}

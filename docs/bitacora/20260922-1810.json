@@ -1,0 +1,23 @@
+{
+  "fecha": "2026-09-22T20:10:00+02:00",
+  "titulo": "«Generar con IA» en la ficha del ejercicio",
+  "objetivo": "Rellenar cómo se hace un ejercicio a partir de su nombre desde el propio formulario.",
+  "prompts": [
+    { "texto": "En editar ejercicios -) debajo de como se hace pon un botón de Generar con IA" }
+  ],
+  "cambios": [
+    "Botón «✨ Generar con IA» bajo «Cómo se hace» en Nuevo y Editar ejercicio.",
+    "Escribe técnica, series y repeticiones en el formulario abierto, sin cerrarlo.",
+    "Prueba de humo tools/prueba-ejercicio-ia.mjs."
+  ],
+  "sha": "35461a8",
+  "sha_completo": "35461a89c56f0945cb24db5fc4cc8de488a29414",
+  "run": 35774062286,
+  "mock": null,
+  "build": "MA-B1-20260922-030",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/ejercicio?v=catalogo",
+  "fly": null,
+  "pendiente": ["Probar con el LLM real desde la app"],
+  "enlaces": [],
+  "notas": ""
+}

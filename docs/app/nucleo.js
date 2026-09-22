@@ -218,7 +218,13 @@ export function delegar(cont, acciones) {
   };
   cont.onclick = e => {
     const el = e.target.closest('[data-a]'); if (!el || !cont.contains(el)) return;
-    const fn = acciones[el.dataset.a]; if (fn) { e.preventDefault(); fn(el, e); }
+    const fn = acciones[el.dataset.a]; if (!fn) return;
+    // Un <a> con destino propio (no ancla) navega y la acción solo acompaña al clic: cancelarlo
+    // dejaba muerto el botón «abrir ↗» del buscador, que es un enlace con data-a para marcar la
+    // tienda como comprobada. Todo lo demás (botones, celdas) sí se cancela como siempre.
+    const href = el.tagName === 'A' ? el.getAttribute('href') || '' : '';
+    if (!href || href.startsWith('#')) e.preventDefault();
+    fn(el, e);
   };
   cont.onchange = e => {
     const el = e.target.closest('[data-c]'); if (!el) return;

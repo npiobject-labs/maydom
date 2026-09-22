@@ -1,0 +1,23 @@
+{
+  "fecha": "2026-09-22T20:30:00+02:00",
+  "titulo": "Cajas de texto que crecen al escribir, dictar o generar con IA",
+  "objetivo": "Que la caja de «Cómo se hace» (y cualquier otra) se alargue mientras se graba o se genera el contenido.",
+  "prompts": [
+    { "texto": "En la caja de cómo se hace a la que sea ampliable que se pueda hacer más larga cuando se está grabando os está generando el contenido" }
+  ],
+  "cambios": [
+    "Las cajas de texto de los formularios crecen con su contenido hasta el 60 % de la pantalla y encogen al borrar.",
+    "El dictado avisa al formulario en cada trozo reconocido, así la caja crece mientras se habla.",
+    "Se pueden estirar a mano en vertical."
+  ],
+  "sha": "5dac535",
+  "sha_completo": "5dac5356ac843f8c4f966830a1e14a9fbc1eb49a",
+  "run": 35775334566,
+  "mock": null,
+  "build": "MA-B1-20260922-031",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/ejercicio?v=catalogo",
+  "fly": null,
+  "pendiente": ["Comprobar el dictado real en el móvil"],
+  "enlaces": [],
+  "notas": ""
+}

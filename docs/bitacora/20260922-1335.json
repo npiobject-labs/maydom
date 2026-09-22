@@ -1,0 +1,94 @@
+{
+  "fecha": "2026-09-22T15:35:00+02:00",
+  "titulo": "Importar sin duplicar, Finanzas por pestañas y contar la noche hablando",
+  "objetivo": "Que reimportar un extracto no duplique nada y se decida qué hacer con lo repetido; organizar Finanzas para que quepan más informes; y quitar el formulario de sueño de cada mañana, contándolo de viva voz.",
+  "prompts": [
+    {
+      "texto": "En el PC, en Finanzas, año 2025 no veo nada; en cambio en el móvil sí me sale el desglose de los movimientos del banco que subí con el móvil."
+    },
+    {
+      "texto": "Ya tengo los CSV de los movimientos bancarios y quiero que los añadas a Finanzas, teniendo en cuenta la regla de que si un registro ya existe, antes de la carga, preguntar si para los registros existentes se quiere reemplazar o saltar el registro. Cuando lo tengas lo probamos con los movimientos del año 25 y 26."
+    },
+    {
+      "texto": "Mergea a main para que pueda probarlo."
+    },
+    {
+      "texto": "La importación solo admite tres campos; el formato de entrada del banco tiene más. Mira a ver cómo lo resuelves: es importante que Observaciones aparezca, porque nos puede dar muchas pistas sobre el movimiento.",
+      "nota": "Adjuntó dos capturas: el diálogo de columnas y la cabecera real del extracto."
+    },
+    {
+      "texto": "Las fechas, siempre en formato día, mes, año cuando las muestres en pantalla."
+    },
+    {
+      "texto": "Finanzas debería tener un módulo de carga y otro de informes. El que has generado es un informe básico, pero tengo pensado hacer más informes de más tipos, así que hay que organizar esta parte de la forma más usable y elegante posible."
+    },
+    {
+      "texto": "En el tema del sueño no quiero introducirlo con un formulario determinista: quiero un cuadro de texto donde vaya metiendo con mi voz cómo he dormido, a qué hora me acosté, a qué hora me desperté, y que un agente lo traduzca a los datos concretos."
+    },
+    {
+      "texto": "Ese cuadro debería aparecer por encima del formulario y el agente lo traducirá a horas y circunstancias del sueño. Lo que no quiero es andar rellenando un formulario cada mañana: quiero hablarle al móvil y que eso se convierta en datos concretos."
+    },
+    {
+      "texto": "En la sección de sueño, la caja de técnicas ponla en un desplegable que se pueda expandir o comprimir."
+    },
+    {
+      "texto": "El botón de interpretar debería ir debajo de la caja en la que he contado cómo he dormido, para que rellene el formulario que viene a continuación; creo que ahí es más usable."
+    }
+  ],
+  "cambios": [
+    "docs/app/secciones/finanzas/importar.js: módulo nuevo con la carga entera. El cotejo de duplicados tiene dos niveles (fecha + importe + descripción normalizada y, con lo que sobre, fecha + importe) y siempre pregunta si saltar o reemplazar antes de escribir nada. Empareja por multiplicidad, así que dos apuntes gemelos del mismo día siguen siendo dos.",
+    "docs/app/secciones/finanzas/importar.js: unirDescripcion() compone la descripción con varias columnas del extracto (Concepto · Movimiento · Observaciones) descartando el trozo que otro ya contiene; el diálogo las preselecciona con casillas y deja fuera saldo, divisa y fechas.",
+    "docs/app/secciones/finanzas.js: cuatro pestañas (Movimientos, Importar, Informes, Recurrentes) con la ruta en ?v=; la antigua ?vista=anio sigue llevando al resumen del año.",
+    "docs/app/secciones/finanzas/calculos.js e informes.js: balances y clasificación aparte de la pantalla, y registro INFORMES donde un informe nuevo es una entrada más con su render.",
+    "docs/app/nucleo.js: fechaCorta() pasa a día/mes/año, fechaLarga() le antepone el día de la semana y mesNombre()/mesAbrev() escriben los periodos en letra.",
+    "docs/app/secciones/sueno.js: la noche se cuenta hablando. El relato va arriba del formulario, al terminar el dictado se llama a sueno-relato y los campos de debajo se rellenan solos; el texto original se guarda siempre. interpretarLocal() es el plan B por reglas cuando no hay LLM.",
+    "docs/app/secciones/sueno.js: calcular() descuenta la latencia del total dormido; antes los minutos que se tarda en dormirse contaban como sueño.",
+    "docs/app/nucleo.js y voz.js: pedir() admite botones que no cierran el diálogo y pueden rellenar sus campos (acciones, accionesTras), y avisar al terminar un dictado (alDictar).",
+    "docs/app/estilos.css: pestañas de sección, zona de subida y <details class=\"plegable\"> reutilizable; las técnicas de Sueño son el primer caso.",
+    ".github/workflows/pages.yml: los tres módulos de secciones/finanzas/ entran en las rutas que se verifican tras publicar.",
+    "tools/: tres pruebas de humo nuevas con Playwright (prueba-importar-finanzas.mjs, prueba-finanzas-pestanas.mjs y prueba-sueno-relato.mjs, esta con gateway simulado).",
+    "CLAUDE.md y docs/planificacion/plan-maydom.md: documentadas las reglas nuevas y añadida la operación sueno-relato a la tabla de §4.1.",
+    "Build de MA-B1-20260921-021 a MA-B1-20260922-027."
+  ],
+  "sha": "d00ace69",
+  "sha_completo": "d00ace691cbddfec8bef60b7b7ac50c6bbbd3068",
+  "run": "35732640532",
+  "mock": "",
+  "build": "MA-B1-20260922-027",
+  "pagina": "index.html",
+  "fly": null,
+  "pendiente": [
+    "Importar los extractos reales de 2025 y 2026 con el mapeo de columnas nuevo: solo se puede comprobar desde el móvil del usuario",
+    "Dictar una noche real y ver si el agente la traduce bien; en el sandbox se probó con el gateway simulado y escribiendo, no hablando",
+    "Decidir qué informes de Finanzas se hacen: comparar años, evolución de un concepto, recurrentes detectados solos, presupuesto frente a real. La estructura está lista y no se ha inventado ninguno",
+    "El historial de cargas empieza vacío: no conoce las importaciones anteriores a esta sesión",
+    "Los datos siguen viviendo en el localStorage de cada dispositivo: móvil y PC divergen y solo se juntan exportando e importando a mano"
+  ],
+  "enlaces": [
+    {
+      "texto": "PR #11 · preguntar qué hacer con los movimientos que ya existen",
+      "url": "https://github.com/npiobject-labs/maydom/pull/11"
+    },
+    {
+      "texto": "PR #12 · descripción compuesta por varias columnas",
+      "url": "https://github.com/npiobject-labs/maydom/pull/12"
+    },
+    {
+      "texto": "PR #13 · Finanzas por pestañas y fechas en día/mes/año",
+      "url": "https://github.com/npiobject-labs/maydom/pull/13"
+    },
+    {
+      "texto": "PR #14 · contar la noche hablando",
+      "url": "https://github.com/npiobject-labs/maydom/pull/14"
+    },
+    {
+      "texto": "PR #15 · técnicas de sueño en un desplegable",
+      "url": "https://github.com/npiobject-labs/maydom/pull/15"
+    },
+    {
+      "texto": "PR #16 · el botón de interpretar, junto a la caja del relato",
+      "url": "https://github.com/npiobject-labs/maydom/pull/16"
+    }
+  ],
+  "notas": "Transcripción aproximada de los prompts, en los términos del usuario; varios se dictaron por voz y se han limpiado las repeticiones sin cambiar lo que pedían. El extracto real del usuario no se tocó en esta sesión: las pruebas usan ficheros sintéticos con la misma forma (cabecera de nueve columnas, preámbulo, Observaciones repitiendo en mayúsculas) y ningún importe ni comercio suyo se ha copiado al repositorio. Dos peticiones se rehicieron a mitad porque el usuario las precisó mientras estaban en marcha: el relato de sueño pasó de ventana aparte a ir dentro del propio formulario, y el botón de interpretar subió del final del formulario a debajo de la caja."
+}

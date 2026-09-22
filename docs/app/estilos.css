@@ -25,6 +25,14 @@ h3{font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mu
 .pill{font-size:.72rem;padding:.12rem .55rem;border-radius:999px;background:var(--acc2);color:var(--acc);border:0;font-family:inherit;white-space:nowrap}
 .pill.w{background:var(--warn2);color:var(--warn)}.pill.ok{background:var(--ok2);color:var(--ok)}.pill.mal{background:var(--mal2);color:var(--mal)}.pill.g{background:var(--line);color:var(--ink2)}
 button.pill{cursor:pointer}button.pill.sel{background:var(--acc);color:#fff}
+.pestanas{display:flex;gap:.1rem;margin:0 0 .9rem;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.pestanas::-webkit-scrollbar{display:none}
+.pestanas button{font:500 .85rem var(--sans);color:var(--ink2);background:none;border:0;border-bottom:2px solid transparent;padding:.5rem .7rem;cursor:pointer;white-space:nowrap;margin-bottom:-1px}
+.pestanas button:hover{color:var(--ink)}
+.pestanas button.sel{color:var(--acc);border-bottom-color:var(--acc)}
+.pestanas .n{font-style:normal;font-size:.7rem;background:var(--acc2);color:var(--acc);border-radius:999px;padding:.05rem .35rem;margin-left:.3rem}
+.zona{border:1px dashed var(--line);border-radius:10px;padding:1.1rem .95rem;text-align:center;background:var(--bg2)}
+.zona .btn{margin-top:.5rem}
 .chips{display:flex;flex-wrap:wrap;gap:.35rem;margin:.5rem 0}
 .barra{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:.35rem 0}
 .barra i{display:block;height:100%;background:var(--acc)}.barra i.w{background:var(--warn)}.barra i.mal{background:var(--mal)}.barra i.ok{background:var(--ok)}

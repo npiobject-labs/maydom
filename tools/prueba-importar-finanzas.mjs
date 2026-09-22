@@ -41,8 +41,12 @@ const fallos = [];
 const comprobar = (ok, msg) => { console.log((ok ? '  ok  ' : '  FALLO ') + msg); if (!ok) fallos.push(msg); };
 const movs = () => pag.evaluate(() => JSON.parse(localStorage.getItem('maydom.v1')).movimientos);
 
-await pag.goto('http://localhost:8099/#/finanzas?mes=2025-01');
-await pag.waitForSelector('[data-c="extracto"]', { state: 'attached', timeout: 15000 });
+const irAImportar = async (recargar = false) => {
+  await pag.goto('http://localhost:8099/#/finanzas?v=importar');
+  if (recargar) await pag.reload();
+  await pag.waitForSelector('[data-c="extracto"]', { state: 'attached', timeout: 15000 });
+};
+await irAImportar();
 
 // Sube el CSV, rellena el diálogo de columnas (descCols = índices a marcar para la descripción) y,
 // si sale el de duplicados, contesta con los modos pedidos. Devuelve los textos de cada diálogo.
@@ -96,7 +100,7 @@ await pag.evaluate(() => {
   x.concepto = 'ocio'; x.conceptoManual = true;
   localStorage.setItem('maydom.v1', JSON.stringify(e));
 });
-await pag.reload(); await pag.waitForSelector('[data-c="extracto"]', { state: 'attached' });
+await irAImportar(true);
 
 console.log('\n--- 2. Reimportar el mismo fichero igual → SALTAR ---');
 r = await importar({ ig: 'saltar' });
@@ -139,7 +143,7 @@ comprobar(m.filter(x => x.descripcion.includes('MERCADONA')).length === 2, 'sigu
 comprobar(m.find(x => x.descripcion.includes('FARMACIA')).concepto === 'salud', 'la farmacia se clasifica en salud');
 
 console.log('\n--- 6. Informe del año ---');
-await pag.goto('http://localhost:8099/#/finanzas?vista=anio&anio=2025');
+await pag.goto('http://localhost:8099/#/finanzas?v=informes&informe=anual&anio=2025');
 await pag.waitForTimeout(600);
 const anio = await pag.locator('#vista, main').innerText().catch(() => '');
 console.log('  ' + anio.split('\n').slice(3, 6).join(' | '));

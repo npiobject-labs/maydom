@@ -109,7 +109,7 @@ El mayordomo no habla con OpenRouter: habla con el **servicio `npiobject-labs/op
 | Clave de **aplicación** de maydom | Secreto `LLM_API_KEY` del repo → Fly | Solo el backend de maydom |
 | Clave de **acceso** a la app | Secreto `MAYDOM_CLAVE` → Fly, y el usuario la escribe una vez en Ajustes | El navegador del usuario |
 
-El backend de maydom manda `Authorization: Bearer <clave de aplicación>` y `X-Operacion: maydom-<sección>` (chat, menu, foto-stock, ejercicios, suplementos, ocio, sueno, finanzas, buscador), así que `GET /v1/uso/resumen?agrupar=operacion` en el gateway dice cuánto cuesta cada función. Sigue la guía de integración del gateway: reintentos solo ante 502/504 (dos, con espera creciente), timeout del cliente por encima del suyo, y los errores traducidos al español con su código (`sin_configurar`, `presupuesto_agotado`, `cuota_superada`, `bucle`). `GET /api/estado` dice si hay LLM y qué modelo, sin gastar crédito.
+El backend de maydom manda `Authorization: Bearer <clave de aplicación>` y `X-Operacion: maydom-<sección>` (chat, menu, foto-stock, ejercicios, suplementos, ocio, sueno, sueno-relato, finanzas, buscador), así que `GET /v1/uso/resumen?agrupar=operacion` en el gateway dice cuánto cuesta cada función. Sigue la guía de integración del gateway: reintentos solo ante 502/504 (dos, con espera creciente), timeout del cliente por encima del suyo, y los errores traducidos al español con su código (`sin_configurar`, `presupuesto_agotado`, `cuota_superada`, `bucle`). `GET /api/estado` dice si hay LLM y qué modelo, sin gastar crédito.
 
 **Qué hace cada sección con el LLM** (todo opcional: sin clave, la app funciona con el motor de reglas):
 
@@ -119,7 +119,7 @@ El backend de maydom manda `Authorization: Bearer <clave de aplicación>` y `X-O
 | Ejercicio | Buscar ejercicios nuevos del tipo que apetece | `ejercicios` |
 | Suplementos | Revisar horas de toma e interacciones (criterio general) | `suplementos` |
 | Ocio | Propuestas en Madrid con coste, duración y enlace | `ocio` |
-| Sueño | Analizar las últimas 14 noches → 3 acciones | `sueno` |
+| Sueño | Analizar las últimas 14 noches → 3 acciones · **el relato hablado de la noche → horas, calidad y nota** | `sueno`, `sueno-relato` |
 | Finanzas | Recomendaciones sobre el gasto del mes · **extracto en PDF que no se deja leer → movimientos** | `finanzas`, `finanzas-extracto` |
 | Buscador | Interpretar la petición → consulta corta + categoría | `buscador` |
 | Notas | Título, etiquetas y tipo al guardar (y en lote para las antiguas) | `nota` |

@@ -118,6 +118,7 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
       <div class="cabecera-modal"><h2>${titulo}</h2>
         <button type="button" class="cerrar" data-cancelar aria-label="Cerrar sin guardar" title="Cerrar sin guardar">✕</button></div>${crudo(f)}
       ${opciones.texto ? crudo('<p class="mini">' + esc(opciones.texto) + '</p>') : ''}
+      ${opciones.acciones ? crudo('<div class="acciones">' + opciones.acciones.map((x, i) => `<button type="button" class="btn ${esc(x.clase || '')}" data-accion="${i}">${esc(x.l)}</button>`).join('') + '</div>') : ''}
       <div class="acciones fin">
         ${opciones.extra ? crudo(`<button type="button" class="btn peligro" data-extra>${esc(opciones.extra)}</button>`) : ''}
         ${opciones.otro ? crudo(`<button type="button" class="btn" data-otro>${esc(opciones.otro)}</button>`) : ''}
@@ -129,10 +130,21 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
     dlg.querySelectorAll('[data-cancelar]').forEach(b => { b.onclick = () => cerrar(null); });
     const ex = dlg.querySelector('[data-extra]'); if (ex) ex.onclick = () => cerrar({ __extra: true });
     const ot = dlg.querySelector('[data-otro]'); if (ot) ot.onclick = () => cerrar({ __otro: true });
+    const leer = () => Object.fromEntries(campos.map(c => [c.n, form.elements[c.n]?.value]));
+    const escribir = datos => { for (const [k, v] of Object.entries(datos)) { const el = form.elements[k]; if (el && v != null && v !== '') el.value = v; } };
+    dlg.querySelectorAll('[data-accion]').forEach(b => {
+      const acc = opciones.acciones[Number(b.dataset.accion)];
+      b.onclick = async () => {
+        const txt = b.textContent; b.disabled = true; b.textContent = acc.cargando || '…';
+        try { await acc.fn({ valores: leer(), escribir, form }); }
+        finally { b.disabled = false; b.textContent = txt; }
+      };
+    });
     // Dictado: solo aparece si el navegador lo trae; si no, el formulario queda igual que antes.
     if (opciones.dictar) import('./voz.js').then(v => {
       const campo = form.elements[opciones.dictar];
-      if (campo) v.botonDictado(campo, campo.parentElement === form ? campo.insertAdjacentElement('afterend', document.createElement('div')) : null);
+      if (campo) v.botonDictado(campo, campo.parentElement === form ? campo.insertAdjacentElement('afterend', document.createElement('div')) : null,
+        opciones.alDictar ? texto => opciones.alDictar(texto, { escribir, form }) : null);
     }).catch(() => { });
     dlg.addEventListener('cancel', e => { e.preventDefault(); cerrar(null); });
     form.onsubmit = e => {

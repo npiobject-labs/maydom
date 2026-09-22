@@ -76,7 +76,9 @@ export function dictar({ alTexto, alFin, alError, idioma = 'es-ES', silencioMs =
 }
 
 // Añade un botón de micrófono que escribe en un <textarea> o <input>, dentro de un formulario abierto.
-export function botonDictado(campo, contenedor) {
+// `alFin` recibe el texto cuando el dictado termina: sirve para encadenar algo (interpretarlo
+// con el mayordomo, por ejemplo) sin que el usuario tenga que pulsar otro botón.
+export function botonDictado(campo, contenedor, alFin = null) {
   if (!hayVoz() || !campo) return null;
   const btn = document.createElement('button');
   btn.type = 'button'; btn.className = 'btn dictar'; btn.innerHTML = '🎤 Dictar';
@@ -90,7 +92,7 @@ export function botonDictado(campo, contenedor) {
     btn.classList.add('grabando'); btn.innerHTML = '⏹ Parar';
     sesion = dictar({
       alTexto: (parcial, definitivo) => { campo.value = pegar(definitivo, parcial); campo.scrollTop = campo.scrollHeight; },
-      alFin: definitivo => { campo.value = pegar(definitivo); parar(); campo.focus(); },
+      alFin: definitivo => { campo.value = pegar(definitivo); parar(); campo.focus(); if (campo.value.trim()) alFin?.(campo.value.trim()); },
       alError: e => { import('./nucleo.js').then(m => m.toast(e.message, 5000)); parar(); },
     });
     if (!sesion) parar();

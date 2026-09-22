@@ -6,9 +6,29 @@ import { pedirJSON, conLLM, lista as listaLLM } from '../llm.js';
 const ejercicio = id => estado.ejercicios.find(e => e.id === id);
 const camposEj = [
   { n: 'nombre', l: 'Nombre', req: true }, { n: 'tipo', l: 'Tipo', t: 'select', o: TIPOS_EJERCICIO },
-  { n: 'descripcion', l: 'Cómo se hace', t: 'textarea', filas: 3 }, { n: 'series', l: 'Series', t: 'number', v: 3, min: 1 }, { n: 'reps', l: 'Repeticiones o tiempo', v: '10' },
+  { n: 'descripcion', l: 'Cómo se hace', t: 'textarea', filas: 5 }, { n: 'series', l: 'Series', t: 'number', v: 3, min: 1 }, { n: 'reps', l: 'Repeticiones o tiempo', v: '10' },
   { n: 'video', l: 'Vídeo (URL)', ph: 'vacío = búsqueda en YouTube' },
 ];
+// Botón «Generar con IA» bajo «Cómo se hace»: escribe técnica, series y repeticiones en el formulario abierto, sin cerrarlo.
+const generarConIA = {
+  l: '✨ Generar con IA', cargando: 'Generando…', fn: async ({ valores, escribir }) => {
+    const nombre = (valores.nombre || '').trim();
+    if (!nombre) { toast('Escribe primero el nombre del ejercicio'); return; }
+    try {
+      const j = await pedirJSON({
+        operacion: 'ejercicios', contexto: false,
+        tarea: `Eres entrenador. Para el ejercicio que te digan, devuelve {"descripcion":"","series":3,"reps":"10"}. La descripción, en español y texto plano: posición inicial, ejecución paso a paso, respiración y un error habitual que evitar, en 3 a 5 frases. reps puede ser un número o un tiempo ("30 s").`,
+        mensaje: `Ejercicio: ${nombre} (tipo ${valores.tipo || 'sin indicar'})${valores.descripcion ? '\nLo que ya tengo escrito:\n' + String(valores.descripcion).slice(0, 1500) : ''}`,
+      });
+      if (!j?.descripcion) { toast('El mayordomo no devolvió explicación'); return; }
+      const datos = { descripcion: String(j.descripcion).trim().slice(0, 2000) };
+      if (Number(j.series) > 0) datos.series = Math.round(Number(j.series));
+      if (j.reps) datos.reps = String(j.reps).slice(0, 30);
+      escribir(datos);
+    } catch (e) { toast('LLM: ' + e.message, 5000); }
+  },
+};
+const opcionesEj = { acciones: [generarConIA], accionesTras: 'descripcion' };
 export function pildoraAleatoria() {
   const pref = estado.preferencias.tiposEjercicio || [];
   let pool = estado.ejercicios.filter(e => PILDORAS.includes(e.id) || e.pildora);
@@ -64,8 +84,8 @@ function render(cont, params) {
       estado.tablas.push({ id: uid(), nombre: `Propuesta ${tipos.join('/')} ${fechaCorta(hoyISO())}`, duracion: items.length * 5, items }); guardar(); toast('Tabla propuesta añadida');
     },
     pildora: () => { const e = pildoraAleatoria(); if (!e) return toast('Carga el catálogo primero'); pedir('Píldora: ' + e.nombre, [], {}, { texto: `${e.series} × ${e.reps}. ${e.descripcion}`, aceptar: 'Hecha' }).then(v => { if (v) { registrarPildora(e); toast('Píldora anotada'); } }); },
-    nuevoEj: async () => { const v = await pedir('Nuevo ejercicio', camposEj, { tipo: pref[0] || 'calistenia' }); if (v) { if (!v.video) v.video = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(v.nombre + ' técnica'); estado.ejercicios.push({ id: uid(), ...v }); guardar(); } },
-    editarEj: async el => { const e = ejercicio(el.dataset.id); const v = await pedir('Editar ejercicio', camposEj, e, { extra: 'Borrar' }); if (!v) return; if (v.__extra) { estado.ejercicios = estado.ejercicios.filter(x => x.id !== e.id); guardar(); return; } Object.assign(e, v); guardar(); },
+    nuevoEj: async () => { const v = await pedir('Nuevo ejercicio', camposEj, { tipo: pref[0] || 'calistenia' }, opcionesEj); if (v) { if (!v.video) v.video = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(v.nombre + ' técnica'); estado.ejercicios.push({ id: uid(), ...v }); guardar(); } },
+    editarEj: async el => { const e = ejercicio(el.dataset.id); const v = await pedir('Editar ejercicio', camposEj, e, { ...opcionesEj, extra: 'Borrar' }); if (!v) return; if (v.__extra) { estado.ejercicios = estado.ejercicios.filter(x => x.id !== e.id); guardar(); return; } Object.assign(e, v); guardar(); },
     buscarLLM: el => conLLM(el, async () => {
       const tipos = tipo ? [tipo] : (pref.length ? pref : ['calistenia', 'movilidad']);
       const j = await pedirJSON({ operacion: 'ejercicios', tarea: `Propón 8 ejercicios de tipo ${tipos.join(' o ')} para hacer en casa sin apenas material, que NO estén en esta lista: ${estado.ejercicios.map(e => e.nombre).join('; ')}. Explicación de 2 frases con la técnica y un error habitual. Devuelve {"ejercicios":[{"nombre":"","tipo":"${tipos[0]}","descripcion":"","series":3,"reps":"10"}]} con tipo entre: ${TIPOS_EJERCICIO.join(', ')}.` });

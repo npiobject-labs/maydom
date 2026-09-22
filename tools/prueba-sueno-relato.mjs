@@ -130,6 +130,20 @@ comprobar(local[0].latencia === 15, '«un cuarto de hora» son 15 minutos');
 comprobar(local[0].despierto === 40, 'saca los minutos despierto');
 comprobar(Object.keys(local[1]).length === 0, 'de un texto sin horas no se inventa ninguna');
 
+console.log('\n--- 7. Las técnicas van plegadas ---');
+await ir();
+const det = pag.locator('details.plegable');
+comprobar(await det.count() === 1, 'las técnicas están en un desplegable');
+comprobar(!(await det.evaluate(e => e.open)), 'viene cerrado: cada mañana no estorba');
+comprobar(!(await pag.locator('main').innerText()).includes('Ancla el reloj interno'), 'su contenido no se lee con el desplegable cerrado');
+await det.locator('summary').click();
+await pag.waitForTimeout(250);
+comprobar(await det.evaluate(e => e.open), 'se abre al tocar la cabecera');
+comprobar((await pag.locator('main').innerText()).includes('Ancla el reloj interno'), 'y entonces sí se leen las técnicas');
+await det.locator('summary').click();
+await pag.waitForTimeout(250);
+comprobar(!(await det.evaluate(e => e.open)), 'y se vuelve a cerrar');
+
 console.log('\nerrores de consola:', errores.length ? errores : 'ninguno', '(el 503 del paso 4 es de la propia prueba)');
 await nav.close(); web.close(); api.close();
 console.log(fallos.length ? `\n${fallos.length} FALLOS` : '\nTODO OK');

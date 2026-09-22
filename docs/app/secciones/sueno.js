@@ -147,8 +147,8 @@ function render(cont) {
     ${rs.length ? crudo(`<table class="tabla"><tr><th>Noche</th><th class="n">Total</th><th class="n">1.º</th><th class="n">2.º</th><th class="n">Cal.</th></tr>${rs.slice(0, 14).map(r => { const c = calcular(r); return completo(r)
       ? h`<tr data-a="editar" data-id="${r.id}"><td>${fechaCorta(r.fecha)}${r.relato ? crudo(' <span class="mini">🎤</span>') : ''}</td><td class="n ${c.total >= objMin ? 'pos' : ''}">${duracionTexto(c.total)}</td><td class="n">${duracionTexto(c.tramo1)}</td><td class="n">${r.despertar ? duracionTexto(c.tramo2) : '–'}</td><td class="n">${r.calidad}</td></tr>`
       : h`<tr data-a="editar" data-id="${r.id}"><td>${fechaCorta(r.fecha)}${r.relato ? crudo(' <span class="mini">🎤</span>') : ''}</td><td class="n mini" colspan="4">sin horas · tocar para completar</td></tr>`; }).join('')}</table>`) : ''}
-    <h3>Técnicas</h3>
-    ${lista(tecnicasSueno.map(t => h`<div class="tarjeta"><b>${t.t}</b><div class="mini">${t.d}</div></div>`))}
+    <details class="plegable"><summary>Técnicas <span class="mini">${tecnicasSueno.length}</span></summary>
+      <div class="cuerpo">${lista(tecnicasSueno.map(t => h`<div class="tarjeta"><b>${t.t}</b><div class="mini">${t.d}</div></div>`))}</div></details>
     <p class="mini">Modelo aceptado: 7 h en total; vale un tramo de 4 h 30–5 h, un despertar breve y ~2 h más ligeras. La meditación nocturna está en Meditación → "Volver a dormir".</p>`;
   delegar(cont, {
     registrar: async () => { const r = await registrarNoche(); if (r) toast(completo(r) ? `Noche del ${fechaCorta(r.fecha)}: ${duracionTexto(calcular(r).total)} dormidas` : 'Noche guardada; faltan horas por completar', 5000); },

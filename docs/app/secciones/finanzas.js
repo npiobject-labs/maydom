@@ -65,6 +65,54 @@ export function adivinar(desc, importe = -1) {
   // Un ingreso sin patrón conocido es un ingreso; un cargo sin patrón, «otros».
   return importe > 0 ? 'ingresos' : 'otros';
 }
+// Clave de cotejo de un movimiento. La descripción se normaliza (minúsculas, sin tildes, espacios
+// colapsados) porque dos exportaciones del mismo banco imprimen el mismo apunte con espaciados
+// distintos y, sin normalizar, el duplicado se cuela como movimiento nuevo.
+const claveMov = m => `${m.fecha}|${m.importe}|${sinTildes(m.descripcion).replace(/\s+/g, ' ').trim()}`;
+
+// Importa candidatos {fecha, descripcion, importe} cotejándolos con lo ya guardado y preguntando
+// qué hacer con los que ya existen. Dos apuntes idénticos el mismo día son legítimos (dos cafés
+// iguales), así que el cotejo va por multiplicidad: cada fila del fichero consume un existente de
+// su misma clave y solo la que se queda sin pareja es nueva. Antes se saltaban en silencio, lo que
+// además perdía el segundo de dos apuntes gemelos.
+// Devuelve {n, rep, omit} o null si se cancela: cancelar no escribe nada.
+async function importarMovimientos(cands, origen = '') {
+  const libres = new Map();
+  for (const m of estado.movimientos) {
+    const k = claveMov(m);
+    if (!libres.has(k)) libres.set(k, []);
+    libres.get(k).push(m);
+  }
+  const nuevos = [], pares = [];
+  for (const c of cands) {
+    const cola = libres.get(claveMov(c));
+    if (cola && cola.length) pares.push({ c, mov: cola.shift() }); else nuevos.push(c);
+  }
+  let modo = 'saltar';
+  if (pares.length) {
+    const uno = pares.length === 1;
+    const v = await pedir(uno ? 'Un movimiento que ya existe' : 'Movimientos que ya existen', [{
+      n: 'modo', l: uno ? 'Qué hago con el que ya está' : `Qué hago con los ${pares.length} que ya están`, t: 'select', v: 'saltar',
+      o: [{ v: 'saltar', l: uno ? 'Saltar: dejarlo como está' : `Saltar: dejar los ${pares.length} como están` }, { v: 'reemplazar', l: uno ? 'Reemplazar: rehacerlo con lo del fichero' : 'Reemplazar: rehacerlos con lo del fichero' }],
+      ayuda: 'Reemplazar rehace descripción, importe y concepto desde el fichero; el concepto que hayas puesto a mano no se toca. Saltar deja intacto lo guardado.',
+    }], {}, {
+      texto: `${origen ? origen + ': ' : ''}${cands.length} ${cands.length === 1 ? 'movimiento' : 'movimientos'} en el fichero. ${nuevos.length} ${nuevos.length === 1 ? 'es nuevo' : 'son nuevos'} y se ${nuevos.length === 1 ? 'añade' : 'añaden'} igualmente; ${pares.length} ya ${pares.length === 1 ? 'está guardado' : 'están guardados'} (misma fecha, descripción e importe).`,
+      aceptar: 'Importar',
+    });
+    if (!v) return null;
+    modo = v.modo;
+  }
+  for (const c of nuevos) estado.movimientos.push({ id: uid(), fecha: c.fecha, descripcion: c.descripcion, importe: c.importe, concepto: adivinar(c.descripcion, c.importe) });
+  let rep = 0;
+  if (modo === 'reemplazar') for (const { c, mov } of pares) {
+    mov.fecha = c.fecha; mov.descripcion = c.descripcion; mov.importe = c.importe;
+    if (!mov.conceptoManual) mov.concepto = adivinar(c.descripcion, c.importe);
+    rep++;
+  }
+  guardar();
+  return { n: nuevos.length, rep, omit: pares.length - rep };
+}
+
 // Plan B del PDF: el texto suelto al mayordomo, que devuelve los movimientos en JSON.
 async function interpretarLLM(texto) {
   toast('El mayordomo está leyendo el extracto…', 5000);
@@ -73,14 +121,13 @@ async function interpretarLLM(texto) {
       operacion: 'finanzas-extracto', contexto: false,
       tarea: `Este es el texto de un extracto bancario. Devuelve {"movimientos":[{"fecha":"AAAA-MM-DD","descripcion":"...","importe":-12.34}]} con un objeto por movimiento, importe negativo si es gasto y positivo si es ingreso, sin inventar ninguno. Texto:\n\n${texto.slice(0, 12000)}`,
     });
-    let n = 0, dup = 0;
+    const cands = [];
     for (const m of listaJSON(j, 'movimientos')) {
       const fecha = fechaNorm(m.fecha), importe = num(m.importe), descripcion = String(m.descripcion || '').trim();
-      if (!fecha || importe == null) continue;
-      if (estado.movimientos.some(x => x.fecha === fecha && x.descripcion === descripcion && x.importe === importe)) { dup++; continue; }
-      estado.movimientos.push({ id: uid(), fecha, descripcion, importe, concepto: adivinar(descripcion, importe) }); n++;
+      if (fecha && importe != null) cands.push({ fecha, descripcion, importe });
     }
-    guardar(); toast(`${n} importados por el mayordomo · ${dup} duplicados`, 5000);
+    const r = await importarMovimientos(cands, 'leído por el mayordomo');
+    toast(r ? `${r.n} nuevos · ${r.rep} reemplazados · ${r.omit} sin tocar` : 'Importación cancelada', 5000);
   } catch (e) { toast('LLM: ' + e.message, 6000); }
 }
 
@@ -147,17 +194,18 @@ function render(cont, params) {
         { n: 'd', l: 'Descripción / concepto', t: 'select', o: ops, v: adiv(/concepto|descrip|detalle/i) },
         { n: 'i', l: 'Importe', t: 'select', o: ops, v: adiv(/importe|amount|cantidad/i) },
         { n: 'inv', l: 'Los gastos vienen en positivo (invertir el signo)', t: 'check' },
-      ], {}, { texto: `${p.origen}: ${p.filas.length} filas. Primera: ${m0.filter(Boolean).slice(0, 4).join(' · ')}. Se saltan las duplicadas (misma fecha, descripción e importe).`, aceptar: 'Importar' });
+      ], {}, { texto: `${p.origen}: ${p.filas.length} filas. Primera: ${m0.filter(Boolean).slice(0, 4).join(' · ')}. Si alguna ya está guardada se preguntará si reemplazarla o saltarla.`, aceptar: 'Continuar' });
       if (!v) return;
-      let n = 0, dup = 0, mal = 0;
+      const cands = []; let mal = 0;
       for (const fila of p.filas) {
-        const fecha = fechaNorm(fila[v.f]); let importe = num(fila[v.i]); const descripcion = fila[v.d] || '';
+        const fecha = fechaNorm(fila[v.f]); let importe = num(fila[v.i]); const descripcion = String(fila[v.d] || '').trim();
         if (!fecha || importe == null) { mal++; continue; }
         if (v.inv) importe = -importe;
-        if (estado.movimientos.some(x => x.fecha === fecha && x.descripcion === descripcion && x.importe === importe)) { dup++; continue; }
-        estado.movimientos.push({ id: uid(), fecha, descripcion, importe, concepto: adivinar(descripcion, importe) }); n++;
+        cands.push({ fecha, descripcion, importe });
       }
-      guardar(); toast(`${n} importados · ${dup} duplicados · ${mal} ilegibles`, 5000);
+      const r = await importarMovimientos(cands, p.origen);
+      if (!r) return toast('Importación cancelada: no se ha guardado nada', 4000);
+      toast(`${r.n} nuevos · ${r.rep} reemplazados · ${r.omit} sin tocar · ${mal} ${mal === 1 ? 'ilegible' : 'ilegibles'}`, 6000);
     },
 
   });

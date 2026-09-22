@@ -31,6 +31,15 @@ button.pill{cursor:pointer}button.pill.sel{background:var(--acc);color:#fff}
 .pestanas button:hover{color:var(--ink)}
 .pestanas button.sel{color:var(--acc);border-bottom-color:var(--acc)}
 .pestanas .n{font-style:normal;font-size:.7rem;background:var(--acc2);color:var(--acc);border-radius:999px;padding:.05rem .35rem;margin-left:.3rem}
+details.plegable{background:var(--bg2);border:1px solid var(--line);border-radius:10px;margin:.45rem 0;overflow:hidden}
+details.plegable>summary{list-style:none;cursor:pointer;padding:.7rem .95rem;font-weight:600;font-size:.95rem;display:flex;align-items:center;gap:.5rem}
+details.plegable>summary::-webkit-details-marker{display:none}
+details.plegable>summary::after{content:'▾';margin-left:auto;color:var(--mute);font-size:.8rem;transition:transform .15s}
+details.plegable[open]>summary::after{transform:rotate(180deg)}
+details.plegable>summary:hover{color:var(--acc)}
+details.plegable>summary .mini{font-weight:400}
+details.plegable .cuerpo{padding:0 .95rem .85rem}
+details.plegable .cuerpo .tarjeta{margin:.4rem 0;border-radius:8px}
 .zona{border:1px dashed var(--line);border-radius:10px;padding:1.1rem .95rem;text-align:center;background:var(--bg2)}
 .zona .btn{margin-top:.5rem}
 .chips{display:flex;flex-wrap:wrap;gap:.35rem;margin:.5rem 0}

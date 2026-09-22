@@ -35,14 +35,10 @@ const camposPlato = [
   { n: 'tags', l: 'Etiquetas', t: 'tags', ayuda: ETIQUETAS_PLATO.join(', ') },
   { n: 'min', l: 'Minutos', t: 'number', v: 20 },
 ];
-// Rellena lo que el usuario dejó vacío; nunca pisa lo escrito a mano.
-export async function analizarPlato(plato, { forzar = false } = {}) {
-  const faltaDesc = forzar || !plato.descripcionManual;
-  const faltanTags = forzar || !(plato.tags || []).length;
-  if (!faltaDesc && !faltanTags) return false;
-  const j = await pedirJSON({
-    operacion: 'plato', contexto: false,
-    tarea: `Eres cocinero y sabes de nutrición. Para el plato que te digan, devuelve {"descripcion":"","etiquetas":[],"momentos":["desayuno"],"min":0}.
+// La ficha que redacta el LLM a partir del nombre (y de lo ya escrito, si hay algo).
+const fichaIA = (nombre, descripcion) => pedirJSON({
+  operacion: 'plato', contexto: false,
+  tarea: `Eres cocinero y sabes de nutrición. Para el plato que te digan, devuelve {"descripcion":"","etiquetas":[],"momentos":["desayuno"],"min":0}.
 La descripción, en español y en texto plano, con estas cuatro partes en este orden y cada una en su línea, sin markdown:
 Ingredientes: para una ración, con cantidades.
 Preparación: los pasos en dos o tres frases seguidas.
@@ -50,8 +46,14 @@ Por ración: kilocalorías y gramos aproximados de proteína, hidratos y grasa.
 Nota: una indicación útil (a qué hora sienta mejor, cómo aligerarlo, conservación) o la línea entera vacía si no aplica.
 Si el plato que te dan ya trae una descripción o varios pasos, respétalos y complétalos, no los inventes de cero.
 Las etiquetas, de 1 a 4 de esta lista: ${ETIQUETAS_PLATO.join(', ')}. Los momentos, uno o varios de: desayuno, comida, cena, según cuándo encaje el plato de verdad. min es el tiempo total en minutos.`,
-    mensaje: `Plato: ${plato.nombre}\n${plato.descripcion ? 'Lo que ya tengo escrito:\n' + String(plato.descripcion).slice(0, 2000) : ''}`,
-  });
+  mensaje: `Plato: ${nombre}\n${descripcion ? 'Lo que ya tengo escrito:\n' + String(descripcion).slice(0, 2000) : ''}`,
+});
+// Rellena lo que el usuario dejó vacío; nunca pisa lo escrito a mano.
+export async function analizarPlato(plato, { forzar = false } = {}) {
+  const faltaDesc = forzar || !plato.descripcionManual;
+  const faltanTags = forzar || !(plato.tags || []).length;
+  if (!faltaDesc && !faltanTags) return false;
+  const j = await fichaIA(plato.nombre, plato.descripcion);
   let cambio = false;
   if (faltaDesc && j?.descripcion) { plato.descripcion = String(j.descripcion).trim().slice(0, 2500); cambio = true; }
   if (faltanTags && Array.isArray(j?.etiquetas) && j.etiquetas.length) { plato.tags = j.etiquetas.map(e => String(e).toLowerCase().trim()).filter(Boolean).slice(0, 4); cambio = true; }
@@ -63,6 +65,22 @@ Las etiquetas, de 1 a 4 de esta lista: ${ETIQUETAS_PLATO.join(', ')}. Los moment
   if (cambio) { plato.analizado = true; guardar(); }
   return cambio;
 }
+// Botón «Crear con IA» del formulario: redacta la ficha sin cerrar la ventana, para repasarla antes de guardar.
+const crearConIA = {
+  l: '✨ Crear con IA', cargando: 'Redactando…', fn: async ({ valores, escribir }) => {
+    const nombre = (valores.nombre || '').trim();
+    if (!nombre) { toast('Escribe primero el nombre del plato'); return; }
+    try {
+      const j = await fichaIA(nombre, valores.descripcion);
+      if (!j?.descripcion) { toast('El mayordomo no devolvió ficha'); return; }
+      const datos = { descripcion: String(j.descripcion).trim().slice(0, 2500) };
+      if (!(valores.tags || '').trim() && Array.isArray(j.etiquetas)) datos.tags = j.etiquetas.map(e => String(e).toLowerCase().trim()).filter(Boolean).slice(0, 4).join(', ');
+      if (Number(j.min) > 0) datos.min = Math.round(Number(j.min));
+      escribir(datos);
+    } catch (e) { toast('LLM: ' + e.message, 5000); }
+  },
+};
+const opcionesPlato = { dictar: 'descripcion', acciones: [crearConIA], accionesTras: 'descripcion' };
 // Guarda ya y completa después, como en Notas: escribir el nombre basta.
 function guardarPlato(datos, previo = null) {
   const p = previo || { id: uid(), tags: [] };
@@ -162,10 +180,10 @@ function render(cont, params) {
     buscarPl: el => { params.q = el.value; render(cont, params); },
     momPl: el => { params.mom = el.value; render(cont, params); },
     ordenPl: el => { params.orden = el.value; render(cont, params); },
-    nuevoPl: async () => { const v = await pedir('Nuevo plato', camposPlato, {}, { dictar: 'descripcion' }); if (v) { guardarPlato(v); toast('Guardado; el mayordomo completa la ficha'); } },
+    nuevoPl: async () => { const v = await pedir('Nuevo plato', camposPlato, {}, opcionesPlato); if (v) { guardarPlato(v); toast('Guardado; el mayordomo completa la ficha'); } },
     editarPl: async el => {
       const p = estado.platos.find(x => x.id === el.dataset.id);
-      const v = await pedir('Editar plato', camposPlato, p, { extra: 'Borrar', dictar: 'descripcion', otro: 'Rehacer ficha' });
+      const v = await pedir('Editar plato', camposPlato, p, { ...opcionesPlato, extra: 'Borrar', otro: 'Rehacer ficha' });
       if (!v) return;
       if (v.__extra) { if (await confirmar('¿Borrar el plato?')) { estado.platos = estado.platos.filter(x => x.id !== p.id); guardar(); } return; }
       if (v.__otro) { p.descripcionManual = false; if (await analizarPlato(p, { forzar: true })) toast('Ficha rehecha'); return; }

@@ -1,0 +1,24 @@
+{
+  "fecha": "2026-09-22T19:35:00+02:00",
+  "titulo": "«Crear con IA» en la ficha del plato",
+  "objetivo": "Rellenar ingredientes, preparación y nutrientes de un plato a partir de su nombre desde el propio formulario.",
+  "prompts": [
+    { "texto": "En editar plato, debajo del ingrediente reparación y nutrientes, poner un botón de \"Crear con IA\" para que rellene los ingredientes reparación y nutrientes a partir del título.", "nota": "Adjuntó una captura del diálogo Editar plato." }
+  ],
+  "cambios": [
+    "Botón «✨ Crear con IA» bajo la descripción en Nuevo y Editar plato, junto al micrófono.",
+    "Escribe la ficha en el formulario abierto sin cerrarlo; también etiquetas (si vacías) y minutos.",
+    "Prompt del plato extraído a fichaIA(), compartido con analizarPlato().",
+    "Prueba de humo tools/prueba-plato-ia.mjs."
+  ],
+  "sha": "c2050b0",
+  "sha_completo": "c2050b0fc7e3f38eef3d45bb569c190d19b77356",
+  "run": null,
+  "mock": null,
+  "build": "MA-B1-20260922-029",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/alimentacion?v=platos",
+  "fly": null,
+  "pendiente": ["Merge a main y verificar pages.yml"],
+  "enlaces": [],
+  "notas": "Cambio desarrollado en la rama claude/dreamy-archimedes-gvmve8; se publica al mergear a main."
+}

@@ -68,49 +68,91 @@ export function adivinar(desc, importe = -1) {
 // Clave de cotejo de un movimiento. La descripción se normaliza (minúsculas, sin tildes, espacios
 // colapsados) porque dos exportaciones del mismo banco imprimen el mismo apunte con espaciados
 // distintos y, sin normalizar, el duplicado se cuela como movimiento nuevo.
-const claveMov = m => `${m.fecha}|${m.importe}|${sinTildes(m.descripcion).replace(/\s+/g, ' ').trim()}`;
+const norm = t => sinTildes(t).replace(/\s+/g, ' ').trim();
+const claveMov = m => `${m.fecha}|${m.importe}|${norm(m.descripcion)}`;
+
+// Une en una sola descripción las columnas de texto del extracto («Bizum» · «Enviado: 2 parte» ·
+// «ENVIADO: 2 parte»). Un banco reparte la misma información entre concepto, movimiento y
+// observaciones, y la de observaciones suele repetir la anterior en mayúsculas: de dos trozos en
+// que uno contiene al otro se conserva solo el más largo, que es el que informa.
+export function unirDescripcion(partes) {
+  const out = [];
+  for (const p of partes) {
+    const t = String(p ?? '').replace(/\s+/g, ' ').trim();
+    if (!t) continue;
+    const k = sinTildes(t);
+    const i = out.findIndex(o => { const ko = sinTildes(o); return ko === k || k.includes(ko) || ko.includes(k); });
+    if (i < 0) out.push(t);
+    else if (sinTildes(out[i]).length < k.length) out[i] = t;
+  }
+  return out.join(' · ');
+}
 
 // Importa candidatos {fecha, descripcion, importe} cotejándolos con lo ya guardado y preguntando
 // qué hacer con los que ya existen. Dos apuntes idénticos el mismo día son legítimos (dos cafés
-// iguales), así que el cotejo va por multiplicidad: cada fila del fichero consume un existente de
-// su misma clave y solo la que se queda sin pareja es nueva. Antes se saltaban en silencio, lo que
-// además perdía el segundo de dos apuntes gemelos.
+// iguales), así que el cotejo va por multiplicidad: cada fila del fichero consume un existente y
+// solo la que se queda sin pareja es nueva.
+// El cotejo tiene dos niveles, porque la descripción depende de qué columnas se eligieran al
+// importar: primero por fecha + importe + descripción, y con lo que sobre, por fecha + importe.
+// Sin el segundo nivel, reimportar el mismo extracto con un mapeo de columnas distinto duplicaría
+// todo el año. Emparejar por multiplicidad hace que ese segundo nivel sea seguro: dos cargos del
+// mismo día y el mismo importe se emparejan uno a uno, así que el número de movimientos no cambia
+// ni se pierde ninguno, solo puede intercambiarse qué descripción queda en cuál.
 // Devuelve {n, rep, omit} o null si se cancela: cancelar no escribe nada.
 async function importarMovimientos(cands, origen = '') {
-  const libres = new Map();
-  for (const m of estado.movimientos) {
-    const k = claveMov(m);
-    if (!libres.has(k)) libres.set(k, []);
-    libres.get(k).push(m);
-  }
-  const nuevos = [], pares = [];
-  for (const c of cands) {
-    const cola = libres.get(claveMov(c));
-    if (cola && cola.length) pares.push({ c, mov: cola.shift() }); else nuevos.push(c);
-  }
-  let modo = 'saltar';
-  if (pares.length) {
-    const uno = pares.length === 1;
-    const v = await pedir(uno ? 'Un movimiento que ya existe' : 'Movimientos que ya existen', [{
-      n: 'modo', l: uno ? 'Qué hago con el que ya está' : `Qué hago con los ${pares.length} que ya están`, t: 'select', v: 'saltar',
-      o: [{ v: 'saltar', l: uno ? 'Saltar: dejarlo como está' : `Saltar: dejar los ${pares.length} como están` }, { v: 'reemplazar', l: uno ? 'Reemplazar: rehacerlo con lo del fichero' : 'Reemplazar: rehacerlos con lo del fichero' }],
-      ayuda: 'Reemplazar rehace descripción, importe y concepto desde el fichero; el concepto que hayas puesto a mano no se toca. Saltar deja intacto lo guardado.',
-    }], {}, {
-      texto: `${origen ? origen + ': ' : ''}${cands.length} ${cands.length === 1 ? 'movimiento' : 'movimientos'} en el fichero. ${nuevos.length} ${nuevos.length === 1 ? 'es nuevo' : 'son nuevos'} y se ${nuevos.length === 1 ? 'añade' : 'añaden'} igualmente; ${pares.length} ya ${pares.length === 1 ? 'está guardado' : 'están guardados'} (misma fecha, descripción e importe).`,
+  const usados = new Set();
+  const indexar = clave => {
+    const m = new Map();
+    for (const mov of estado.movimientos) { const k = clave(mov); if (!m.has(k)) m.set(k, []); m.get(k).push(mov); }
+    return m;
+  };
+  const exactos = indexar(claveMov), aproximados = indexar(m => `${m.fecha}|${m.importe}`);
+  const tomar = (mapa, k) => {
+    const cola = mapa.get(k);
+    while (cola && cola.length) { const m = cola.shift(); if (!usados.has(m)) { usados.add(m); return m; } }
+    return null;
+  };
+  // Dos pasadas completas: las coincidencias exactas se reparten antes que las aproximadas, o una
+  // fila con otra descripción podría quedarse con el movimiento que le tocaba a su gemela exacta.
+  const iguales = [], resto = [];
+  for (const c of cands) { const m = tomar(exactos, claveMov(c)); if (m) iguales.push({ c, mov: m }); else resto.push(c); }
+  const parecidos = [], nuevos = [];
+  for (const c of resto) { const m = tomar(aproximados, `${c.fecha}|${c.importe}`); if (m) parecidos.push({ c, mov: m }); else nuevos.push(c); }
+
+  const opciones = (n, que) => [{ v: 'saltar', l: n === 1 ? `Saltar: dejar ${que} como está` : `Saltar: dejar ${que} como están` }, { v: 'reemplazar', l: n === 1 ? 'Reemplazar: rehacerlo con lo del fichero' : 'Reemplazar: rehacerlos con lo del fichero' }];
+  let modoIg = 'saltar', modoPar = 'reemplazar';
+  if (iguales.length || parecidos.length) {
+    const campos = [];
+    if (iguales.length) campos.push({
+      n: 'ig', t: 'select', v: 'saltar', o: opciones(iguales.length, iguales.length === 1 ? 'el que ya está' : `los ${iguales.length}`),
+      l: iguales.length === 1 ? '1 idéntico (misma fecha, importe y descripción)' : `${iguales.length} idénticos (misma fecha, importe y descripción)`,
+    });
+    if (parecidos.length) campos.push({
+      n: 'par', t: 'select', v: 'reemplazar', o: opciones(parecidos.length, parecidos.length === 1 ? 'el guardado' : 'los guardados'),
+      l: parecidos.length === 1 ? '1 con la misma fecha e importe, pero otra descripción' : `${parecidos.length} con la misma fecha e importe, pero otra descripción`,
+      ayuda: 'Suelen ser los mismos movimientos importados antes con otras columnas de descripción. Reemplazar les pone la descripción del fichero de ahora; en ningún caso se añaden por duplicado.',
+    });
+    const v = await pedir(iguales.length + parecidos.length === 1 ? 'Un movimiento que ya existe' : 'Movimientos que ya existen', campos, {}, {
+      texto: `${origen ? origen + ': ' : ''}${cands.length} ${cands.length === 1 ? 'movimiento' : 'movimientos'} en el fichero. ${nuevos.length} ${nuevos.length === 1 ? 'es nuevo y se añade' : 'son nuevos y se añaden'} igualmente. Reemplazar rehace descripción, importe y concepto; el concepto que hayas puesto a mano nunca se toca.`,
       aceptar: 'Importar',
     });
     if (!v) return null;
-    modo = v.modo;
+    if (iguales.length) modoIg = v.ig;
+    if (parecidos.length) modoPar = v.par;
   }
+
   for (const c of nuevos) estado.movimientos.push({ id: uid(), fecha: c.fecha, descripcion: c.descripcion, importe: c.importe, concepto: adivinar(c.descripcion, c.importe) });
   let rep = 0;
-  if (modo === 'reemplazar') for (const { c, mov } of pares) {
-    mov.fecha = c.fecha; mov.descripcion = c.descripcion; mov.importe = c.importe;
-    if (!mov.conceptoManual) mov.concepto = adivinar(c.descripcion, c.importe);
-    rep++;
+  for (const [grupo, modo] of [[iguales, modoIg], [parecidos, modoPar]]) {
+    if (modo !== 'reemplazar') continue;
+    for (const { c, mov } of grupo) {
+      mov.fecha = c.fecha; mov.descripcion = c.descripcion; mov.importe = c.importe;
+      if (!mov.conceptoManual) mov.concepto = adivinar(c.descripcion, c.importe);
+      rep++;
+    }
   }
   guardar();
-  return { n: nuevos.length, rep, omit: pares.length - rep };
+  return { n: nuevos.length, rep, omit: iguales.length + parecidos.length - rep };
 }
 
 // Plan B del PDF: el texto suelto al mayordomo, que devuelve los movimientos en JSON.
@@ -189,16 +231,24 @@ function render(cont, params) {
       const ops = p.cab.map((c, i) => ({ v: i, l: c || 'columna ' + (i + 1) }));
       const adiv = re => Math.max(0, p.cab.findIndex(c => re.test(c)));
       const m0 = p.filas[0];
+      // Un banco reparte la descripción entre varias columnas (concepto, movimiento, observaciones)
+      // y ninguna sola basta: «Bizum» sin «Enviado a …» no dice nada. Por eso se marcan todas las
+      // que la componen, no una. Se preseleccionan las de texto conocidas; las de saldo, divisa y
+      // fecha se dejan fuera porque solo ensucian la descripción y, con ella, la clasificación.
+      const TEXTO = /concepto|descrip|detalle|movimiento|observ|referencia|beneficiar|ordenante|comercio|establecimiento|remitente|notas?\b/i;
+      const marcadas = p.cab.map((c, i) => [c, i]).filter(([c]) => TEXTO.test(c)).map(([, i]) => String(i));
       const v = await pedir('Columnas del extracto', [
         { n: 'f', l: 'Fecha', t: 'select', o: ops, v: adiv(/fecha|date/i) },
-        { n: 'd', l: 'Descripción / concepto', t: 'select', o: ops, v: adiv(/concepto|descrip|detalle/i) },
         { n: 'i', l: 'Importe', t: 'select', o: ops, v: adiv(/importe|amount|cantidad/i) },
+        { n: 'd', l: 'Descripción: marca todas las columnas que la forman', t: 'checks', o: ops, v: marcadas.length ? marcadas : [String(adiv(/concepto|descrip|detalle/i))], ayuda: 'Se unen con « · » en ese orden, sin repetir lo que ya diga otra columna. Cuanto más texto, mejor clasifica el concepto.' },
         { n: 'inv', l: 'Los gastos vienen en positivo (invertir el signo)', t: 'check' },
-      ], {}, { texto: `${p.origen}: ${p.filas.length} filas. Primera: ${m0.filter(Boolean).slice(0, 4).join(' · ')}. Si alguna ya está guardada se preguntará si reemplazarla o saltarla.`, aceptar: 'Continuar' });
+      ], {}, { texto: `${p.origen}: ${p.filas.length} filas. Primera: ${m0.filter(Boolean).slice(0, 5).join(' · ')}. Si alguna ya está guardada se preguntará si reemplazarla o saltarla.`, aceptar: 'Continuar' });
       if (!v) return;
+      const cols = (v.d || []).map(Number).filter(i => !isNaN(i));
+      if (!cols.length) return toast('Marca al menos una columna para la descripción', 5000);
       const cands = []; let mal = 0;
       for (const fila of p.filas) {
-        const fecha = fechaNorm(fila[v.f]); let importe = num(fila[v.i]); const descripcion = String(fila[v.d] || '').trim();
+        const fecha = fechaNorm(fila[v.f]); let importe = num(fila[v.i]); const descripcion = unirDescripcion(cols.map(k => fila[k]));
         if (!fecha || importe == null) { mal++; continue; }
         if (v.inv) importe = -importe;
         cands.push({ fecha, descripcion, importe });

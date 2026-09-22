@@ -1,0 +1,23 @@
+{
+  "fecha": "2026-09-22T19:45:00+02:00",
+  "titulo": "«Crear con IA» del plato, publicado y comprobado",
+  "objetivo": "Publicar en main el botón «Crear con IA» de la ficha del plato y cerrar la sesión.",
+  "prompts": [
+    { "texto": "Mergea a main para que pueda probarlo" },
+    { "texto": "Funciona, cierra sesión" }
+  ],
+  "cambios": [
+    "PR #20 mergeado a main; Pages publicado y verificado por el workflow.",
+    "Resumen de sesión actualizado con el SHA de main y el run."
+  ],
+  "sha": "11e2f14",
+  "sha_completo": "11e2f148d8129402dbafed7a7a8c76b6c94ac0a2",
+  "run": 35761929560,
+  "mock": null,
+  "build": "MA-B1-20260922-029",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/alimentacion?v=platos",
+  "fly": null,
+  "pendiente": [],
+  "enlaces": [{ "texto": "PR #20", "url": "https://github.com/npiobject-labs/maydom/pull/20" }],
+  "notas": "Continúa la entrada 20260922-1735 (desarrollo del botón); el usuario confirmó que funciona en la app publicada."
+}

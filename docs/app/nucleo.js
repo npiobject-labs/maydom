@@ -14,7 +14,7 @@ const vacio = () => ({
   eventos: [], notas: [], ejercicios: [], tablas: [], sesionesEjercicio: [], pildoras: [],
   sueno: [], alimentos: [], platos: [], menus: [], comidas: [],
   suplementos: [], tomas: [], compra: [], proyectos: [], horas: [], sesionTrabajo: null,
-  ocio: [], movimientos: [], recurrentes: [], tiendas: [], consejos: [], chat: [], memoria: [],
+  ocio: [], movimientos: [], recurrentes: [], importaciones: [], tiendas: [], consejos: [], chat: [], memoria: [],
   ajustes: { backend: '', clave: '', avisos: false, tema: 'auto', semillasCargadas: false, llm: null },
 });
 
@@ -72,8 +72,13 @@ export function hhmm(min) { min = ((min % 1440) + 1440) % 1440; return `${pad(Ma
 export function duracionTexto(min) { if (min == null || isNaN(min)) return '–'; const h = Math.floor(min / 60), m = Math.round(min % 60); return h ? `${h} h${m ? ' ' + pad(m) : ''}` : `${m} min`; }
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-export function fechaLarga(iso) { const d = new Date(iso + 'T12:00:00'); return `${DIAS[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}`; }
-export function fechaCorta(iso) { const d = new Date(iso + 'T12:00:00'); return `${d.getDate()} ${MESES[d.getMonth()]}`; }
+const MESES_LARGO = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+// Toda fecha que se pinta en pantalla va en día/mes/año: el ISO solo vive en los datos y en los
+// <input type=date>, que ya los muestra el navegador en el formato del sistema.
+export function fechaCorta(iso) { const d = new Date(iso + 'T12:00:00'); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`; }
+export function fechaLarga(iso) { const d = new Date(iso + 'T12:00:00'); return `${DIAS[d.getDay()]} ${fechaCorta(iso)}`; }
+export const mesNombre = mes => `${MESES_LARGO[Number(mes.slice(5)) - 1]} ${mes.slice(0, 4)}`;
+export const mesAbrev = mes => MESES[Number(mes.slice(5)) - 1];
 export function diaSemana(iso) { return new Date(iso + 'T12:00:00').getDay(); }
 export function mesISO(iso) { return iso.slice(0, 7); }
 export function diasEntre(a, b) { return Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000); }

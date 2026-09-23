@@ -1,6 +1,6 @@
 // Prueba de humo del modo cocina: paso 0 de ingredientes (lo que falta va a Compra), pasos que la IA
 // afina en segundo plano, temporizador que suena y se para, ficha plegada y sesión que sobrevive a
-// una recarga. El gateway simulado da un paso de 3 segundos para no esperar minutos.
+// una recarga, y manos libres con un reconocimiento de voz simulado. El gateway simulado da un paso de 3 segundos para no esperar minutos.
 // Uso: npm i playwright && node tools/prueba-cocina.mjs
 import { chromium } from 'playwright';
 import http from 'node:http';
@@ -44,6 +44,16 @@ const fallos = [];
 const comprobar = (ok, msg) => { console.log((ok ? '  ok  ' : '  FALLO ') + msg); if (!ok) fallos.push(msg); };
 
 
+// Voz simulada: window.__oir('texto') entrega una frase al reconocedor abierto y __dicho guarda lo leído.
+await pag.addInitScript(() => {
+  window.__dicho = []; window.__rec = null;
+  class Rec { start() { window.__rec = this; } abort() { if (window.__rec === this) window.__rec = null; } stop() { this.abort(); } }
+  window.SpeechRecognition = window.webkitSpeechRecognition = Rec;
+  window.__oir = t => { const r = window.__rec; if (!r) return false; const res = [{ transcript: t }]; res.isFinal = true; r.onresult({ results: [res] }); return true; };
+  const sintesis = { speaking: false, cancel() { }, speak(u) { window.__dicho.push(u.text); } };
+  Object.defineProperty(window, 'speechSynthesis', { value: sintesis, configurable: true });
+  window.SpeechSynthesisUtterance = class { constructor(t) { this.text = t; } };
+});
 const FICHA = 'Ingredientes:\n1 rebanada de pan de ayer (100g),\n2 dientes de ajo,\nsal.\n\n____________________________\n\nPreparación:\nSofríe los ajos laminados en aceite. Cocina a fuego lento 10 minutos.';
 await pag.goto('http://localhost:8095/?api=8098#/alimentacion?v=platos'); await pag.waitForTimeout(400);
 await pag.evaluate(f => { const e = JSON.parse(localStorage.getItem('maydom.v1')); e.platos = [{ id: 'sopa', nombre: 'Sopas de ajo', momentos: ['cena'], tags: [], min: 25, descripcion: f }]; localStorage.setItem('maydom.v1', JSON.stringify(e)); }, FICHA);
@@ -82,7 +92,31 @@ comprobar(await pag.locator('.reloj.sonando').count() === 1, 'al acabar el tiemp
 await pag.locator('.reloj [data-a="pararC"]').click(); await pag.waitForTimeout(200);
 comprobar(await pag.locator('.reloj').count() === 0, 'Parar lo quita');
 
-console.log('\n--- 4. Terminar ---');
+console.log('\n--- 4. Manos libres ---');
+await pag.locator('[data-a="irC"]').first().click(); await pag.waitForTimeout(200);
+await pag.locator('[data-a="manosC"]').click(); await pag.waitForTimeout(300);
+comprobar(await pag.evaluate(() => !!window.__rec), 'el micrófono queda escuchando');
+const actual = () => pag.locator('.paso.actual').innerText();
+await pag.evaluate(() => { window.__dicho = []; window.__oir('repite'); }); await pag.waitForTimeout(150);
+comprobar((await pag.evaluate(() => window.__dicho.join(' '))).includes('Lamina'), '«repite» lee el paso actual');
+await pag.evaluate(() => window.__oir('Siguiente')); await pag.waitForTimeout(300);
+comprobar((await actual()).includes('Sofríe'), '«siguiente» pasa al paso siguiente');
+await pag.evaluate(() => window.__oir('pon el temporizador')); await pag.waitForTimeout(300);
+comprobar(await pag.locator('.reloj').count() === 1, '«temporizador» arranca el del paso');
+await pag.evaluate(() => { window.__dicho = []; window.__oir('¿cuánto queda?'); }); await pag.waitForTimeout(150);
+comprobar((await pag.evaluate(() => window.__dicho.join(' '))).includes('segundos'), '«cuánto queda» dice el tiempo');
+await pag.waitForTimeout(3500);
+await pag.evaluate(() => window.__oir('para')); await pag.waitForTimeout(300);
+comprobar(await pag.locator('.reloj').count() === 0, '«para» apaga la alarma');
+await pag.evaluate(() => window.__oir('anterior')); await pag.waitForTimeout(300);
+comprobar((await actual()).includes('Lamina'), '«anterior» vuelve atrás');
+await pag.evaluate(() => { window.__oir('siguiente'); }); await pag.waitForTimeout(300);
+await pag.locator('[data-a="salirC"]').click(); await pag.waitForTimeout(300);
+comprobar(await pag.evaluate(() => !window.__rec), 'al salir de la cocina deja de escuchar');
+await pag.locator('[data-a="cocinar"]').first().click(); await pag.waitForTimeout(400);
+comprobar(await pag.evaluate(() => !!window.__rec), 'al volver sigue en manos libres');
+
+console.log('\n--- 5. Terminar ---');
 await pag.locator('.paso.actual [data-a="hechoC"]').click(); await pag.waitForTimeout(200);
 await pag.locator('.paso.actual [data-a="hechoC"]').click(); await pag.waitForTimeout(200);
 await pag.locator('[data-a="finC"][data-apuntar]').click(); await pag.waitForTimeout(400);

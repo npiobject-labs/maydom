@@ -86,8 +86,8 @@ const sonido = {
 };
 // El navegador solo deja sonar audio tras un toque del usuario: cualquiera vale mientras se cocina.
 document.addEventListener('pointerdown', () => { if (ses) sonido.desbloquear(); }, { passive: true });
-function decir(texto) {
-  if (!ses?.voz || !('speechSynthesis' in window)) return;
+function decir(texto, forzar = false) {
+  if (!texto || !(ses?.voz || forzar) || !('speechSynthesis' in window)) return;
   try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(texto); u.lang = 'es-ES'; speechSynthesis.speak(u); } catch { }
 }
 // Con las manos en la masa la pantalla no debe apagarse; el bloqueo se pierde al cambiar de app.
@@ -159,10 +159,86 @@ async function terminar(apuntar) {
     estado.comidas.push({ id: uid(), fecha: hoyISO(), tipo, segunMenu: menu?.[tipo] === ses.platoId, que: platoDe(ses.platoId)?.nombre || '' });
     toast(`Apuntado como ${tipo} de hoy`);
   }
-  ses = null; persistir(); pantallaEncendida(false);
+  ses = null; persistir(); pantallaEncendida(false); dejarDeEscuchar();
   if (apuntar) guardar();
   navegar('alimentacion', { v: 'platos' });
 }
+
+// ---------- acciones (las comparten los botones y la voz) ----------
+const pasosSes = () => ses?.pasos || [];
+function ir(i) {
+  const pasos = pasosSes(); if (!pasos.length) return;
+  ses.paso = Math.max(0, Math.min(i, pasos.length - 1)); ses.fase = 'pasos'; persistir(); repintar();
+  decir(pasos[ses.paso].texto); window.scrollTo?.(0, 0);
+}
+function siguiente() {
+  if (ses.fase === 'ingredientes') { if (pasosSes().length) ir(0); return; }
+  if (ses.fase !== 'pasos') return;
+  ses.hechos[ses.paso] = true;
+  if (ses.paso >= pasosSes().length - 1) { ses.fase = 'fin'; persistir(); repintar(); decir('Plato terminado'); } else ir(ses.paso + 1);
+}
+const anterior = () => ir(ses.fase === 'fin' ? pasosSes().length - 1 : ses.paso - 1);
+function repetir() {
+  if (ses.fase === 'pasos') decir(`Paso ${ses.paso + 1}. ${pasosSes()[ses.paso]?.texto || ''}`, true);
+  else if (ses.fase === 'ingredientes') decir('Ingredientes: ' + ingredientesDe(platoDe(ses.platoId)?.descripcion).join(', ') + '. Di siguiente para empezar.', true);
+  else decir('Plato terminado', true);
+}
+function relojDelPaso(i = ses.paso) {
+  const x = pasosSes()[i];
+  if (ses.fase !== 'pasos' || !x || !(x.min || x.cada)) return false;
+  if (ses.timers.some(t => t.paso === i)) return true;
+  nuevoReloj({ texto: x.texto, min: x.min, cada: x.cada, paso: i }); repintar(); return true;
+}
+function pararAlarmas() {
+  const antes = ses.timers.length;
+  ses.timers = ses.timers.filter(t => !t.sonando); persistir(); repintar();
+  try { speechSynthesis.cancel(); } catch { }
+  return antes !== ses.timers.length;
+}
+function cuantoQueda() {
+  const ahora = Date.now(), vivos = ses.timers.filter(t => t.fin && !t.sonando);
+  decir(vivos.length ? vivos.map(t => { const s = Math.round((t.fin - ahora) / 1000); return `${t.texto}: ${s >= 60 ? Math.floor(s / 60) + ' minutos y ' : ''}${s % 60} segundos`; }).join('. ') : 'No hay temporizadores en marcha', true);
+}
+
+// ---------- manos libres ----------
+// Con las manos manchadas se cocina hablando: el micrófono queda abierto mientras la vista de cocina
+// está delante y cada frase reconocida se busca en ORDENES. Lo que dice la propia app (la voz) se
+// ignora para que «siguiente paso…» leído en alto no se tome como orden.
+const sinTildes = t => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+export const ORDENES = [
+  [/\b(cuanto queda|cuanto falta|tiempo que queda)\b/, cuantoQueda],
+  [/\b(repite|repetir|otra vez|vuelve a leer|lee|como era|que era)\b/, repetir],
+  [/\b(para|parar|basta|silencio|calla|apaga)\b/, () => { if (!pararAlarmas()) decir('Vale', true); }],
+  [/\b(anterior|atras|vuelve)\b/, anterior],
+  [/\b(temporizador|cronometro|pon el tiempo|empieza el tiempo|cuenta)\b/, () => { if (!relojDelPaso()) decir('Este paso no lleva tiempo', true); }],
+  [/\b(siguiente|hecho|listo|terminado|ya esta|empieza|empezar|adelante)\b/, siguiente],
+];
+export function interpretarOrden(texto) {
+  const t = sinTildes(texto || '');
+  const o = ORDENES.find(([re]) => re.test(t));
+  if (o && ses) { o[1](); return true; }
+  return false;
+}
+let oido = null;
+const enVista = () => !!ses?.manos && /v=cocinar/.test(location.hash) && document.visibilityState === 'visible';
+function escuchar() {
+  const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (oido || !Rec || !enVista()) return;
+  const rec = new Rec(); oido = rec;
+  rec.lang = 'es-ES'; rec.continuous = true; rec.interimResults = false;
+  rec.onresult = e => {
+    const r = e.results[e.results.length - 1];
+    if (!r?.isFinal || window.speechSynthesis?.speaking) return;
+    const texto = r[0]?.transcript || '';
+    if (!interpretarOrden(texto)) toast('🎙 «' + texto.trim() + '»: di siguiente, repite, anterior, temporizador o para', 3500);
+  };
+  rec.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { ses.manos = false; persistir(); toast('Sin permiso para el micrófono'); repintar(); } };
+  rec.onend = () => { oido = null; if (enVista()) setTimeout(escuchar, 300); };
+  try { rec.start(); } catch { oido = null; }
+}
+function dejarDeEscuchar() { const r = oido; oido = null; try { r?.abort(); } catch { } }
+window.addEventListener('hashchange', () => { if (!enVista()) dejarDeEscuchar(); });
+document.addEventListener('visibilitychange', () => { if (enVista()) escuchar(); else dejarDeEscuchar(); });
 
 // ---------- vista ----------
 export function pintarCocina(cont) {
@@ -198,13 +274,14 @@ export function pintarCocina(cont) {
       <div class="acciones"><button class="btn p" data-a="finC" data-apuntar="1">Apuntar como comida de hoy</button><button class="btn" data-a="finC">Terminar</button><button class="btn" data-a="irC" data-n="${pasos.length - 1}">‹ Volver al último paso</button></div></div>`;
   }
   cont.innerHTML = h`
-    <div class="fila cab"><div class="t"><div class="mini">🍳 Cocinando</div><b>${p.nombre}</b></div><button class="btn mini" data-a="vozC" aria-pressed="${ses.voz ? 'true' : 'false'}">${ses.voz ? '🔊 Voz' : '🔇 Voz'}</button><button class="btn mini" data-a="salirC">Salir</button></div>
+    <div class="fila cab"><div class="t"><div class="mini">🍳 Cocinando</div><b>${p.nombre}</b></div>${'SpeechRecognition' in window || 'webkitSpeechRecognition' in window ? crudo(`<button class="btn mini ${ses.manos ? 'p' : ''}" data-a="manosC" aria-pressed="${ses.manos ? 'true' : 'false'}">🎙 ${ses.manos ? 'Escuchando' : 'Manos libres'}</button>`) : ''}<button class="btn mini" data-a="vozC" aria-pressed="${ses.voz ? 'true' : 'false'}">${ses.voz ? '🔊 Voz' : '🔇 Voz'}</button><button class="btn mini" data-a="salirC">Salir</button></div>
+    ${ses.manos ? crudo('<div class="mini">🎙 Di <b>siguiente</b>, <b>repite</b>, <b>anterior</b>, <b>temporizador</b>, <b>cuánto queda</b> o <b>para</b>.</div>') : ''}
     ${ses.timers.length ? crudo(`<div class="relojes">${relojes}</div>`) : ''}
     <details class="plegable" ${fichaAbierta ? 'open' : ''}><summary>Ficha del plato <span class="mini">ingredientes, preparación y nutrientes</span></summary><div class="cuerpo"><div class="ficha-completa">${p.descripcion || 'Sin ficha.'}</div></div></details>
     ${cuerpo}
     <div class="acciones"><button class="btn" data-a="libreC">+ Temporizador</button>${ses.fase !== 'fin' ? crudo('<button class="btn" data-a="finC">Terminar</button>') : ''}</div>`;
   cont.querySelector('details.plegable')?.addEventListener('toggle', e => { fichaAbierta = e.target.open; });
-  const ir = i => { ses.paso = Math.max(0, Math.min(i, pasos.length - 1)); ses.fase = 'pasos'; persistir(); repintar(); decir(pasos[ses.paso]?.texto || ''); window.scrollTo?.(0, 0); };
+  if (ses.manos) escuchar();
   delegar(cont, {
     tengoC: el => { ses.tengo[el.dataset.n] = el.checked; persistir(); },
     todoC: () => { ings.forEach((_, i) => { ses.tengo[i] = true; }); persistir(); repintar(); },
@@ -222,11 +299,8 @@ export function pintarCocina(cont) {
       ir(0);
     },
     irC: el => ir(Number(el.dataset.n)),
-    hechoC: el => {
-      const i = Number(el.dataset.n); ses.hechos[i] = true;
-      if (i >= pasos.length - 1) { ses.fase = 'fin'; persistir(); repintar(); decir('Plato terminado'); } else ir(i + 1);
-    },
-    relojC: el => { const i = Number(el.dataset.n), x = pasos[i]; nuevoReloj({ texto: x.texto, min: x.min, cada: x.cada, paso: i }); repintar(); },
+    hechoC: el => { ses.paso = Number(el.dataset.n); siguiente(); },
+    relojC: el => relojDelPaso(Number(el.dataset.n)),
     masC: el => { const t = ses.timers.find(x => x.id === el.dataset.id); if (t) { t.fin += 60000; persistir(); tick(); } },
     pararC: el => { ses.timers = ses.timers.filter(x => x.id !== el.dataset.id); persistir(); repintar(); },
     libreC: async () => {
@@ -235,7 +309,11 @@ export function pintarCocina(cont) {
       nuevoReloj({ texto: v.texto || 'Temporizador', min: Number(v.min) || 0, cada: Number(v.cada) || 0 }); repintar();
     },
     vozC: () => { ses.voz = !ses.voz; persistir(); repintar(); if (ses.voz) decir(ses.fase === 'pasos' ? pasos[ses.paso]?.texto : 'Voz activada'); },
-    leerC: el => decir(pasos[Number(el.dataset.n)]?.texto || ''),
+    leerC: () => repetir(),
+    manosC: () => {
+      ses.manos = !ses.manos;
+      if (ses.manos) { ses.voz = true; persistir(); repintar(); decir('Te escucho. Di siguiente o repite.'); escuchar(); } else { persistir(); dejarDeEscuchar(); repintar(); }
+    },
     salirC: () => navegar('alimentacion', { v: 'platos' }),
     finC: el => terminar(!!el.dataset.apuntar),
   });

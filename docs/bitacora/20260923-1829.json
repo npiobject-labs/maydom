@@ -1,0 +1,25 @@
+{
+  "fecha": "2026-09-23T18:29:00+02:00",
+  "titulo": "Formato único de la ficha del plato",
+  "objetivo": "Que todos los platos, actuales y nuevos, usen el formato de la ficha de «Sopas de ajo castellana».",
+  "prompts": [
+    { "texto": "En la sección de platos, utiliza el formato que tiene el plato \"Sopas de ajo castellana\" unas vez tengas estudiado y programado el formato, aplicalo al resto de los platos actuales y utilizarlo siempre como formato para cada nuevo patio" },
+    { "texto": "Formato del plato: Ingredientes (uno por línea) / raya / Preparación / raya / Por ración / raya / Nota", "nota": "resumido: el usuario pegó la ficha completa de las sopas de ajo como modelo" }
+  ],
+  "cambios": [
+    "Nuevo docs/app/ficha-plato.js que compone y normaliza la ficha en el formato modelo.",
+    "El LLM devuelve los apartados por separado y el formato lo pone el código.",
+    "Los platos guardados se reformatean al arrancar, sin LLM y sin cambiar lo escrito a mano.",
+    "La lista de platos respeta los saltos de línea de la ficha."
+  ],
+  "sha": "fd1b012",
+  "sha_completo": "fd1b012ab07b2478e7d16bd0cd45124391da7ffe",
+  "run": 35889078139,
+  "mock": null,
+  "build": "MA-B1-20260923-001",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/alimentacion?v=platos",
+  "fly": null,
+  "pendiente": ["Completar con «Completarlas» los platos que aún no tienen ficha"],
+  "enlaces": [],
+  "notas": "El segundo prompt se resume porque era la ficha pegada entera."
+}

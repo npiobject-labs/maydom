@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="build" content="MA-B1-20260923-003">
+<meta name="build" content="MA-B1-20260923-004">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#0B6E7A">
 <!-- App de Fly: <repo>-<owner>, el mismo nombre que deriva deploy.yml. Si el proyecto usa FLY_APP, cambia este content. -->
@@ -12,13 +12,14 @@
 <title>maydom</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="app/icono.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="app/icono.svg">
+<link rel="apple-touch-icon" href="app/icono-192.png">
 <link rel="stylesheet" href="app/estilos.css">
 </head>
 <body>
 <div class="app">
   <nav class="inferior" aria-label="Principal"><div class="in" id="nav"></div></nav>
   <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+    <div id="nueva-version" class="banda" role="status" hidden><span>Hay una versión nueva de maydom.</span><button class="btn" type="button">Actualizar</button></div>
     <header class="cab"><h1 id="titulo">maydom</h1><small id="sub"></small></header>
     <main id="main"><noscript>maydom necesita JavaScript.</noscript></main>
   </div>

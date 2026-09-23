@@ -168,7 +168,7 @@ Se revisa si aparece un segundo usuario, si hace falta sincronizar varios dispos
 | F4 | Mesa: Alimentación (menús, seguimiento, stock), Suplementos (stock, hora, umbral 10 %), Compra unificada | Hecha 20-sep (build 004) |
 | F5 | Vida: Proyectos (horas, semáforo, bloques con píldoras), Ocio (fijas, propuestas, conflictos, presupuesto), Finanzas (movimientos, extracto CSV/Excel/PDF, recurrentes, balances) | Hecha 20-sep (build 004); extracto en Excel y PDF el 21-sep (build 016) |
 | F6 | Mayordomo: consejos con estados, motor de reglas local, motor LLM vía backend, Buscador con catálogo de tiendas, exportar memoria | Hecha 20-sep (build 004) |
-| F7 | PWA: manifest, service worker, instalación, notificaciones locales | Hecha 20-sep (build 004) |
+| F7 | PWA: manifest, service worker, instalación, notificaciones locales | Hecha 20-sep (build 004); el 23-sep (build 20260923-004), aviso de versión nueva con «Actualizar», tarjeta Aplicación en Ajustes con «Instalar la app» e iconos PNG para que Chrome la ofrezca |
 | F8 | Backend: `POST /api/mayordomo` proxy a OpenRouter con CORS, sin clave en el cliente | Hecha 20-sep; probado en local con y sin clave. Falta la clave en Fly (D1) |
 | F9 | Deuda de desarrollo (§7) | Pendiente |
 | F10 | LLM por el gateway propio: funciones con IA en 8 secciones, clave de acceso, `X-Operacion`, foto del frigorífico, buscador interpretado, exportar memoria a GitHub | Hecha 21-sep (build 005) |

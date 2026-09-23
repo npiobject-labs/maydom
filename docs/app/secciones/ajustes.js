@@ -2,6 +2,7 @@ import { estado, guardar, reemplazarEstado, h, lista, crudo, delegar, pedir, con
 import { estadoLLM } from '../llm.js';
 import { esc } from '../nucleo.js';
 import * as S from '../datos/semillas.js';
+import { BUILD, buscarVersion, versionNueva, actualizar, instalar, instalada, puedeInstalar } from '../pwa.js';
 
 // Copia las semillas al estado si el catálogo correspondiente está vacío (o siempre, con forzar).
 export function cargarSemillas(forzar = false) {
@@ -27,8 +28,12 @@ function render(cont) {
       <div class="acciones"><button class="btn" data-a="semillas">Cargar las que falten</button><button class="btn" data-a="semillasForzar">Restaurar semillas (sobrescribe)</button></div></div>
     <h3>Avisos</h3>
     <div class="tarjeta"><div class="mini">Con la app abierta o instalada avisa de eventos, tomas y píldoras. Permiso: ${'Notification' in window ? Notification.permission : 'no disponible'}.</div>
-      <div class="acciones"><button class="btn" data-a="avisos">${a.avisos ? 'Avisos activados' : 'Activar avisos'}</button>
-        <button class="btn" data-a="instalar" id="btn-instalar" ${window.__instalar ? '' : 'hidden'}>Instalar en el móvil</button></div></div>
+      <div class="acciones"><button class="btn" data-a="avisos">${a.avisos ? 'Avisos activados' : 'Activar avisos'}</button></div></div>
+    <h3>Aplicación</h3>
+    <div class="tarjeta"><div class="mini">${instalada() ? 'Instalada en este dispositivo.' : puedeInstalar() ? 'Se puede instalar: queda en la pantalla de inicio, abre a pantalla completa y funciona sin red.' : 'El navegador aún no ofrece instalarla. En Chrome: menú ⋮ → «Instalar app» o «Añadir a pantalla de inicio»; en iPhone, Safari → Compartir → «Añadir a pantalla de inicio».'}</div>
+      ${puedeInstalar() && !instalada() ? crudo('<div class="acciones"><button class="btn p" data-a="instalar">Instalar la app</button></div>') : ''}
+      <div class="mini" id="salida-version" style="margin-top:.4rem">Build ${BUILD}.${versionNueva() ? ` Hay una versión nueva (${versionNueva()}).` : ''}</div>
+      <div class="acciones">${versionNueva() ? crudo('<button class="btn p" data-a="actualizar">Actualizar ahora</button>') : ''}<button class="btn" data-a="buscarVersion">Buscar actualización</button></div></div>
     <h3>Backend y mayordomo</h3>
     <div class="tarjeta"><div class="mini">URL: ${urlBackend()} ${a.backend ? '(manual)' : '(derivada del meta fly-app o localhost)'}</div>
       <div class="mini">Clave de acceso: ${a.clave ? '••••' + a.clave.slice(-4) : 'sin poner'} · el mayordomo usa el gateway openrouter del propio proyecto; su clave vive en el backend, nunca aquí.</div>
@@ -37,7 +42,7 @@ function render(cont) {
       <div id="salida-backend" class="mini"></div></div>
     <h3>Aspecto</h3>
     <div class="tarjeta"><div class="acciones">${lista(['auto', 'light', 'dark'].map(t => h`<button class="btn ${a.tema === t ? 'p' : ''}" data-a="tema" data-t="${t}">${{ auto: 'Sistema', light: 'Claro', dark: 'Oscuro' }[t]}</button>`))}</div></div>
-    <p class="mini">Build ${document.querySelector('meta[name=build]')?.content} · <a href="bitacora.html">bitácora</a> · <a href="mocks/">mocks</a> · <a href="holamundo.html">comprobación del backend</a></p>`;
+    <p class="mini"><a href="bitacora.html">bitácora</a> · <a href="mocks/">mocks</a> · <a href="holamundo.html">comprobación del backend</a></p>`;
   delegar(cont, {
     exportar: () => descargar(`maydom-${hoyISO()}.json`, JSON.stringify(estado, null, 1)),
     importar: async el => {
@@ -50,7 +55,14 @@ function render(cont) {
     semillas: () => { cargarSemillas(false); toast('Semillas cargadas'); },
     semillasForzar: async () => { if (await confirmar('Sobrescribe ejercicios, tablas, platos y tiendas con las semillas.')) { cargarSemillas(true); toast('Semillas restauradas'); } },
     avisos: async () => { if (await pedirPermisoAvisos()) toast('Avisos activados'); else toast('Sin permiso de avisos'); render(cont); },
-    instalar: async () => { if (window.__instalar) { window.__instalar.prompt(); await window.__instalar.userChoice; window.__instalar = null; render(cont); } },
+    instalar: async () => { if (await instalar()) toast('Instalada'); render(cont); },
+    actualizar,
+    buscarVersion: async el => {
+      const out = cont.querySelector('#salida-version'); el.disabled = true; el.textContent = 'Buscando…';
+      try { if (!(await buscarVersion())) out.textContent = `Build ${BUILD}. Es la última publicada.`; }
+      catch { out.textContent = `Build ${BUILD}. No se pudo comprobar si hay una más nueva (¿sin conexión?).`; }
+      finally { el.disabled = false; el.textContent = 'Buscar actualización'; }
+    },
     clave: async () => { const v = await pedir('Clave de acceso al mayordomo', [{ n: 'clave', l: 'Clave', ph: 'la del secreto MAYDOM_CLAVE', ayuda: 'Solo controla quién puede gastar presupuesto desde esta app. La clave del gateway no pasa por el navegador.' }], a); if (v) { a.clave = v.clave.trim(); guardar(); render(cont); } },
     estado: async () => {
       const out = cont.querySelector('#salida-backend'); out.textContent = 'Consultando…';

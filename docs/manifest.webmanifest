@@ -2,11 +2,17 @@
   "name": "maydom",
   "short_name": "maydom",
   "description": "Mayordomo personal: calendario, cuerpo, mesa, vida y consejos.",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#F6F7F4",
   "theme_color": "#0B6E7A",
   "lang": "es",
-  "icons": [{ "src": "app/icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+  "icons": [
+    { "src": "app/icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "app/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "app/icono-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "app/icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
 }

@@ -20,6 +20,7 @@ import preferencias from './secciones/preferencias.js';
 import buscador from './secciones/buscador.js';
 import ajustes from './secciones/ajustes.js';
 import menu from './secciones/menu.js';
+import { arrancarPWA } from './pwa.js';
 
 [hoy, calendario, notas, ejercicio, sueno, meditacion, alimentacion, suplementos, compra, proyectos, ocio, finanzas, mayordomo, preferencias, buscador, ajustes, menu].forEach(registrar);
 if (!estado.ajustes.semillasCargadas) cargarSemillas(false);
@@ -50,7 +51,7 @@ alCambiar(() => { if (!document.querySelector('dialog[open]')) render(); });
 render();
 arrancarVigilante();
 
-// PWA: service worker e instalación.
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => null);
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__instalar = e; const b = document.getElementById('btn-instalar'); if (b) b.hidden = false; });
+// PWA: service worker, aviso de versión nueva e instalación. Si Ajustes está delante, se repinta
+// cuando el navegador ofrece instalar (o deja de ofrecerlo) y cuando aparece una versión nueva.
+arrancarPWA(() => { if (actual === 'ajustes' && !document.querySelector('dialog[open]')) render(); });
 window.addEventListener('error', e => { if (e.message) toast('Error: ' + e.message, 5000); });

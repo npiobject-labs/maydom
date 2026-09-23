@@ -91,6 +91,7 @@ nav.inferior a .n{position:absolute;top:0;right:.1rem;background:var(--warn);col
 .semana div.sel{border-color:var(--acc);background:var(--acc2)}.semana div.hoy b{color:var(--acc)}
 .nota b{display:block;margin-bottom:.1rem}
 .nota .cuerpo{white-space:pre-wrap;color:var(--ink2);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.cuerpo.ficha{white-space:pre-wrap;color:var(--ink2);margin-top:.3rem;display:-webkit-box;-webkit-line-clamp:9;-webkit-box-orient:vertical;overflow:hidden}
 .btn.dictar{margin-top:.4rem}
 .btn.dictar.grabando{background:var(--mal);color:#fff;border-color:var(--mal);animation:latido 1.4s ease-in-out infinite}
 @keyframes latido{50%{opacity:.6}}

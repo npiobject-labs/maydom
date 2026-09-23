@@ -1,6 +1,7 @@
 import { estado, guardar, h, lista, crudo, esc, delegar, uid, hoyISO, sumarDias, fechaCorta, fechaLarga, pedir, confirmar, toast, aviso, navegar } from '../nucleo.js';
 import { sincronizarCompra } from './compra.js';
 import { pedirJSON, conLLM, reducirImagen, lista as listaLLM } from '../llm.js';
+import { componerFicha, formatearFicha } from '../ficha-plato.js';
 
 const TIPOS = ['desayuno', 'comida', 'cena'];
 const plato = id => estado.platos.find(p => p.id === id);
@@ -35,19 +36,21 @@ const camposPlato = [
   { n: 'tags', l: 'Etiquetas', t: 'tags', ayuda: ETIQUETAS_PLATO.join(', ') },
   { n: 'min', l: 'Minutos', t: 'number', v: 20 },
 ];
-// La ficha que redacta el LLM a partir del nombre (y de lo ya escrito, si hay algo).
+// La ficha que redacta el LLM a partir del nombre (y de lo ya escrito, si hay algo). El LLM devuelve
+// los apartados por separado y el texto lo compone componerFicha(): el formato no depende del modelo.
 const fichaIA = (nombre, descripcion) => pedirJSON({
   operacion: 'plato', contexto: false,
-  tarea: `Eres cocinero y sabes de nutrición. Para el plato que te digan, devuelve {"descripcion":"","etiquetas":[],"momentos":["desayuno"],"min":0}.
-La descripción, en español y en texto plano, con estas cuatro partes en este orden y cada una en su línea, sin markdown:
-Ingredientes: para una ración, con cantidades.
-Preparación: los pasos en dos o tres frases seguidas.
-Por ración: kilocalorías y gramos aproximados de proteína, hidratos y grasa.
-Nota: una indicación útil (a qué hora sienta mejor, cómo aligerarlo, conservación) o la línea entera vacía si no aplica.
+  tarea: `Eres cocinero y sabes de nutrición. Para el plato que te digan, devuelve {"ingredientes":[],"preparacion":[],"racion":"","nota":"","etiquetas":[],"momentos":["desayuno"],"min":0}, en español y en texto plano, sin markdown:
+ingredientes: para una ración, uno por elemento, con cantidad delante («1 rebanada de pan de ayer (100g)», «2 dientes de ajo», «sal»).
+preparacion: los pasos en uno o dos párrafos de dos o tres frases cada uno.
+racion: «450 kcal, 20g proteína, 40g hidratos, 20g grasa», con las cifras aproximadas del plato.
+nota: una indicación útil (a qué hora sienta mejor, cómo aligerarlo, conservación) o "" si no aplica.
 Si el plato que te dan ya trae una descripción o varios pasos, respétalos y complétalos, no los inventes de cero.
 Las etiquetas, de 1 a 4 de esta lista: ${ETIQUETAS_PLATO.join(', ')}. Los momentos, uno o varios de: desayuno, comida, cena, según cuándo encaje el plato de verdad. min es el tiempo total en minutos.`,
   mensaje: `Plato: ${nombre}\n${descripcion ? 'Lo que ya tengo escrito:\n' + String(descripcion).slice(0, 2000) : ''}`,
 });
+// Texto de la ficha a partir de lo que devuelva el LLM; si aún manda una descripción de un bloque, se reformatea.
+const fichaDe = j => (j?.ingredientes || j?.preparacion ? componerFicha(j) : formatearFicha(String(j?.descripcion || '').trim())).slice(0, 2500);
 // Rellena lo que el usuario dejó vacío; nunca pisa lo escrito a mano.
 export async function analizarPlato(plato, { forzar = false } = {}) {
   const faltaDesc = forzar || !plato.descripcionManual;
@@ -55,7 +58,8 @@ export async function analizarPlato(plato, { forzar = false } = {}) {
   if (!faltaDesc && !faltanTags) return false;
   const j = await fichaIA(plato.nombre, plato.descripcion);
   let cambio = false;
-  if (faltaDesc && j?.descripcion) { plato.descripcion = String(j.descripcion).trim().slice(0, 2500); cambio = true; }
+  const ficha = fichaDe(j);
+  if (faltaDesc && ficha) { plato.descripcion = ficha; cambio = true; }
   if (faltanTags && Array.isArray(j?.etiquetas) && j.etiquetas.length) { plato.tags = j.etiquetas.map(e => String(e).toLowerCase().trim()).filter(Boolean).slice(0, 4); cambio = true; }
   if (!plato.momentosManual) {
     const ms = (Array.isArray(j?.momentos) ? j.momentos : [j?.tipo]).map(String).filter(m => TIPOS.includes(m));
@@ -72,8 +76,9 @@ const crearConIA = {
     if (!nombre) { toast('Escribe primero el nombre del plato'); return; }
     try {
       const j = await fichaIA(nombre, valores.descripcion);
-      if (!j?.descripcion) { toast('El mayordomo no devolvió ficha'); return; }
-      const datos = { descripcion: String(j.descripcion).trim().slice(0, 2500) };
+      const ficha = fichaDe(j);
+      if (!ficha) { toast('El mayordomo no devolvió ficha'); return; }
+      const datos = { descripcion: ficha };
       if (!(valores.tags || '').trim() && Array.isArray(j.etiquetas)) datos.tags = j.etiquetas.map(e => String(e).toLowerCase().trim()).filter(Boolean).slice(0, 4).join(', ');
       if (Number(j.min) > 0) datos.min = Math.round(Number(j.min));
       escribir(datos);
@@ -85,6 +90,8 @@ const opcionesPlato = { dictar: 'descripcion', acciones: [crearConIA], accionesT
 function guardarPlato(datos, previo = null) {
   const p = previo || { id: uid(), tags: [] };
   Object.assign(p, datos);
+  // Lo escrito a mano se respeta palabra por palabra, pero se pone en el formato de la ficha.
+  if (p.descripcion) p.descripcion = formatearFicha(p.descripcion);
   p.descripcionManual = !!(datos.descripcion || '').trim();
   // Momentos marcados a mano: se respetan. Ninguno: los pone el mayordomo.
   p.momentos = Array.isArray(datos.momentos) ? datos.momentos : momentosDe(p);
@@ -135,7 +142,7 @@ function render(cont, params) {
         <div class="mini">${ps.length} de ${estado.platos.length} platos</div>
         ${ps.map(p => h`<div class="tarjeta" data-a="editarPl" data-id="${p.id}"><b>${p.nombre}</b>
           <div class="mini">${momentosDe(p).join(' · ') || 'sin momento'} · ${p.min || '?'} min${(p.tags || []).length ? ' · ' + p.tags.join(', ') : ''}</div>
-          ${p.descripcion ? h`<div class="cuerpo mini">${p.descripcion}</div>` : crudo('<div class="mini">sin ficha todavía</div>')}</div>`).join('') || aviso('Ningún plato encaja con esa búsqueda.').__crudo}`;
+          ${p.descripcion ? h`<div class="cuerpo mini ficha">${p.descripcion}</div>` : crudo('<div class="mini">sin ficha todavía</div>')}</div>`).join('') || aviso('Ningún plato encaja con esa búsqueda.').__crudo}`;
       })()}
       <div class="acciones"><button class="btn p" data-a="nuevoPl">+ Plato</button></div>`)}`;
   delegar(cont, {

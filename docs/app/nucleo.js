@@ -1,4 +1,5 @@
 // Núcleo de maydom: estado local, utilidades, router, modales y avisos.
+import { formatearFicha } from './ficha-plato.js';
 export const CLAVE = 'maydom.v1';
 export const VERSION_ESQUEMA = 1;
 
@@ -30,6 +31,8 @@ function cargar() {
   // Un plato tenía un único momento; ahora puede ser de varios. Se migra al cargar y se persiste,
   // porque una migración que solo vive en memoria vuelve a hacerse en cada arranque.
   for (const p of e.platos || []) if (!Array.isArray(p.momentos)) { p.momentos = p.tipo ? [p.tipo] : []; delete p.tipo; e.__migrado = true; }
+  // Toda ficha de plato con apartados reconocibles pasa al formato de «Sopas de ajo castellana».
+  for (const p of e.platos || []) if (p.descripcion) { const f = formatearFicha(p.descripcion); if (f !== p.descripcion) { p.descripcion = f; e.__migrado = true; } }
   // Las tiendas ganan dominio (para buscar en el sitio) y marca de verificada. Las tres plantillas
   // que se comprobaron rotas el 21-sep se vacían: esa tienda pasa a buscarse en su propio sitio.
   // De cinco plantillas escritas a ojo, cuatro fallaron en la tienda real. Las que nadie ha dado

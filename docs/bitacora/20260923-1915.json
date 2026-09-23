@@ -1,0 +1,26 @@
+{
+  "fecha": "2026-09-23T19:15:00+02:00",
+  "titulo": "Modo cocina: ingredientes, pasos y temporizadores",
+  "objetivo": "Un botón de cocinar en cada plato que acompañe la elaboración: comprobar ingredientes, dar instrucciones y cronometrar esperas y remover.",
+  "prompts": [
+    { "texto": "En cada plato vas a poner un botón de cocinar y lo que va a hacer el botón es acompañar durante el cocinado del plato, empezando por comprobar que se tienen los ingredientes; si se dice que sí, empiezas a dar instrucciones y a temporizar los tiempos necesarios. Si es por ejemplo pelar una patata, un botón para cuando se ha terminado; si es un tiempo de cocción, un temporizador y un aviso acústico o notificación de que se ha acabado el tiempo; si hay que remover cada dos o tres minutos, un temporizador que avise. Dos tipos de funciones, con tiempo y de preparación, y una opción cero de preguntar si están los ingredientes. Cuando comienza la realización, un desplegable plegado con toda la información del plato; lo fundamental son preguntas y tiempos. Mira qué te parece y si tienes algo mejor me lo propones.", "nota": "transcripción dictada, limpiada de muletillas" },
+    { "texto": "Cuando termines para probarlo dime cuál es el plato más rápido para tener que esperar el mínimo tiempo en hacer la prueba" }
+  ],
+  "cambios": [
+    "Nuevo docs/app/cocina.js con el modo cocina y botón 🍳 en platos y menú del día.",
+    "Paso 0 de ingredientes con envío de lo que falta a Compra.",
+    "Temporizadores de espera y de remover con pitido, vibración, notificación y voz opcional; sobreviven a recargas.",
+    "Pasos por reglas al instante y afinados por la IA (operación plato-cocinar), guardados en el plato.",
+    "Pantalla encendida mientras se cocina y opción de apuntarlo como comida de hoy."
+  ],
+  "sha": "fd31b48",
+  "sha_completo": "fd31b48796cebaf5f8653021b0269a154fd15a71",
+  "run": 35893195863,
+  "mock": null,
+  "build": "MA-B1-20260923-002",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/alimentacion?v=platos",
+  "fly": null,
+  "pendiente": ["Probar sonido, vibración y aviso con pantalla bloqueada en el móvil", "Comandos de voz y escalar raciones (propuestas)"],
+  "enlaces": [],
+  "notas": "El primer prompt era un dictado largo; se transcribe limpio de muletillas y repeticiones."
+}

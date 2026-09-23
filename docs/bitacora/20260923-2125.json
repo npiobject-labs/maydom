@@ -1,0 +1,39 @@
+{
+  "fecha": "2026-09-23T21:25:00+02:00",
+  "titulo": "Instalar la app y aviso de versión nueva",
+  "objetivo": "Replicar en maydom el botón de instalar de Ajustes y el aviso de versión nueva con botón para actualizar que tiene la app prueba.",
+  "prompts": [
+    {
+      "texto": "Ahora sí tienes acceso, te he abierto la carpeta de prueba. La aplicación prueba en Ajustes tiene un botón para instalar la aplicación, y tiene otra cosa que está muy bien: cuando hay una versión nueva, al entrar en la aplicación te sale un aviso de que instales la nueva, pinchas un botón y se instala la nueva versión. ¿Lo puedes replicar en maydom?",
+      "nota": "transcripción dictada, limpiada de muletillas"
+    },
+    {
+      "texto": "Desde aquí no modifiques la aplicación prueba, solamente tienes permiso para leer."
+    }
+  ],
+  "cambios": [
+    "Nuevo docs/app/pwa.js: comprueba el build publicado al abrir y al volver a la app y enseña la banda «Hay una versión nueva de maydom · Actualizar».",
+    "Ajustes: tarjeta Aplicación con «Instalar la app», el build, «Buscar actualización» y «Actualizar ahora».",
+    "Manifest con iconos PNG de 192, 512 y maskable para que Chrome ofrezca instalar.",
+    "sw.js revalida con el servidor (no-cache) y precachea sin caché HTTP, para que «Actualizar» traiga de verdad la versión nueva.",
+    "Prueba de humo tools/prueba-pwa.mjs, sin y con service worker."
+  ],
+  "sha": "77e289b",
+  "sha_completo": "77e289b153f0a83c06757b78d75050f360805ee1",
+  "run": 35909330518,
+  "mock": null,
+  "build": "MA-B1-20260923-004",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/ajustes",
+  "fly": null,
+  "pendiente": [
+    "Verlo en el móvil: la banda sale a partir de la próxima publicación, porque esta llega aún con el service worker viejo",
+    "Comprobar que Chrome en Android ofrece «Instalar la app»"
+  ],
+  "enlaces": [
+    {
+      "texto": "App prueba (referencia, solo lectura)",
+      "url": "https://npiobject-labs.github.io/prueba/"
+    }
+  ],
+  "notas": "El primer prompt era un dictado; se transcribe limpio de muletillas."
+}

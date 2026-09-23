@@ -11,7 +11,7 @@ const APARTADOS = [
 const CABECERA = /^\s*(ingredientes|preparaci[oó]n|por raci[oó]n|nutrientes|valores nutricionales|notas?)\s*:\s*/i;
 
 // Parte por comas fuera de paréntesis, sin romper decimales («1,5 l»), y por saltos de línea.
-function trocear(texto) {
+export function trocear(texto) {
   const out = []; let hondo = 0, cur = '';
   for (let i = 0; i < texto.length; i++) {
     const c = texto[i];
@@ -22,7 +22,7 @@ function trocear(texto) {
   out.push(cur);
   return out.map(s => s.trim().replace(/^[-•*·]\s*/, '').replace(/[.,;]+$/, '').trim()).filter(Boolean);
 }
-const frases = t => t.split(/(?<=[.!?])\s+(?=[¡¿A-ZÁÉÍÓÚÑ0-9])/).map(s => s.trim()).filter(Boolean);
+export const frases = t => t.split(/(?<=[.!?])\s+(?=[¡¿A-ZÁÉÍÓÚÑ0-9])/).map(s => s.trim()).filter(Boolean);
 // Un párrafo largo se parte en dos, como en la ficha modelo (tres frases y dos).
 function parrafos(v) {
   let ps = (Array.isArray(v) ? v.map(String) : String(v || '').split(/\n\s*\n/)).map(p => p.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean);

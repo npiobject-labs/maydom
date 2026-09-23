@@ -126,6 +126,7 @@ El backend de maydom manda `Authorization: Bearer <clave de aplicación>` y `X-O
 | Buscador | Interpretar la petición → consulta corta + categoría | `buscador` |
 | Notas | Título, etiquetas y tipo al guardar (y en lote para las antiguas) | `nota` |
 | Alimentación | Ficha del plato: ingredientes, preparación, nutrientes, nota, etiquetas, momento y minutos | `plato` |
+| Alimentación | Modo cocina: la ficha convertida en pasos, con minutos de espera y cada cuánto remover (se guarda en el plato; sin LLM, por reglas) | `plato-cocinar` |
 | Mayordomo | Chat y tanda de consejos | `chat` |
 
 ### 4.2 El buscador, mirando a buscaproducto
@@ -176,6 +177,7 @@ Se revisa si aparece un segundo usuario, si hace falta sincronizar varios dispos
 | F13 | Un plato vale para varios momentos (casillas) y los filtros del catálogo pasan a desplegables | Hecha 21-sep (build 008) |
 | F14 | Cruz de cerrar en todas las ventanas; catálogo de tiendas con dominio, verificación y búsqueda en el sitio por defecto | Hecha 21-sep (builds 009 a 011) |
 
+| F15 | Formato único de la ficha del plato y **modo cocina**: comprobar ingredientes (lo que falta, a Compra), pasos con «hecho», temporizadores con aviso al acabar y para remover, ficha plegada, pantalla encendida y voz opcional | Hecha 23-sep (build 20260923-002) |
 ## 7. Deuda de desarrollo
 
 Lo que las notas piden y no se puede cerrar sin servicios externos, datos reales o decisiones del usuario:

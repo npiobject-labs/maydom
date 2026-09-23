@@ -2,6 +2,7 @@ import { estado, guardar, h, lista, crudo, esc, delegar, uid, hoyISO, sumarDias,
 import { sincronizarCompra } from './compra.js';
 import { pedirJSON, conLLM, reducirImagen, lista as listaLLM } from '../llm.js';
 import { componerFicha, formatearFicha } from '../ficha-plato.js';
+import { pintarCocina, empezarCocina, cocinando } from '../cocina.js';
 
 const TIPOS = ['desayuno', 'comida', 'cena'];
 const plato = id => estado.platos.find(p => p.id === id);
@@ -104,20 +105,24 @@ function guardarPlato(datos, previo = null) {
 
 function render(cont, params) {
   const vista = params.v || 'menu';
+  if (vista === 'cocinar') return pintarCocina(cont);
   const fecha = params.fecha || hoyISO();
   const menu = estado.menus.find(m => m.fecha === fecha);
   const comidasDia = estado.comidas.filter(c => c.fecha === fecha);
   const ultimas = estado.comidas.slice(-30);
   const ajuste = ultimas.length ? Math.round(ultimas.filter(c => c.segunMenu).length / ultimas.length * 100) : null;
   const bajos = estado.alimentos.filter(a => Number(a.stock) <= Number(a.umbral));
+  const enCurso = cocinando() && plato(cocinando());
+  const botonCocinar = p => `<button class="btn mini" data-a="cocinar" data-id="${esc(p.id)}">${cocinando() === p.id ? '🍳 Seguir cocinando' : '🍳 Cocinar'}</button>`;
   cont.innerHTML = h`
+    ${enCurso ? crudo(`<div class="tarjeta fila" data-a="cocinar" data-id="${esc(enCurso.id)}"><div class="t">🍳 Cocinando <b>${esc(enCurso.nombre)}</b></div><span class="btn mini">Volver</span></div>`) : ''}
     <div class="chips">${lista(['menu', 'stock', 'platos'].map(v => h`<button class="pill ${v === vista ? 'sel' : ''}" data-a="vista" data-v="${v}">${{ menu: 'Menú', stock: 'Stock' + (bajos.length ? ` (${bajos.length} bajo)` : ''), platos: 'Platos' }[v]}</button>`))}</div>
     ${vista === 'menu' ? crudo(`
       <div class="fila cab"><button class="btn" data-a="dia" data-f="${sumarDias(fecha, -1)}">‹</button><div class="t centro"><b>${fechaLarga(fecha)}</b></div><button class="btn" data-a="dia" data-f="${sumarDias(fecha, 1)}">›</button></div>
       ${TIPOS.map(t => { const p = menu && plato(menu[t]); const c = comidasDia.find(x => x.tipo === t); return h`<div class="tarjeta"><div class="fila"><div class="t"><div class="mini">${t}</div><b>${p ? p.nombre : '—'}</b>${p ? crudo(`<div class="mini">${p.min} min · ${p.tags.join(', ')}</div>`) : ''}
         ${c ? crudo(`<div class="mini ${c.segunMenu ? 'pos' : 'neg'}">${c.segunMenu ? '✓ según menú' : '≠ ' + c.que}</div>`) : ''}</div>
         ${c ? crudo(`<button class="btn mini" data-a="deshacer" data-id="${c.id}">deshacer</button>`) : crudo(`<button class="btn mini" data-a="hecho" data-t="${t}">Fue esta</button><button class="btn mini" data-a="otra" data-t="${t}">Fue otra</button>`)}
-        </div>${p ? crudo(`<div class="acciones"><button class="btn mini" data-a="cambiar" data-t="${t}">Cambiar plato</button></div>`) : ''}</div>`; }).join('')}
+        </div>${p ? crudo(`<div class="acciones"><button class="btn mini" data-a="cambiar" data-t="${t}">Cambiar plato</button>${botonCocinar(p)}</div>`) : ''}</div>`; }).join('')}
       <div class="acciones"><button class="btn p" data-a="proponer">${menu ? 'Proponer otro menú' : 'Proponer menú del día'}</button><button class="btn" data-a="semana">Proponer la semana</button><button class="btn" data-a="semanaLLM">Semana con LLM</button></div>
       <div class="tarjeta mini">Ajuste al menú en las últimas ${ultimas.length} comidas: <b>${ajuste == null ? '–' : ajuste + ' %'}</b>. Preferencias de alimentación: ${estado.preferencias.restricciones || 'ninguna'} (se cambian en Preferencias).</div>`)
     : vista === 'stock' ? crudo(`
@@ -142,10 +147,12 @@ function render(cont, params) {
         <div class="mini">${ps.length} de ${estado.platos.length} platos</div>
         ${ps.map(p => h`<div class="tarjeta" data-a="editarPl" data-id="${p.id}"><b>${p.nombre}</b>
           <div class="mini">${momentosDe(p).join(' · ') || 'sin momento'} · ${p.min || '?'} min${(p.tags || []).length ? ' · ' + p.tags.join(', ') : ''}</div>
-          ${p.descripcion ? h`<div class="cuerpo mini ficha">${p.descripcion}</div>` : crudo('<div class="mini">sin ficha todavía</div>')}</div>`).join('') || aviso('Ningún plato encaja con esa búsqueda.').__crudo}`;
+          ${p.descripcion ? h`<div class="cuerpo mini ficha">${p.descripcion}</div>` : crudo('<div class="mini">sin ficha todavía</div>')}
+          ${p.descripcion ? crudo(`<div class="acciones">${botonCocinar(p)}</div>`) : ''}</div>`).join('') || aviso('Ningún plato encaja con esa búsqueda.').__crudo}`;
       })()}
       <div class="acciones"><button class="btn p" data-a="nuevoPl">+ Plato</button></div>`)}`;
   delegar(cont, {
+    cocinar: el => { const p = plato(el.dataset.id); if (p) empezarCocina(p); },
     vista: el => navegar('alimentacion', { v: el.dataset.v, fecha }),
     dia: el => navegar('alimentacion', { v: 'menu', fecha: el.dataset.f }),
     proponer: () => { estado.menus = estado.menus.filter(m => m.fecha !== fecha); estado.menus.push(proponerMenu(fecha)); guardar(); },

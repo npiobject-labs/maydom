@@ -204,7 +204,7 @@ jobs:
 
           # La app es modular: si un solo modulo no se sirve, la pagina queda en blanco.
           fallos=0
-          for ruta in app/app.js app/nucleo.js app/llm.js app/extracto.js app/ficha-plato.js app/secciones/finanzas.js app/secciones/finanzas/calculos.js app/secciones/finanzas/importar.js app/secciones/finanzas/informes.js app/estilos.css manifest.webmanifest sw.js bitacora.html bitacora/index.json mocks/index.html; do
+          for ruta in app/app.js app/nucleo.js app/llm.js app/extracto.js app/ficha-plato.js app/cocina.js app/secciones/finanzas.js app/secciones/finanzas/calculos.js app/secciones/finanzas/importar.js app/secciones/finanzas/informes.js app/estilos.css manifest.webmanifest sw.js bitacora.html bitacora/index.json mocks/index.html; do
             codigo="$(curl -sS --max-time 20 -o /tmp/recurso -w '%{http_code}' "${url}${ruta}" || true)"
             if [ "${codigo}" = "200" ]; then
               echo "  ok  ${ruta}"

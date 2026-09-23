@@ -92,6 +92,15 @@ nav.inferior a .n{position:absolute;top:0;right:.1rem;background:var(--warn);col
 .nota b{display:block;margin-bottom:.1rem}
 .nota .cuerpo{white-space:pre-wrap;color:var(--ink2);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 .cuerpo.ficha{white-space:pre-wrap;color:var(--ink2);margin-top:.3rem;display:-webkit-box;-webkit-line-clamp:9;-webkit-box-orient:vertical;overflow:hidden}
+.ficha-completa{white-space:pre-wrap;font-size:.88rem;color:var(--ink2)}
+.relojes{position:sticky;top:3.2rem;z-index:4;display:flex;flex-direction:column;gap:.35rem;margin:.4rem 0}
+.reloj{display:flex;align-items:center;gap:.5rem;background:var(--bg2);border:1px solid var(--acc);border-radius:10px;padding:.45rem .7rem;box-shadow:0 2px 8px #0002}
+.reloj .t{flex:1;min-width:0}.reloj .t .mini{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.reloj b{font-size:1.35rem;font-variant-numeric:tabular-nums}
+.reloj.sonando{border-color:var(--mal);background:var(--mal2);animation:latido 1s ease-in-out infinite}
+.ingr{display:flex;gap:.6rem;align-items:flex-start;padding:.4rem 0;border-bottom:1px dashed var(--line)}.ingr input{width:1.25rem;height:1.25rem;flex:none;margin-top:.15rem}
+.paso{opacity:.6}.paso.hecho{opacity:.45}.paso.hecho .t{text-decoration:line-through}
+.paso.actual{opacity:1;border-color:var(--acc);border-width:2px;font-size:1.12rem}
+.paso .num{flex:none;width:1.7rem;height:1.7rem;border-radius:999px;background:var(--acc2);color:var(--acc);display:grid;place-items:center;font-size:.85rem;font-weight:600}
 .btn.dictar{margin-top:.4rem}
 .btn.dictar.grabando{background:var(--mal);color:#fff;border-color:var(--mal);animation:latido 1.4s ease-in-out infinite}
 @keyframes latido{50%{opacity:.6}}

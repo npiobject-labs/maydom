@@ -87,6 +87,7 @@ export function resumenParaLLM() {
     `Ocio ${mesISO(hoy)}: ${ocioMes()} aceptadas, gasto ${euros(gastoOcioMes())}; propuestas: ${estado.ocio.filter(o => o.estado === 'propuesta').map(o => o.titulo).join('; ') || '-'}; fijas: ${estado.ocio.filter(o => o.fija).map(o => o.titulo).join('; ') || '-'}.`,
     `Finanzas ${mesISO(hoy)}: neto ${euros(balanceMes(mesISO(hoy)).neto)}; gastos por concepto ${Object.entries(balanceMes(mesISO(hoy)).por).map(([k, v]) => k + ' ' + euros(v)).join(', ') || '-'}.`,
     `Consejos en curso: ${estado.consejos.filter(c => c.estado === 'probar').map(c => c.texto.slice(0, 80)).join(' | ') || '-'}. Rechazados recientes: ${estado.consejos.filter(c => c.estado === 'rechazado').slice(-5).map(c => c.texto.slice(0, 60)).join(' | ') || '-'}.`,
-    `Notas recientes: ${estado.notas.slice(-5).map(n => `[${n.tipo}] ${n.texto.slice(0, 100)}`).join(' | ') || '-'}.`,
+    `Notas recientes: ${estado.notas.filter(n => (n.clase || 'idea') === 'idea').slice(-5).map(n => `[${n.tipo}] ${n.texto.slice(0, 100)}`).join(' | ') || '-'}.`,
+    `Tareas pendientes: ${estado.notas.filter(n => n.clase === 'tarea' && !n.hecha).sort((a, b) => (a.tope || '9').localeCompare(b.tope || '9')).slice(0, 8).map(n => `${n.titulo} (tope ${n.tope || '-'})`).join('; ') || '-'}.`,
   ].join('\n');
 }

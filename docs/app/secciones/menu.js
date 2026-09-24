@@ -10,7 +10,7 @@ const GRUPOS = ['Agenda', 'Cuerpo', 'Mesa', 'Vida', 'Mayordomo', 'Ajustes'];
 function resumen(id) {
   const media = mediaSueno(7);
   const r = {
-    calendario: () => `hoy ${eventosDe(hoyISO()).length} eventos`, notas: () => estado.notas.length + '',
+    calendario: () => `hoy ${eventosDe(hoyISO()).length} eventos`, notas: () => { const t = estado.notas.filter(n => n.clase === 'tarea' && !n.hecha), v = t.filter(n => n.tope && n.tope < hoyISO()).length; return t.length ? `${t.length} tarea${t.length > 1 ? 's' : ''}${v ? ` (${v} vencida${v > 1 ? 's' : ''})` : ''}` : estado.notas.length + ''; },
     ejercicio: () => estado.sesionesEjercicio.length + ' sesiones', sueno: () => media != null ? duracionTexto(media) + ' media' : 'sin datos', meditacion: () => '',
     alimentacion: () => estado.menus.some(m => m.fecha === hoyISO()) ? 'menú de hoy listo' : 'sin menú hoy', suplementos: () => { const n = estado.suplementos.filter(bajoStock).length; return n ? n + ' por reponer' : estado.suplementos.length + ''; }, compra: () => { const n = estado.compra.filter(c => !c.comprado).length; return n ? n + ' líneas' : ''; },
     proyectos: () => { const n = rezagados().length; return n ? n + ' rezagado' + (n > 1 ? 's' : '') : estado.proyectos.filter(p => p.estado === 'activo').length + ' activos'; }, ocio: () => estado.ocio.filter(o => o.estado === 'propuesta').length + ' propuestas', finanzas: () => euros(balanceMes(mesISO(hoyISO())).neto),

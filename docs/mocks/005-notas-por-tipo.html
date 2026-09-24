@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="build" content="MA-B1-20260924-004">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0B6E7A">
+<title>maydom · mock 5 · notas por tipo</title>
+<style>
+:root{--bg:#F6F7F4;--bg2:#FFFFFF;--ink:#1B2430;--ink2:#4B5563;--mute:#8A93A0;--line:#D9DED8;--acc:#0B6E7A;--acc2:#0B6E7A1A;--warn:#B85C1E;--warn2:#B85C1E14;--ok:#2E7D4F;--ok2:#2E7D4F14;--mal:#B00020;--mal2:#B0002014;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#131A20;--bg2:#1B232B;--ink:#E6EAE7;--ink2:#B7C0C7;--mute:#7F8A94;--line:#2C3740;--acc:#4FB3BF;--acc2:#4FB3BF22;--warn:#E08A4C;--warn2:#E08A4C1F;--ok:#5FBF87;--ok2:#5FBF871F;--mal:#FF6B6B;--mal2:#FF6B6B1F}}
+:root[data-theme="dark"]{--bg:#131A20;--bg2:#1B232B;--ink:#E6EAE7;--ink2:#B7C0C7;--mute:#7F8A94;--line:#2C3740;--acc:#4FB3BF;--acc2:#4FB3BF22;--warn:#E08A4C;--warn2:#E08A4C1F;--ok:#5FBF87;--ok2:#5FBF871F;--mal:#FF6B6B;--mal2:#FF6B6B1F}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans)}
+.app{max-width:32rem;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
+header.cab{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:.6rem 1rem;display:flex;align-items:center;gap:.5rem}
+header.cab h1{font-size:1.1rem;margin:0;flex:1}
+header.cab small{color:var(--mute);font-size:.72rem;text-align:right}
+main{flex:1;padding:.9rem 1rem 5.5rem}
+.aviso-mock{font-size:.78rem;color:var(--ink2);background:var(--acc2);border-radius:8px;padding:.5rem .7rem;margin-bottom:.7rem}
+h3{font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:1.1rem 0 .4rem;display:flex;align-items:center;gap:.5rem}
+h3 .n{font-weight:400;letter-spacing:0}
+h3.mal{color:var(--mal)}
+.tarjeta{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:.7rem .9rem;margin:.4rem 0}
+.fila{display:flex;align-items:center;gap:.7rem}.fila .t{flex:1;min-width:0;cursor:pointer}
+.mini{color:var(--mute);font-size:.8rem}
+.btn{font:500 .85rem var(--sans);color:var(--acc);background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:.42rem .72rem;cursor:pointer;display:inline-flex;align-items:center;gap:.3rem}
+.btn:hover{border-color:var(--acc)}.btn.p{background:var(--acc);color:#fff;border-color:var(--acc)}.btn.mini{font-size:.72rem;padding:.2rem .45rem}
+.acciones{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.55rem;align-items:center}.acciones.fin{justify-content:flex-end}
+.acciones input[type=search]{flex:1;min-width:8rem}
+.pill{font-size:.72rem;padding:.12rem .55rem;border-radius:999px;background:var(--acc2);color:var(--acc);border:0;font-family:inherit;white-space:nowrap;cursor:pointer}
+.pill.sel{background:var(--acc);color:#fff}
+.chips{display:flex;gap:.35rem;flex-wrap:wrap;margin:.6rem 0 .2rem}
+input,select,textarea{font:inherit;padding:.5rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--bg2);color:var(--ink);width:100%}
+textarea{resize:vertical}
+label{display:block;font-size:.82rem;color:var(--ink2);margin-top:.6rem}
+/* Pestañas: mismo estilo que Finanzas */
+.pestanas{display:flex;gap:.1rem;margin:0 0 .9rem;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.pestanas::-webkit-scrollbar{display:none}
+.pestanas button{font:500 .85rem var(--sans);color:var(--ink2);background:none;border:0;border-bottom:2px solid transparent;padding:.5rem .7rem;cursor:pointer;white-space:nowrap;margin-bottom:-1px}
+.pestanas button:hover{color:var(--ink)}
+.pestanas button.sel{color:var(--acc);border-bottom-color:var(--acc)}
+.pestanas .n{font-style:normal;font-size:.7rem;background:var(--acc2);color:var(--acc);border-radius:999px;padding:.05rem .35rem;margin-left:.3rem}
+.pestanas .n.mal{background:var(--mal2);color:var(--mal)}
+/* Casilla de hecho / comprado */
+.chk{flex:none;width:1.6rem;height:1.6rem;border-radius:999px;border:2px solid var(--line);background:none;color:var(--ok);font-size:.9rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.chk:hover{border-color:var(--ok)}
+.hecha .chk{background:var(--ok);border-color:var(--ok);color:#fff}
+.hecha b{text-decoration:line-through;color:var(--mute);font-weight:500}
+.tope{flex:none;font-size:.72rem;padding:.12rem .5rem;border-radius:999px;background:var(--line);color:var(--ink2);white-space:nowrap}
+.tope.hoy{background:var(--warn2);color:var(--warn)}
+.tope.vencida{background:var(--mal2);color:var(--mal)}
+.tarjeta.vencida{border-left:3px solid var(--mal)}
+.etq{font-size:.7rem;padding:.05rem .45rem;border-radius:999px;border:1px solid var(--line);color:var(--ink2);white-space:nowrap}
+.nota .cuerpo{font-size:.88rem;color:var(--ink2);margin-top:.25rem}
+.nota.t-preferencia{border-left:3px solid var(--acc)}.nota.t-tendencia{border-left:3px solid var(--warn)}
+details.plegable{background:var(--bg2);border:1px solid var(--line);border-radius:10px;margin:.8rem 0 .45rem;overflow:hidden}
+details.plegable>summary{list-style:none;cursor:pointer;padding:.6rem .9rem;font-weight:600;font-size:.9rem;display:flex;align-items:center;gap:.5rem}
+details.plegable>summary::-webkit-details-marker{display:none}
+details.plegable>summary::after{content:'▾';margin-left:auto;color:var(--mute);font-size:.8rem}
+details.plegable[open]>summary::after{transform:rotate(180deg)}
+details.plegable .cuerpo{padding:0 .9rem .7rem}
+details.plegable .cuerpo .tarjeta{margin:.35rem 0}
+.vacio{border:2px dashed var(--line);border-radius:10px;padding:1rem;text-align:center;color:var(--mute);font-size:.88rem;margin:.6rem 0}
+nav.inferior{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--line);display:flex;justify-content:center;z-index:6;padding-bottom:env(safe-area-inset-bottom)}
+nav.inferior .in{display:flex;width:100%;max-width:32rem;justify-content:space-around;padding:.3rem 0}
+nav.inferior a{color:var(--mute);font-size:.68rem;display:flex;flex-direction:column;align-items:center;gap:.1rem;padding:.2rem .5rem;text-decoration:none;cursor:pointer}
+nav.inferior a.activo{color:var(--acc)}nav.inferior a span{font-size:1.3rem;line-height:1.2}
+/* Modal */
+.modal{border:1px solid var(--line);border-radius:12px;background:var(--bg2);color:var(--ink);padding:1rem 1.1rem;width:min(92vw,27rem);max-height:92dvh;overflow:auto}
+.modal::backdrop{background:rgba(0,0,0,.45)}
+.cabecera-modal{display:flex;align-items:center;gap:.5rem;margin:0 0 .3rem}
+.cabecera-modal h2{flex:1;min-width:0;margin:0;font-size:1.15rem}
+.cerrar{flex:none;background:none;border:0;color:var(--mute);font-size:1.25rem;line-height:1;cursor:pointer;padding:.15rem .3rem;border-radius:6px}
+.cerrar:hover{color:var(--ink);background:var(--line)}
+.con-micro{display:flex;gap:.45rem;align-items:flex-start}
+.micro{flex:none;width:2.6rem;height:2.6rem;border-radius:999px;border:1px solid var(--line);background:var(--bg2);font-size:1.2rem;cursor:pointer}
+.micro.oyendo{background:var(--mal2);border-color:var(--mal);animation:latido 1s ease-in-out infinite alternate}
+@keyframes latido{from{transform:scale(1)}to{transform:scale(1.08)}}
+.segmento{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:.3rem}
+.segmento button{font:500 .88rem var(--sans);background:var(--bg2);color:var(--ink2);border:0;border-left:1px solid var(--line);padding:.5rem .2rem;cursor:pointer}
+.segmento button:first-child{border-left:0}
+.segmento button.sel{background:var(--acc);color:#fff}
+.detectado{font-size:.75rem;color:var(--acc);margin-top:.3rem;min-height:1.1em}
+.rapidas{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.4rem}
+.linea{display:grid;grid-template-columns:minmax(0,1fr) 4.9rem 5.6rem 1.4rem;gap:.35rem;align-items:center;margin-top:.35rem}
+.linea input,.linea select{padding:.38rem .45rem;font-size:.88rem}
+.linea button{background:none;border:0;color:var(--mute);cursor:pointer;font-size:1rem}
+.aviso-mezcla{background:var(--warn2);border:1px solid var(--warn);border-radius:8px;padding:.55rem .7rem;margin-top:.7rem;font-size:.85rem}
+.aviso-mezcla ul{margin:.3rem 0 .4rem;padding-left:1.1rem}
+.ejemplos{margin-top:.5rem;font-size:.75rem;color:var(--mute);display:flex;gap:.3rem;flex-wrap:wrap;align-items:center}
+.ejemplos .pill{background:none;border:1px dashed var(--line);color:var(--ink2)}
+#toast{position:fixed;left:50%;bottom:4.5rem;transform:translateX(-50%) translateY(1rem);background:var(--ink);color:var(--bg);padding:.5rem .9rem;border-radius:8px;font-size:.85rem;opacity:0;transition:.2s;z-index:50;max-width:90vw;pointer-events:none;text-align:center}
+#toast.ver{opacity:1;transform:translateX(-50%)}
+.nota-mock{font-size:.82rem;color:var(--ink2);margin-top:1.6rem;border-top:1px solid var(--line);padding-top:.6rem}
+.nota-mock h4{margin:.2rem 0 .3rem;font-size:.9rem;color:var(--ink)}
+.nota-mock li{margin:.3rem 0}
+.nota-mock code{font-size:.78rem}
+.sup{color:var(--warn);font-weight:600}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="cab"><h1 id="titulo">Notas</h1><small>mock 5<br>MA-B1-20260924-004</small></header>
+  <main id="main"></main>
+</div>
+<nav class="inferior" aria-label="Principal"><div class="in">
+  <a data-nav="hoy"><span>☀</span>Hoy</a>
+  <a data-nav="calendario"><span>📅</span>Calendario</a>
+  <a data-nav="mayordomo"><span>🤵</span>Mayordomo</a>
+  <a data-nav="buscador"><span>🔎</span>Buscar</a>
+  <a data-nav="notas"><span>✎</span>Notas</a>
+</div></nav>
+
+<dialog class="modal" id="dlg">
+  <form method="dialog" id="form" autocomplete="off">
+    <div class="cabecera-modal"><h2 id="dlg-titulo">Nueva nota</h2><button class="cerrar" type="button" data-cancelar aria-label="Cerrar">✕</button></div>
+    <label for="texto">Dicta o escribe</label>
+    <div class="con-micro"><textarea id="texto" rows="3" placeholder="«Tengo que llamar al fontanero el jueves» · «Comprar leche, huevos y pilas» · una idea cualquiera"></textarea><button class="micro" type="button" id="micro" title="Dictar">🎙</button></div>
+    <div class="ejemplos">Solo en el mock, dictados de ejemplo:
+      <button type="button" class="pill" data-ej="tarea">tarea</button><button type="button" class="pill" data-ej="compra">compra</button><button type="button" class="pill" data-ej="idea">idea</button><button type="button" class="pill" data-ej="mezcla">mezcla</button></div>
+    <label>Es una</label>
+    <div class="segmento" id="clase"><button type="button" data-c="tarea">☑ Tarea</button><button type="button" data-c="compra">🛒 Compra</button><button type="button" data-c="idea">💡 Idea</button></div>
+    <div class="detectado" id="detectado"></div>
+    <div id="aviso-mezcla" class="aviso-mezcla" hidden></div>
+
+    <div id="b-tarea" hidden>
+      <label for="t-titulo">Título</label><input id="t-titulo" placeholder="vacío = lo pone el mayordomo">
+      <label for="t-tope">Fecha tope</label><input id="t-tope" type="date" required>
+      <div class="rapidas" id="rapidas"></div>
+      <div class="mini" id="t-leido"></div>
+    </div>
+    <div id="b-compra" hidden>
+      <label>Qué hay que comprar <span class="mini">(una línea por cosa)</span></label>
+      <div id="lineas"></div>
+      <div class="acciones"><button class="btn mini" type="button" id="mas-linea">+ línea</button><span class="mini">Van a la lista de 🧺 Compra</span></div>
+    </div>
+    <div id="b-idea" hidden>
+      <label for="i-titulo">Título</label><input id="i-titulo" placeholder="vacío = lo pone el mayordomo">
+      <label for="i-etq">Etiquetas (coma)</label><input id="i-etq" placeholder="sueno, alimentacion, proyecto…">
+      <label for="i-tipo">Tipo</label><select id="i-tipo"><option value="nota">Nota</option><option value="preferencia">Preferencia (guía al mayordomo)</option><option value="tendencia">Tendencia (algo que noto)</option></select>
+    </div>
+
+    <div class="acciones fin">
+      <button class="btn" type="button" data-cancelar>Cancelar</button>
+      <button class="btn p" type="button" id="guardar">Guardar</button>
+    </div>
+  </form>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('ver'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('ver'), 2800); }
+
+// ── Fechas: siempre día/mes/año en pantalla; el ISO solo en los datos ──
+const HOY = new Date(); HOY.setHours(0, 0, 0, 0);
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const desdeISO = s => { const [a, m, d] = s.split('-').map(Number); return new Date(a, m - 1, d); };
+const mas = n => { const d = new Date(HOY); d.setDate(d.getDate() + n); return iso(d); };
+const fechaCorta = s => { const [a, m, d] = s.split('-'); return `${d}/${m}/${a}`; };
+const fechaLarga = s => DIAS[desdeISO(s).getDay()].slice(0, 3) + ' ' + fechaCorta(s);
+const dias = s => Math.round((desdeISO(s) - HOY) / 864e5);
+function relativo(s) { const n = dias(s); return n === 0 ? 'hoy' : n === 1 ? 'mañana' : n === -1 ? 'ayer' : n < 0 ? `hace ${-n} días` : `en ${n} días`; }
+const finDeSemana = () => mas((7 - HOY.getDay()) % 7);          // domingo de esta semana
+function proximo(dow) { let n = (dow - HOY.getDay() + 7) % 7; if (n === 0) n = 7; return mas(n); }
+
+// ── Datos de ejemplo (inventados) ──
+let tareas = [
+  { id: 't1', titulo: 'Renovar el DNI', tope: mas(-2), hecha: false },
+  { id: 't2', titulo: 'Pagar el seguro del coche', tope: mas(0), hecha: false },
+  { id: 't3', titulo: 'Llamar al fontanero por la cisterna', tope: mas(2), hecha: false },
+  { id: 't4', titulo: 'Pedir cita al dentista', tope: mas(5), hecha: false },
+  { id: 't5', titulo: 'Revisar el borrador de la declaración', tope: mas(20), hecha: false },
+  { id: 't6', titulo: 'Devolver el libro a la biblioteca', tope: mas(-1), hecha: true },
+];
+let compras = [
+  { id: 'c1', nombre: 'Leche', cantidad: '2 l', etiqueta: 'alimentacion', origen: 'nota', fecha: mas(0), comprado: false },
+  { id: 'c2', nombre: 'Huevos', cantidad: '1 docena', etiqueta: 'alimentacion', origen: 'nota', fecha: mas(0), comprado: false },
+  { id: 'c3', nombre: 'Plátanos', cantidad: '', etiqueta: 'alimentacion', origen: 'nota', fecha: mas(-1), comprado: false },
+  { id: 'c4', nombre: 'Aceite de oliva', cantidad: '', etiqueta: 'alimentacion', origen: 'stock', fecha: mas(-1), comprado: false },
+  { id: 'c5', nombre: 'Pilas AA', cantidad: '4', etiqueta: 'otras', origen: 'nota', fecha: mas(-1), comprado: false },
+  { id: 'c6', nombre: 'Bombilla E27', cantidad: '', etiqueta: 'otras', origen: 'nota', fecha: mas(-3), comprado: false },
+];
+let ideas = [
+  { id: 'i1', titulo: 'Cenar antes de las nueve entre semana', texto: 'Quiero probar a cenar antes de las nueve de lunes a jueves, a ver si me cuesta menos dormirme.', etiquetas: ['alimentacion', 'sueno'], tipo: 'preferencia', fecha: mas(-1) },
+  { id: 'i2', titulo: 'Medir el ruido del dormitorio', texto: 'Una app o un sensor barato que registre el ruido por la noche y lo cruce con los despertares.', etiquetas: ['sueno', 'proyecto'], tipo: 'nota', fecha: mas(-4) },
+  { id: 'i3', titulo: 'Los lunes me cuesta arrancar', texto: 'Los lunes me cuesta arrancar hasta media mañana; los demás días no.', etiquetas: ['energia'], tipo: 'tendencia', fecha: mas(-6) },
+];
+
+// ── Plan B sin LLM: clase, fecha tope y líneas de compra por reglas ──
+const RE_COMPRA = /\b(comprar|compra|c[oó]mprame|faltan?|se (?:ha|han) acabado|se acab[oó]|reponer)\b/i;
+const RE_TAREA = /\b(tengo que|hay que|llamar|pagar|renovar|pedir cita|enviar|mandar|recoger|devolver|antes del?|para el|hasta el|no olvidar)\b/i;
+const ALIMENTOS = /\b(leche|huevos?|pan|fruta|manzanas?|pl[aá]tanos?|naranjas?|tomates?|lechuga|cebollas?|ajos?|patatas?|pollo|pescado|carne|arroz|pasta|aceite|yogur(?:es)?|queso|caf[eé]|t[eé]|verduras?|legumbres|garbanzos|lentejas|avena|nueces|almendras|frutos secos|agua|zumo|at[uú]n|jam[oó]n|harina|az[uú]car|sal|mantequilla|pimientos?|zanahorias?|calabac[ií]n|espinacas|kiwis?|fresas)\b/i;
+function claseDe(texto) {
+  const c = RE_COMPRA.test(texto), t = RE_TAREA.test(texto) || !!topeDe(texto).tope;
+  if (c && t && /\b(y|adem[aá]s)\b/i.test(texto) && trozos(texto).length === 2) return 'mezcla';
+  return c ? 'compra' : t ? 'tarea' : 'idea';
+}
+// Parte «llamar al fontanero el jueves y comprar pilas» por la conjunción que precede al segundo verbo.
+function trozos(texto) {
+  const m = texto.match(/^(.*?)\s*,?\s+(?:y|adem[aá]s)\s+((?:tengo que |hay que )?(?:comprar|llamar|pagar|renovar|pedir|enviar|mandar|recoger|devolver)\b.*)$/i);
+  return m ? [m[1], m[2]] : [texto];
+}
+function topeDe(texto) {
+  const t = texto.toLowerCase();
+  let m;
+  if (/pasado mañana/.test(t)) return { tope: mas(2), leido: 'pasado mañana' };
+  if (/\bmañana\b/.test(t)) return { tope: mas(1), leido: 'mañana' };
+  if (/\bhoy\b/.test(t)) return { tope: mas(0), leido: 'hoy' };
+  if ((m = t.match(/\b(?:el |este |antes del? )?(lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)\b/))) {
+    const dow = DIAS.findIndex(d => d.normalize('NFD').replace(/\p{M}/gu, '') === m[1].normalize('NFD').replace(/\p{M}/gu, ''));
+    return { tope: proximo(dow), leido: m[0] };
+  }
+  if ((m = t.match(/\b(?:el|antes del|para el|hasta el)(?: d[ií]a)? (\d{1,2})(?: de (\w+))?/))) {
+    const dia = +m[1], mes = m[2] ? MESES.indexOf(m[2]) : -1;
+    const d = new Date(HOY.getFullYear(), mes >= 0 ? mes : HOY.getMonth(), dia);
+    if (d < HOY) mes >= 0 ? d.setFullYear(d.getFullYear() + 1) : d.setMonth(d.getMonth() + 1);
+    if (dia >= 1 && dia <= 31) return { tope: iso(d), leido: m[0] };
+  }
+  if (/esta semana/.test(t)) return { tope: finDeSemana(), leido: 'esta semana' };
+  if (/(la semana que viene|la pr[oó]xima semana)/.test(t)) return { tope: mas(((8 - HOY.getDay()) % 7 || 7) + 4), leido: 'la semana que viene' };   // viernes de la semana que viene
+  if (/(fin de mes|este mes|final de mes)/.test(t)) { const d = new Date(HOY.getFullYear(), HOY.getMonth() + 1, 0); return { tope: iso(d), leido: 'este mes' }; }
+  return { tope: '', leido: '' };
+}
+function lineasDe(texto) {
+  const limpio = texto.replace(/^.*?\b(?:comprar|compra|c[oó]mprame|faltan?|se (?:ha|han) acabado|se acab[oó]|reponer)\b\s*(?:el |la |los |las |de )?/i, '').replace(/[.;]+$/, '');
+  return limpio.split(/\s*,\s*|\s+y\s+|\s+e\s+/i).map(s => s.trim()).filter(Boolean).map(s => {
+    const q = s.match(/^((?:\d+|una?|dos|tres|cuatro|media|medio)\s*(?:kilos?|kg|litros?|l|paquetes?|botes?|docenas?|botellas?|bolsas?|latas?)?)\s+(?:de\s+)?(.+)$/i);
+    const nombre = (q ? q[2] : s).replace(/^(?:el|la|los|las|unas?|unos)\s+/i, '');
+    return { nombre: nombre.charAt(0).toUpperCase() + nombre.slice(1), cantidad: q ? q[1] : '', etiqueta: ALIMENTOS.test(nombre) ? 'alimentacion' : 'otras' };
+  });
+}
+function tituloTarea(texto) {
+  return texto.replace(/^(?:tengo que|hay que|no olvidar|recordar)\s+/i, '').replace(/\s*(?:,?\s*(?:el|este|antes del?|para el|hasta el)\s+(?:d[ií]a\s+)?(?:lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo|\d{1,2}(?: de \w+)?)|\s+(?:pasado mañana|mañana|hoy|esta semana|la semana que viene|la pr[oó]xima semana|este mes))\b.*$/i, '').replace(/^\w/, c => c.toUpperCase());
+}
+const EJEMPLOS = {
+  tarea: 'Tengo que llevar el coche a la ITV antes del viernes',
+  compra: 'Comprar dos litros de leche, pan, un bote de tomate y cinta americana',
+  idea: 'Se me ha ocurrido que podría caminar veinte minutos después de comer los días que teletrabajo',
+  mezcla: 'Llamar a la gestoría el jueves y comprar sobres y un paquete de folios',
+};
+
+// ── Pintado ──
+let vista = 'notas', pest = 'tareas', filtroEtq = 'todas', filtroIdea = '', q = '';
+const ICO = { alimentacion: '🥕 Alimentación', otras: '🛒 Otras' };
+function tarjetaTarea(t) {
+  const n = dias(t.tope), cls = t.hecha ? '' : n < 0 ? 'vencida' : n === 0 ? 'hoy' : '';
+  return `<div class="tarjeta fila ${t.hecha ? 'hecha' : ''} ${cls === 'vencida' ? 'vencida' : ''}">
+    <button class="chk" data-a="hecha" data-id="${t.id}" aria-label="Hecha">${t.hecha ? '✓' : ''}</button>
+    <div class="t" data-a="editar-tarea" data-id="${t.id}"><b>${esc(t.titulo)}</b><div class="mini">tope ${fechaLarga(t.tope)}</div></div>
+    <span class="tope ${cls}">${relativo(t.tope)}</span></div>`;
+}
+function gruposTareas(lista) {
+  const pend = lista.filter(t => !t.hecha).sort((a, b) => a.tope.localeCompare(b.tope));
+  const G = [['Vencidas', t => dias(t.tope) < 0, 'mal'], ['Hoy', t => dias(t.tope) === 0], ['Esta semana', t => dias(t.tope) > 0 && t.tope <= finDeSemana()], ['Más adelante', t => t.tope > finDeSemana()]];
+  return G.map(([nom, f, c]) => { const l = pend.filter(f); return l.length ? `<h3 class="${c || ''}">${nom} <span class="n">${l.length}</span></h3>${l.map(tarjetaTarea).join('')}` : ''; }).join('');
+}
+function pintarNotas() {
+  const vencidas = tareas.filter(t => !t.hecha && dias(t.tope) < 0).length;
+  const pendT = tareas.filter(t => !t.hecha).length, pendC = compras.filter(c => !c.comprado).length;
+  const tabs = [['tareas', 'Tareas', pendT, vencidas], ['compras', 'Compras', pendC], ['ideas', 'Ideas', ideas.length]];
+  let html = `<div class="aviso-mock">Mock 5 · no guarda nada. <b>+ Nota</b> abre el mismo diálogo en las tres pestañas: dicta y el mayordomo decide si es tarea, compra o idea (se puede cambiar). Prueba los dictados de ejemplo.</div>
+  <div class="pestanas">${tabs.map(([v, l, n, mal]) => `<button class="${v === pest ? 'sel' : ''}" data-a="pestana" data-v="${v}">${l}${n ? `<i class="n ${mal ? 'mal' : ''}">${n}</i>` : ''}</button>`).join('')}</div>`;
+  if (pest === 'tareas') {
+    const hechas = tareas.filter(t => t.hecha);
+    html += `<div class="acciones"><button class="btn p" data-a="nueva" data-c="tarea">+ Tarea</button><span class="mini">Ordenadas por fecha tope</span></div>
+      ${gruposTareas(tareas) || '<div class="vacio">Nada pendiente.</div>'}
+      ${hechas.length ? `<details class="plegable"><summary>Hechas <span class="mini">${hechas.length}</span></summary><div class="cuerpo">${hechas.map(tarjetaTarea).join('')}</div></details>` : ''}`;
+  } else if (pest === 'compras') {
+    const pend = compras.filter(c => !c.comprado && (filtroEtq === 'todas' || c.etiqueta === filtroEtq));
+    const hechos = compras.filter(c => c.comprado);
+    const etqs = ['todas', ...new Set(compras.map(c => c.etiqueta))];
+    html += `<div class="acciones"><button class="btn p" data-a="nueva" data-c="compra">+ Compra</button><button class="btn" data-a="copiar">Copiar lista</button><button class="btn" data-a="ir-compra">🧺 Abrir Compra</button></div>
+      <div class="chips">${etqs.map(e => `<button class="pill ${e === filtroEtq ? 'sel' : ''}" data-a="etq" data-e="${e}">${e === 'todas' ? 'todas' : ICO[e] || e}</button>`).join('')}</div>
+      ${Object.keys(ICO).map(e => { const l = pend.filter(c => c.etiqueta === e); return l.length ? `<h3>${ICO[e]} <span class="n">${l.length}</span></h3>` + l.map(c => `<div class="tarjeta fila">
+        <button class="chk" data-a="comprado" data-id="${c.id}" aria-label="Comprado"></button>
+        <div class="t" data-a="editar-compra" data-id="${c.id}"><b>${esc(c.nombre)}</b>${c.cantidad ? ` <span class="mini">${esc(c.cantidad)}</span>` : ''}<div class="mini">${c.origen === 'stock' ? 'bajo mínimos en Alimentación' : 'dictado el ' + fechaCorta(c.fecha)}</div></div>
+        <button class="btn mini" data-a="buscar" data-q="${esc(c.nombre)}">buscar</button></div>`).join('') : ''; }).join('') || '<div class="vacio">Nada que comprar.</div>'}
+      ${hechos.length ? `<details class="plegable"><summary>Comprado <span class="mini">${hechos.length}</span></summary><div class="cuerpo">${hechos.map(c => `<div class="mini">✓ ${esc(c.nombre)} ${esc(c.cantidad)}</div>`).join('')}</div></details>` : ''}
+      <p class="mini">Es la misma lista que la sección 🧺 Compra (allí va por tienda): marcar aquí la tacha allí.</p>`;
+  } else {
+    const usadas = ['todas', ...new Set(ideas.flatMap(n => n.etiquetas))];
+    const l = ideas.filter(n => (!q || (n.titulo + ' ' + n.texto).toLowerCase().includes(q)) && (filtroIdea === 'todas' || !filtroIdea || n.etiquetas.includes(filtroIdea)));
+    html += `<div class="acciones"><input type="search" placeholder="Buscar en las ideas" value="${esc(q)}" id="buscar-ideas"><button class="btn p" data-a="nueva" data-c="idea">+ Idea</button></div>
+      <div class="chips">${usadas.map(e => `<button class="pill ${(filtroIdea || 'todas') === e ? 'sel' : ''}" data-a="etq-idea" data-e="${e}">${e}</button>`).join('')}</div>
+      ${l.map(n => `<div class="tarjeta nota t-${n.tipo}"><b>${esc(n.titulo)}</b><div class="mini">${fechaCorta(n.fecha)} · ${n.tipo}${n.etiquetas.length ? ' · ' + n.etiquetas.join(', ') : ''}</div><div class="cuerpo">${esc(n.texto)}</div></div>`).join('') || '<div class="vacio">Sin ideas con ese filtro.</div>'}
+      <p class="mini">Igual que las notas de ahora: título automático, etiquetas y tipo. Las marcadas como preferencia o tendencia siguen guiando al mayordomo. Todas las notas que ya tienes pasan aquí.</p>`;
+  }
+  html += NOTA_MOCK;
+  return html;
+}
+function pintarHoy() {
+  const urg = tareas.filter(t => !t.hecha && dias(t.tope) <= 0).sort((a, b) => a.tope.localeCompare(b.tope));
+  const prox = tareas.filter(t => !t.hecha && dias(t.tope) > 0 && dias(t.tope) <= 3);
+  return `<div class="aviso-mock">Así saldrían las tareas en <b>Hoy</b>: solo las vencidas y las de hoy, más un recordatorio de las de los próximos tres días. El resto de Hoy no cambia.</div>
+    <h3>Tareas <span class="n">${urg.length}</span></h3>
+    ${urg.map(tarjetaTarea).join('') || '<div class="vacio">Nada vence hoy.</div>'}
+    ${prox.length ? `<p class="mini">Próximos días: ${prox.map(t => esc(t.titulo) + ' (' + relativo(t.tope) + ')').join(' · ')}</p>` : ''}
+    <div class="acciones"><button class="btn" data-a="pestana" data-v="tareas">Todas las tareas ›</button><button class="btn" data-a="nueva" data-c="">+ Nota rápida</button></div>
+    <h3>Consejos del mayordomo</h3><div class="tarjeta mini">(sin cambios respecto a la app)</div>`;
+}
+function pintar() {
+  $('#titulo').textContent = vista === 'hoy' ? 'Hoy' : 'Notas';
+  document.querySelectorAll('nav a').forEach(a => a.classList.toggle('activo', a.dataset.nav === vista));
+  $('#main').innerHTML = vista === 'hoy' ? pintarHoy() : pintarNotas();
+  const b = $('#buscar-ideas');
+  if (b) b.addEventListener('input', () => { q = b.value.toLowerCase(); const pos = b.selectionStart; pintar(); const n = $('#buscar-ideas'); n.focus(); n.setSelectionRange(pos, pos); });
+}
+
+// ── Diálogo «Nueva nota» ──
+const dlg = $('#dlg');
+let clase = 'idea', claseManual = false, lineas = [], mezcla = null, editando = null;
+function ponerClase(c, { auto = false } = {}) {
+  clase = c;
+  document.querySelectorAll('#clase button').forEach(b => b.classList.toggle('sel', b.dataset.c === c));
+  $('#b-tarea').hidden = c !== 'tarea'; $('#b-compra').hidden = c !== 'compra'; $('#b-idea').hidden = c !== 'idea';
+  $('#t-tope').required = c === 'tarea';
+  if (!auto) $('#detectado').textContent = '';
+  if (!editando) $('#dlg-titulo').textContent = { tarea: 'Nueva tarea', compra: 'Añadir a la compra', idea: 'Nueva idea' }[c];
+  if (c === 'compra' && !lineas.length) { lineas = lineasDe($('#texto').value); if (!lineas.length) lineas = [{ nombre: '', cantidad: '', etiqueta: 'alimentacion' }]; pintarLineas(); }
+  if (c === 'tarea' && !$('#t-tope').value) interpretarTarea();
+}
+function pintarLineas() {
+  $('#lineas').innerHTML = lineas.map((l, i) => `<div class="linea"><input value="${esc(l.nombre)}" data-l="${i}" data-k="nombre" placeholder="qué"><input value="${esc(l.cantidad)}" data-l="${i}" data-k="cantidad" placeholder="cuánto"><select data-l="${i}" data-k="etiqueta"><option value="alimentacion" ${l.etiqueta === 'alimentacion' ? 'selected' : ''}>🥕 alim.</option><option value="otras" ${l.etiqueta === 'otras' ? 'selected' : ''}>🛒 otras</option></select><button type="button" data-quitar="${i}" aria-label="Quitar">✕</button></div>`).join('');
+}
+function interpretarTarea() {
+  const { tope, leido } = topeDe($('#texto').value);
+  if (tope) $('#t-tope').value = tope;
+  $('#t-leido').textContent = tope ? `Leído del dictado: «${leido}» → ${fechaLarga(tope)}` : 'No he oído ninguna fecha: elige una.';
+  if (!$('#t-titulo').value) $('#t-titulo').placeholder = tituloTarea($('#texto').value) || 'vacío = lo pone el mayordomo';
+}
+function interpretar() {
+  const texto = $('#texto').value.trim();
+  $('#aviso-mezcla').hidden = true; mezcla = null;
+  if (!texto) return;
+  const c = claseDe(texto);
+  if (c === 'mezcla') {
+    const [a, b] = trozos(texto);
+    const ca = RE_COMPRA.test(a) ? 'compra' : 'tarea', cb = RE_COMPRA.test(b) ? 'compra' : 'tarea';
+    mezcla = [[ca, a], [cb, b]];
+    $('#aviso-mezcla').innerHTML = `Esto parecen <b>dos cosas</b>:<ul>${mezcla.map(([k, t]) => `<li>${k === 'tarea' ? '☑ tarea' : '🛒 compra'}: «${esc(t)}»</li>`).join('')}</ul><button class="btn mini" type="button" id="partir">Guardar como dos</button> <button class="btn mini" type="button" id="no-partir">Dejarla en una</button>`;
+    $('#aviso-mezcla').hidden = false;
+    if (!claseManual) { lineas = []; ponerClase(ca, { auto: true }); $('#detectado').textContent = 'El mayordomo ve una tarea y una compra.'; }
+    return;
+  }
+  if (claseManual) {
+    if (clase === 'tarea') interpretarTarea();
+    if (clase === 'compra' && !lineas.some(l => l.nombre.trim())) { lineas = lineasDe(texto); pintarLineas(); }
+    return;
+  }
+  lineas = []; $('#t-tope').value = '';
+  ponerClase(c, { auto: true });
+  $('#detectado').textContent = { tarea: 'Parece una tarea (lleva fecha o un «tengo que»).', compra: 'Parece una compra: la he partido en líneas.', idea: 'Parece una idea: el mayordomo le pondrá título y etiquetas.' }[c];
+}
+function rapidas() {
+  const R = [['Hoy', mas(0)], ['Mañana', mas(1)], ['Viernes', proximo(5)], ['Fin de semana', finDeSemana()], ['En 15 días', mas(15)]];
+  $('#rapidas').innerHTML = R.map(([l, d]) => `<button type="button" class="pill" data-tope="${d}">${l}</button>`).join('');
+}
+function abrir(c, previa = null) {
+  editando = previa; claseManual = !!c; lineas = []; mezcla = null;
+  $('#form').reset(); $('#lineas').innerHTML = ''; $('#aviso-mezcla').hidden = true; $('#t-leido').textContent = ''; $('#detectado').textContent = c ? '' : 'Dicta y el mayordomo decide el tipo; puedes cambiarlo.';
+  $('#t-titulo').placeholder = 'vacío = lo pone el mayordomo';
+  $('#dlg-titulo').textContent = previa ? 'Editar tarea' : { tarea: 'Nueva tarea', compra: 'Añadir a la compra', idea: 'Nueva idea' }[c] || 'Nueva nota';
+  if (previa) { $('#texto').value = previa.titulo; $('#t-titulo').value = previa.titulo; $('#t-tope').value = previa.tope; }
+  rapidas(); ponerClase(c || 'idea', { auto: !c }); if (!c) { $('#detectado').textContent = 'Dicta y el mayordomo decide el tipo; puedes cambiarlo.'; $('#dlg-titulo').textContent = 'Nueva nota'; }
+  if (previa) $('#dlg-titulo').textContent = 'Editar tarea';
+  dlg.showModal();
+}
+function guardar() {
+  const texto = $('#texto').value.trim();
+  if (clase === 'tarea') {
+    const tope = $('#t-tope').value;
+    if (!tope) { $('#t-tope').focus(); return toast('Una tarea necesita fecha tope'); }
+    const titulo = $('#t-titulo').value.trim() || tituloTarea(texto) || 'Tarea';
+    if (editando) Object.assign(editando, { titulo, tope });
+    else tareas.push({ id: 't' + Date.now(), titulo, tope, hecha: false });
+    pest = 'tareas'; toast(editando ? 'Tarea actualizada' : `Tarea para ${relativo(tope)} · sale en Hoy ese día`);
+  } else if (clase === 'compra') {
+    const nuevas = lineas.filter(l => l.nombre.trim());
+    if (!nuevas.length) return toast('Añade al menos una línea');
+    const rep = anadirCompras(nuevas);
+    pest = 'compras'; toast(`${nuevas.length - rep} ${nuevas.length - rep === 1 ? 'línea nueva' : 'líneas nuevas'} en la compra${rep ? ` · ${rep} ya estaba${rep > 1 ? 'n' : ''}` : ''}`);
+  } else {
+    if (!texto) return toast('Escribe o dicta algo');
+    ideas.unshift({ id: 'i' + Date.now(), titulo: $('#i-titulo').value.trim() || texto.split(/\s+/).slice(0, 7).join(' ') + '…', texto, etiquetas: $('#i-etq').value.split(',').map(s => s.trim()).filter(Boolean), tipo: $('#i-tipo').value, fecha: mas(0) });
+    pest = 'ideas'; toast('Guardada; el mayordomo le pone título');
+  }
+  dlg.close(); if (vista !== 'hoy') vista = 'notas'; pintar();
+}
+// Lo que ya está pendiente en la lista no se duplica: se actualiza la cantidad si se dijo una.
+const norma = s => s.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').replace(/s$/, '').trim();
+function anadirCompras(nuevas) {
+  let rep = 0;
+  nuevas.forEach((l, i) => { const ya = compras.find(c => !c.comprado && norma(c.nombre) === norma(l.nombre)); if (ya) { rep++; if (l.cantidad) ya.cantidad = l.cantidad; } else compras.push({ id: 'c' + Date.now() + i, ...l, origen: 'nota', fecha: mas(0), comprado: false }); });
+  return rep;
+}
+function partir() {
+  for (const [k, t] of mezcla) {
+    if (k === 'tarea') { const { tope } = topeDe(t); tareas.push({ id: 't' + Date.now(), titulo: tituloTarea(t), tope: tope || mas(7), hecha: false }); }
+    else anadirCompras(lineasDe(t));
+  }
+  dlg.close(); toast('Guardada como una tarea y una compra'); pintar();
+}
+// Dictado simulado: escribe el texto poco a poco y al terminar interpreta, como alDictar en la app.
+let dictando = null;
+function dictar(texto) {
+  clearInterval(dictando); const ta = $('#texto'); ta.value = ''; $('#micro').classList.add('oyendo');
+  const palabras = texto.split(' '); let i = 0;
+  dictando = setInterval(() => { ta.value += (i ? ' ' : '') + palabras[i++]; if (i >= palabras.length) { clearInterval(dictando); $('#micro').classList.remove('oyendo'); claseManual = false; interpretar(); } }, 90);
+}
+let ejemplo = 0;
+dlg.addEventListener('click', e => {
+  const t = e.target;
+  if (t.closest('[data-cancelar]')) { clearInterval(dictando); $('#micro').classList.remove('oyendo'); dlg.close(); return; }
+  if (t.closest('#clase button')) { claseManual = true; lineas = []; ponerClase(t.closest('button').dataset.c); if (clase === 'tarea') interpretarTarea(); return; }
+  if (t.dataset.ej) return dictar(EJEMPLOS[t.dataset.ej]);
+  if (t.id === 'micro') { const k = Object.keys(EJEMPLOS)[ejemplo++ % 4]; return dictar(EJEMPLOS[k]); }
+  if (t.dataset.tope) { $('#t-tope').value = t.dataset.tope; $('#t-leido').textContent = ''; return; }
+  if (t.dataset.quitar) { lineas.splice(+t.dataset.quitar, 1); return pintarLineas(); }
+  if (t.id === 'mas-linea') { lineas.push({ nombre: '', cantidad: '', etiqueta: 'otras' }); pintarLineas(); $('#lineas .linea:last-child input').focus(); return; }
+  if (t.id === 'partir') return partir();
+  if (t.id === 'no-partir') { $('#aviso-mezcla').hidden = true; mezcla = null; return; }
+  if (t.id === 'guardar') return guardar();
+});
+dlg.addEventListener('input', e => { const k = e.target.dataset.k; if (k) lineas[+e.target.dataset.l][k] = e.target.value; });
+dlg.addEventListener('change', e => { const k = e.target.dataset.k; if (k) lineas[+e.target.dataset.l][k] = e.target.value; });
+$('#texto').addEventListener('change', interpretar);
+dlg.addEventListener('close', () => { editando = null; });
+
+// ── Clics de la página ──
+document.addEventListener('click', e => {
+  const n = e.target.closest('nav a');
+  if (n) { const d = n.dataset.nav; if (d === 'hoy' || d === 'notas') { vista = d; pintar(); window.scrollTo(0, 0); } else toast(d === 'calendario' ? 'Calendario: cada tarea sale el día de su tope como marca, sin sumar horas a la carga del día' : 'Fuera del alcance del mock'); return; }
+  const el = e.target.closest('[data-a]'); if (!el || dlg.contains(el)) return;
+  const a = el.dataset.a, id = el.dataset.id;
+  if (a === 'pestana') { vista = 'notas'; pest = el.dataset.v; pintar(); }
+  else if (a === 'nueva') abrir(el.dataset.c);
+  else if (a === 'hecha') { const t = tareas.find(x => x.id === id); t.hecha = !t.hecha; pintar(); toast(t.hecha ? 'Hecha' : 'Pendiente otra vez'); }
+  else if (a === 'editar-tarea') abrir('tarea', tareas.find(x => x.id === id));
+  else if (a === 'comprado') { const c = compras.find(x => x.id === id); c.comprado = true; pintar(); toast(c.origen === 'stock' ? 'Comprado · pregunta cuánto para reponer el stock' : 'Comprado'); }
+  else if (a === 'editar-compra') toast('Edita nombre, cantidad, etiqueta y tienda (como en Compra)');
+  else if (a === 'etq') { filtroEtq = el.dataset.e; pintar(); }
+  else if (a === 'etq-idea') { filtroIdea = el.dataset.e; pintar(); }
+  else if (a === 'copiar') toast('Lista copiada (agrupada por etiqueta)');
+  else if (a === 'ir-compra') toast('Abre la sección Compra: la misma lista, agrupada por tienda');
+  else if (a === 'buscar') toast('Abre el Buscador con «' + el.dataset.q + '»');
+});
+
+const NOTA_MOCK = `<div class="nota-mock"><h4>Qué se aprueba con este mock</h4><ol>
+  <li><b>Un solo botón, tres destinos.</b> Se dicta como ahora y el mayordomo (operación <code>nota</code>, la misma llamada que ya pone título) devuelve además la clase. Sin LLM la deciden unas reglas («comprar», «falta», «tengo que», una fecha…), que son las del mock. El + de cada pestaña la trae preseleccionada, y cambiarla a mano manda.</li>
+  <li><b>Tarea = título + fecha tope obligatoria</b>, sacada del dictado («el viernes», «mañana», «antes del 30», «esta semana») con botones rápidos si no se dijo. Agrupadas en vencidas, hoy, esta semana y más adelante; las hechas, plegadas.</li>
+  <li><b>Mejora propuesta · tareas en Hoy y en el Calendario:</b> las vencidas y las de hoy salen en Hoy (toca ☀ abajo); en el Calendario, como marca del día sin sumar horas a la carga.</li>
+  <li><b>Mejora propuesta · una sola lista de la compra.</b> Una compra dictada se parte en líneas (una por cosa, con cantidad) con etiqueta 🥕 alimentación u 🛒 otras, y van a la lista de la sección 🧺 Compra, no a una lista paralela: la pestaña Compras de Notas es esa lista agrupada por etiqueta; Compra la sigue agrupando por tienda. Lo que ya está pendiente no se duplica.</li>
+  <li><b>Ideas = las notas de hoy</b>, sin cambios: título automático, etiquetas y tipo (nota, preferencia, tendencia). Las notas que ya tienes pasan aquí al migrar.</li>
+  <li><b>Mejora propuesta · una nota que mezcla se parte</b> («llamar a la gestoría el jueves y comprar sobres»): se ofrece guardarla como una tarea y una compra; nunca sin preguntar.</li>
+  <li><b>Accesos directos:</b> «+ Tarea», «+ Compra» y «+ Idea» son botones con <code>data-a</code>, así que se pueden fijar en Hoy con ☆ sin tocar nada.</li>
+</ol>
+<p><span class="sup">[SUPUESTO]</span> Las etiquetas de compra son solo dos (alimentación y otras); si quieres más (farmacia, droguería…), se añaden como las de las ideas. <span class="sup">[SUPUESTO]</span> Una tarea no avisa con notificación: sale en Hoy. Si quieres aviso, se añade después con la hora del día que digas.</p></div>`;
+
+pintar();
+</script>
+</body>
+</html>

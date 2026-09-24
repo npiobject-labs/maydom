@@ -32,7 +32,7 @@ function exportarMemoria() {
     `- Energía ${p.energia}/5 · foco: ${p.foco || '-'} · carga máx ${p.cargaMax} h · píldoras cada ${p.pildoraCada} min\n- Ejercicio: ${(p.tiposEjercicio || []).join(', ') || '-'} · alimentación: ${p.restricciones || '-'}\n- Ocio: ${(p.tiposOcio || []).join(', ')} · ${p.ocioPorMes}/mes · ${p.presupuestoOcio} €\n- Sueño: acostarse ${p.horaAcostarse}, objetivo ${p.objetivoSueno} h\n${p.notas ? '- Notas: ' + p.notas + '\n' : ''}`,
     `\n## Consejos decididos\n`, ...estado.consejos.filter(c => c.estado !== 'nuevo').map(c => `- ${c.cambiado || c.fecha} · **${ESTADOS[c.estado]}** · #${c.seccion} · ${c.texto}`),
     `\n## Memoria de la app\n`, ...estado.memoria.slice(-100).map(m => `- ${m.fecha} · ${m.tipo} · ${m.texto}`),
-    `\n## Notas marcadas\n`, ...estado.notas.filter(n => n.tipo !== 'nota').map(n => `- ${n.fecha} · ${n.tipo} · ${n.texto} ${(n.etiquetas || []).map(e => '#' + e).join(' ')}`)].join('\n');
+    `\n## Notas marcadas\n`, ...estado.notas.filter(n => (n.clase || 'idea') === 'idea' && n.tipo !== 'nota').map(n => `- ${n.fecha} · ${n.tipo} · ${n.texto} ${(n.etiquetas || []).map(e => '#' + e).join(' ')}`)].join('\n');
   const nombre = `${hoyISO()}-app.md`;
   const url = `${REPO_MEMORIA}?filename=${encodeURIComponent(nombre)}&value=${encodeURIComponent(md)}`;
   // GitHub prellena el fichero desde la URL hasta unos 8 KB; si es más largo, se descarga y se copia.

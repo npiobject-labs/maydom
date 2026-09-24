@@ -187,3 +187,26 @@ h3.cab-accesos{display:flex;align-items:center;gap:.5rem;margin-top:.3rem}h3.cab
 .vista-acceso{margin-top:.8rem;padding:.8rem;border-radius:10px;background:var(--bg);display:flex;justify-content:center}
 .vista-acceso .accesos{width:min(100%,17rem)}
 @media (prefers-reduced-motion:reduce){.colocando .acceso{animation:none}}
+
+/* ── Notas: tareas, compras e ideas en un solo diálogo (mock 5) ── */
+.segmento{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:.3rem}
+.segmento button{font:500 .88rem var(--sans);background:var(--bg2);color:var(--ink2);border:0;border-left:1px solid var(--line);padding:.5rem .2rem;cursor:pointer}
+.segmento button:first-child{border-left:0}
+.segmento button.sel{background:var(--acc);color:#fff}
+.detectado{color:var(--acc);margin-top:.3rem;min-height:1.1em}
+.aviso-mezcla{background:var(--warn2);border:1px solid var(--warn);border-radius:8px;padding:.55rem .7rem;margin-top:.6rem;font-size:.85rem}
+.aviso-mezcla ul{margin:.3rem 0 .45rem;padding-left:1.1rem}
+.rapidas{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.4rem}
+.rapidas .pill{cursor:pointer}
+.dialogo-nota [data-leido]{display:block;margin-top:.3rem}
+.linea-compra{display:grid;grid-template-columns:minmax(0,1fr) 4.6rem 5.8rem 1.2rem;gap:.35rem;align-items:center;margin-top:.35rem}
+.linea-compra input,.linea-compra select{padding:.38rem .45rem;font-size:.88rem;min-width:0}
+.linea-compra button{background:none;border:0;color:var(--mute);cursor:pointer;font-size:1rem;padding:0}
+.tarea .chk{display:flex;align-items:center;justify-content:center;padding:0}
+.tarea.hecha .chk{background:var(--ok);border-color:var(--ok);color:#fff}
+.tarea.hecha b{text-decoration:line-through;color:var(--mute);font-weight:500}
+.tarea.vencida{border-left:3px solid var(--mal)}
+.tarea .t{cursor:pointer}
+h3.mal{color:var(--mal)}
+h3 a.mini{text-transform:none;letter-spacing:0;font-weight:400;margin-left:.3rem}
+.pestanas .n.mal{background:var(--mal2);color:var(--mal)}

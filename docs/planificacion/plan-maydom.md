@@ -33,13 +33,13 @@ En móvil: barra inferior con **Hoy · Calendario · Mayordomo · Buscar · Men�
 ## 3. Secciones: qué hace cada una
 
 ### Hoy
-Portada. **Accesos directos** arriba del todo (ADR-007): botones de colores con forma, icono y nombre que el usuario fija con ☆ desde cualquier sección o ventana y coloca en una rejilla de 4 columnas; llevan a la sección o directamente a una acción. Debajo, agenda del día con carga (horas ocupadas vs límite), próximas tomas de suplementos, siguiente píldora de movimiento, consejos nuevos del mayordomo, registro rápido de sueño de anoche y de comida hecha.
+Portada. **Accesos directos** arriba del todo (ADR-007): botones de colores con forma, icono y nombre que el usuario fija con ☆ desde cualquier sección o ventana y coloca en una rejilla de 4 columnas; llevan a la sección o directamente a una acción. Debajo, agenda del día con carga (horas ocupadas vs límite), las **tareas** vencidas y las de hoy (y las de los tres días siguientes, nombradas), próximas tomas de suplementos, siguiente píldora de movimiento, consejos nuevos del mayordomo, registro rápido de sueño de anoche y de comida hecha.
 
 ### Calendario
 Vista día y semana. Eventos con sección de origen (ejercicio, comida, meditación, proyecto, ocio, aviso). **Regla de carga**: límite de horas planificadas al día (preferencias, por defecto 6) y aviso al superarlo. **Conflictos**: al añadir algo que choca con otro evento se pregunta si se sustituye o se descarta (nota de ocio). Planificación a corto plazo: se rellena día a día; las plantillas semanales son opcionales.
 
 ### Notas
-Notas rápidas sobre cualquier área. **Se dictan** (botón de micrófono, donde el navegador lo admita) y **se titulan solas**: al guardar, el mayordomo devuelve título, etiquetas y tipo (nota, preferencia o tendencia) en una llamada. Lo escrito a mano nunca se pisa: el análisis solo rellena lo vacío. El guardado es inmediato y el análisis va después, así que una nota no se pierde por un fallo de red; mientras llega, lleva un título hecho con sus primeras palabras. Las marcadas como preferencia o tendencia alimentan a Preferencias. Búsqueda por texto, título y etiqueta, y un botón para titular en lote las que vengan de antes.
+Tres pestañas, **Tareas · Compras · Ideas** (ADR-008, mock 005), y **un solo diálogo** para dictar: el mayordomo decide la clase en la misma llamada que pone el título (`nota`), y sin LLM o mientras llega la deciden unas reglas (`interpretar-nota.js`); la clase elegida a mano manda y el «+» de cada pestaña la trae ya puesta. **Tarea**: título y **fecha tope obligatoria**, leída del dictado («el viernes», «mañana», «antes del 30», «esta semana», «en dos semanas») o elegida con botones rápidos; agrupadas en vencidas, hoy, esta semana y más adelante, y las hechas plegadas. Las vencidas y las de hoy salen en **Hoy** y cada una sale en el **Calendario** el día de su tope, sin sumar carga; no hay notificación. **Compra**: el dictado se parte en líneas, una por cosa y con cantidad, con etiqueta (alimentación, droguería, farmacia, otras y las que el usuario cree) y van a **la lista de Compra, que es una sola**; lo que ya está pendiente no se duplica. **Idea**: lo que eran las notas —título, etiquetas y tipo (nota, preferencia o tendencia)—; las marcadas como preferencia o tendencia alimentan a Preferencias, y todas las notas anteriores pasaron a ideas. Una nota que junta cosas de clases distintas se ofrece guardar por separado. Lo escrito a mano nunca se pisa, el guardado es inmediato y el análisis va después.
 
 ### Ejercicio
 - **Catálogo** de ejercicios básicos con tipo (calistenia, kettlebell, movilidad, cardio), explicación y enlace de búsqueda en YouTube. Ampliable a mano y por el mayordomo según preferencias ("quiero calistenia" → propone ejercicios de ese tipo).
@@ -67,7 +67,7 @@ Lista de suplementos en casa con **stock**, dosis y **hora de toma propuesta** p
 **Propuesta en estudio (24-sep)**: sustituir «Revisar horario con LLM» por un **especialista** que propone pauta y dosis de todos los suplementos a la vez, con su propio modelo (candidato: Opus 5.5, elegido midiendo), una tabla local de límites y choques que manda sobre el modelo y las horas calculadas en la app a partir de la jornada; «✦ Según la IA» como opción de hora y de dosis en la ficha. El stock queda aparcado. Análisis en [`suplementos-especialista.md`](suplementos-especialista.md) y mock en `docs/mocks/004-suplementos-especialista.html`. **Alternativa preferida como fase 1** (misma tarde): la pauta la hace el usuario en el chat con Fable 5.1 u Opus 5.5 a partir de fotos y textos de los botes (primero identifica y genera la tabla de entrada, se para a que la revise, y después la pauta), con prompt y formatos Markdown en `docs/planificacion/suplementos/`, y la app solo la importa y la enseña, sin seguimiento de tomas ni stock ([`suplementos-pauta-externa.md`](suplementos-pauta-externa.md)). Proceso recurrente (24-sep): skill «suplementos» de claude.ai (`docs/planificacion/suplementos/skill/`) que añade suplementos a una tabla en Drive a partir de los enlaces de «Mis pedidos» sin perder los anteriores y genera la pauta; los datos reales no entran en el repositorio.
 
 ### Compra
-Lista unificada: lo que baja del umbral en Alimentación y Suplementos más lo que se añade a mano. Cada línea con tienda preferida. Marcar comprado repone stock.
+Lista unificada: lo que baja del umbral en Alimentación y Suplementos, lo que se dicta como compra en Notas y lo que se añade a mano. Cada línea con etiqueta y tienda preferida; Compra agrupa por tienda y la pestaña Compras de Notas, por etiqueta. Marcar comprado repone stock.
 
 ### Proyectos
 Proyectos de **trabajo** o **personales** con estimación de horas, horas registradas, porcentaje y fecha objetivo. Registro de horas por sesión (un botón, no un parte). **Semáforo**: proyectos sin horas en N días se marcan como rezagados. Planificación de bloques de trabajo en el calendario con **píldoras de movimiento** intercaladas (nota: el trabajo es lo más sedentario). Buena parte del trabajo se hace desde el móvil: la app no asume PC.
@@ -101,7 +101,7 @@ Input de qué busco + tiendas donde buscarlo (catálogo con categoría: alimenta
 | Memoria del mayordomo | Bóveda **Obsidian** en `docs/planificacion/memoria/` (Markdown con frontmatter y wikilinks), en el repo | El repo es la única fuente de verdad; los agentes la leen en cada sesión; la app exporta decisiones en ese formato |
 | Semillas | Catálogos iniciales en `docs/app/datos/` (ejercicios, meditaciones, técnicas de sueño, tiendas, categorías) | Editables desde Ajustes; nunca datos reales del usuario |
 
-Esquema de datos (clave `maydom.v1` en `localStorage`): `preferencias`, `eventos[]`, `notas[]`, `ejercicios[]`, `tablas[]`, `sesionesEjercicio[]`, `sueno[]`, `alimentos[]`, `menus[]`, `comidas[]`, `suplementos[]`, `tomas[]`, `compra[]`, `proyectos[]`, `horas[]`, `ocio[]`, `movimientos[]`, `recurrentes[]`, `importaciones[]`, `tiendas[]`, `consejos[]`, `memoria[]`, `ajustes`.
+Esquema de datos (clave `maydom.v1` en `localStorage`): `preferencias`, `eventos[]`, `notas[]` (con `clase` tarea o idea; las tareas llevan `tope`, `hecha` y `hechaEl`), `ejercicios[]`, `tablas[]`, `sesionesEjercicio[]`, `sueno[]`, `alimentos[]`, `menus[]`, `comidas[]`, `suplementos[]`, `tomas[]`, `compra[]`, `proyectos[]`, `horas[]`, `ocio[]`, `movimientos[]`, `recurrentes[]`, `importaciones[]`, `tiendas[]`, `consejos[]`, `memoria[]`, `ajustes`.
 
 ### 4.1 El LLM: gateway propio, no OpenRouter directo
 
@@ -126,7 +126,7 @@ El backend de maydom manda `Authorization: Bearer <clave de aplicación>` y `X-O
 | Sueño | Analizar las últimas 14 noches → 3 acciones · **el relato hablado de la noche → horas, calidad y nota** | `sueno`, `sueno-relato` |
 | Finanzas | Recomendaciones sobre el gasto del mes · **extracto en PDF que no se deja leer → movimientos** | `finanzas`, `finanzas-extracto` |
 | Buscador | Interpretar la petición → consulta corta + categoría | `buscador` |
-| Notas | Título, etiquetas y tipo al guardar (y en lote para las antiguas) | `nota` |
+| Notas | Clase (tarea, compra o idea), título, fecha tope, líneas de compra con etiqueta, etiquetas y tipo, y si la nota junta varias cosas; una llamada por nota (y en lote para las ideas antiguas) | `nota` |
 | Alimentación | Ficha del plato: ingredientes, preparación, nutrientes, nota, etiquetas, momento y minutos | `plato` |
 | Alimentación | Modo cocina: la ficha convertida en pasos, con minutos de espera y cada cuánto remover (se guarda en el plato; sin LLM, por reglas) | `plato-cocinar` |
 | Mayordomo | Chat y tanda de consejos | `chat` |
@@ -181,6 +181,7 @@ Se revisa si aparece un segundo usuario, si hace falta sincronizar varios dispos
 
 | F15 | Formato único de la ficha del plato y **modo cocina**: comprobar ingredientes (lo que falta, a Compra), pasos con «hecho», temporizadores con aviso al acabar y para remover, ficha plegada, pantalla encendida y voz opcional | Hecha 23-sep (build 20260923-002) |
 | F16 | **Accesos directos en Hoy** (ADR-007): ☆ Fijar en cada sección y en cada ventana, rejilla de 4 columnas con tres tamaños, cinco formas y nueve colores, modo colocar con arrastre y huecos, sugerencias por uso | Hecha 24-sep (build 20260924-002; mock 003 el mismo día) |
+| F17 | **Notas por tipo** (ADR-008): pestañas Tareas, Compras e Ideas con un solo diálogo que clasifica; tareas con fecha tope en Hoy y en el Calendario; compras en líneas con etiqueta dentro de la lista de Compra | Hecha 24-sep (build 20260924-005; mock 005 el mismo día) |
 ## 7. Deuda de desarrollo
 
 Lo que las notas piden y no se puede cerrar sin servicios externos, datos reales o decisiones del usuario:

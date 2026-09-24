@@ -46,6 +46,8 @@ function cargar() {
     if (t.url && !t.verificada) { t.url = ''; e.__migrado = true; }
     if (t.verificada === undefined) { t.verificada = false; e.__migrado = true; }
   }
+  // Las notas se reparten en tareas, compras e ideas: todas las de antes son ideas.
+  for (const n of e.notas || []) if (!n.clase) { n.clase = 'idea'; e.__migrado = true; }
   e.version = VERSION_ESQUEMA;
   return e;
 }
@@ -116,6 +118,8 @@ export function toast(msg, ms = 2600) {
 // Botón que acaba de abrir una ventana (lo anota app.js): pedir() le pone ☆ para fijarlo en Hoy.
 let origen = null;
 export function anotarOrigen(o) { origen = o ? { ...o, t: Date.now() } : null; }
+// El botón fijable que acaba de abrir una ventana (o null), y se olvida: solo lo toma una ventana.
+export function tomarOrigen() { const o = origen && Date.now() - origen.t < 3000 ? origen : null; origen = null; return o; }
 
 // Formulario declarativo dentro de un <dialog>. Devuelve el objeto con los valores o null.
 // campo: {n, l, t:'text|number|date|time|select|textarea|check|tags', o:[{v,l}]|[str], v, req, min, max, step, ph, ayuda}
@@ -123,7 +127,7 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
   return new Promise(resolve => {
     const dlg = document.createElement('dialog');
     dlg.className = 'modal';
-    const fijable = origen && Date.now() - origen.t < 3000 ? origen : null; origen = null;
+    const fijable = tomarOrigen();
     const f = campos.map(c => campoHTML(c, valores[c.n] ?? c.v)).join('');
     dlg.innerHTML = h`<form method="dialog" class="form">
       <div class="cabecera-modal"><h2>${titulo}</h2>

@@ -78,7 +78,7 @@ await pag.waitForTimeout(200);
 comprobar(await pag.locator('dialog[open] [data-fijar]').isVisible(), 'la ventana lleva ☆');
 await pag.click('dialog[open] [data-fijar]');
 await pag.waitForTimeout(200);
-comprobar(await pag.locator('.fijar-acceso .lleva').textContent() === 'Notas › Nota', 'la ☆ propone justo esa acción');
+comprobar(await pag.locator('.fijar-acceso .lleva').textContent() === 'Notas › Tareas › Nota', 'la ☆ propone justo esa acción (con la pestaña)');
 await pag.click('.fijar-acceso label[title="Pentágono"]');
 await pag.click('.fijar-acceso button[type=submit]');
 await pag.waitForTimeout(200);
@@ -86,7 +86,7 @@ l = await accesos();
 comprobar(l.length === 2 && l[1].destino === '#/notas?accion=nueva', 'fijado #/notas?accion=nueva');
 await pag.click('main button[data-a="nueva"]'); await pag.waitForTimeout(150);
 await pag.click('dialog[open] .cerrar');
-await pag.locator('main input[data-i="buscar"]').click(); await pag.waitForTimeout(100);
+await pag.locator('main .acciones .mini').click(); await pag.waitForTimeout(100);
 // Una ventana abierta por un botón con ficha concreta no hereda la ☆ del último botón pulsado.
 const conId = pag.locator('main [data-a][data-id]').first();
 if (await conId.count()) { await conId.click(); await pag.waitForTimeout(200); comprobar(!(await pag.locator('dialog[open] [data-fijar]').count()), 'sin ☆ en una ventana de una ficha concreta'); await pag.keyboard.press('Escape'); }

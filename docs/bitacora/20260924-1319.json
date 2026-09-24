@@ -1,0 +1,39 @@
+{
+  "fecha": "2026-09-24T15:19:00+02:00",
+  "titulo": "Mock de accesos directos en Hoy",
+  "objetivo": "Opinar sobre la idea de accesos directos personalizables en la pantalla de entrada y montar un mock para ver cómo quedaría con las mejoras propuestas.",
+  "prompts": [
+    {
+      "texto": "Quiero plantear un acceso directo a las opciones que más utilice de la aplicación, a la entrada de la aplicación: botones de colores distintos, grandes, que se vean bien y con el nombre de dónde te llevan. En cada opción del menú, abajo a la derecha, un icono para añadirla como acceso directo; al pulsarlo sale una ventana para elegir el color, el nombre y la forma del botón (circular, cuadrada, rectangular, pentagonal, hexagonal). Quiero colocarlos en la primera pantalla en el lugar que elija, no por orden de llegada, y pueden no estar alineados. No desarrolles: dime qué te parece de forma escueta, crítico y constructivo.",
+      "nota": "dictado largo; resumido fiel a lo pedido y limpio de muletillas"
+    },
+    {
+      "texto": "Monta un mock a ver cómo quedaría tal y como tú me dices.",
+      "nota": "el original decía «mod»"
+    }
+  ],
+  "cambios": [
+    "Nuevo mock docs/mocks/003-accesos-directos.html: accesos en lo alto de Hoy sobre una rejilla de 4 columnas fijas, con tamaños pequeño, ancho y grande y cinco formas.",
+    "Modo colocar (mantener pulsado o «✎ Colocar»): arrastrar a cualquier casilla, dejar huecos, soltar encima intercambia, ✕ para quitar y «+» en los huecos.",
+    "Ventana «Fijar en inicio» desde la cabecera de cada sección y desde la ☆ de cada ventana de acción: destino, nombre de 12 letras, icono, color, forma, tamaño y vista previa.",
+    "Sugerencias del mayordomo por uso, solo como propuesta que el usuario acepta."
+  ],
+  "sha": "237322e",
+  "sha_completo": "237322e3c242bca163a0c675a871062e786e0e10",
+  "run": 36005361584,
+  "mock": "mocks/003-accesos-directos.html",
+  "build": "MA-B1-20260924-001",
+  "pagina": "https://npiobject-labs.github.io/maydom/mocks/003-accesos-directos.html",
+  "fly": null,
+  "pendiente": [
+    "Probar el mock en el móvil, sobre todo arrastrar con el dedo",
+    "Decidir si se desarrolla; si sí, ADR nuevo que complemente el ADR-003, rutas ?accion= por sección y atajos del manifest"
+  ],
+  "enlaces": [
+    {
+      "texto": "Mocks archivados",
+      "url": "https://npiobject-labs.github.io/maydom/mocks/"
+    }
+  ],
+  "notas": "Los dos prompts eran dictados; el primero se resume porque era muy largo, conservando lo que pedía."
+}

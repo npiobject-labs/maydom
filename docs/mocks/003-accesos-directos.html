@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="build" content="MA-B1-20260924-001">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0B6E7A">
+<title>maydom · mock 3 · accesos directos</title>
+<style>
+:root{--bg:#F6F7F4;--bg2:#FFFFFF;--ink:#1B2430;--ink2:#4B5563;--mute:#8A93A0;--line:#D9DED8;--acc:#0B6E7A;--acc2:#0B6E7A1A;--warn:#B85C1E;--warn2:#B85C1E14;--ok:#2E7D4F;--ok2:#2E7D4F14;--mal:#B00020;--mal2:#B0002014;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#131A20;--bg2:#1B232B;--ink:#E6EAE7;--ink2:#B7C0C7;--mute:#7F8A94;--line:#2C3740;--acc:#4FB3BF;--acc2:#4FB3BF22;--warn:#E08A4C;--warn2:#E08A4C1F;--ok:#5FBF87;--ok2:#5FBF871F;--mal:#FF6B6B;--mal2:#FF6B6B1F}}
+:root[data-theme="dark"]{--bg:#131A20;--bg2:#1B232B;--ink:#E6EAE7;--ink2:#B7C0C7;--mute:#7F8A94;--line:#2C3740;--acc:#4FB3BF;--acc2:#4FB3BF22;--warn:#E08A4C;--warn2:#E08A4C1F;--ok:#5FBF87;--ok2:#5FBF871F;--mal:#FF6B6B;--mal2:#FF6B6B1F}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans)}
+.app{max-width:32rem;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
+header.cab{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:.6rem 1rem;display:flex;align-items:center;gap:.5rem}
+header.cab h1{font-size:1.1rem;margin:0;flex:1}
+header.cab small{color:var(--mute);font-size:.72rem;text-align:right}
+.fijar{background:none;border:1px solid var(--line);border-radius:999px;color:var(--acc);font:500 .78rem var(--sans);padding:.25rem .6rem;cursor:pointer;white-space:nowrap}
+.fijar:hover{border-color:var(--acc)}
+main{flex:1;padding:.9rem 1rem 5.5rem}
+.aviso-mock{font-size:.78rem;color:var(--ink2);background:var(--acc2);border-radius:8px;padding:.5rem .7rem;margin-bottom:.7rem}
+h3{font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:1.2rem 0 .45rem;display:flex;align-items:center;gap:.5rem}
+h3 .sp{flex:1}
+.tarjeta{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:.8rem .95rem;margin:.45rem 0}
+.fila{display:flex;align-items:center;gap:.7rem}.fila .t{flex:1;min-width:0}
+.mini{color:var(--mute);font-size:.8rem}
+.barra{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:.35rem 0}.barra i{display:block;height:100%;background:var(--acc)}
+.btn{font:500 .85rem var(--sans);color:var(--acc);background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:.42rem .72rem;cursor:pointer;display:inline-flex;align-items:center;gap:.3rem}
+.btn:hover{border-color:var(--acc)}.btn.p{background:var(--acc);color:#fff;border-color:var(--acc)}.btn.peligro{color:var(--mal)}.btn.mini{font-size:.72rem;padding:.2rem .45rem}
+.acciones{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.55rem;align-items:center}.acciones.fin{justify-content:flex-end}
+.pill{font-size:.72rem;padding:.12rem .55rem;border-radius:999px;background:var(--acc2);color:var(--acc);border:0;font-family:inherit;white-space:nowrap;cursor:pointer}
+input,select,textarea{font:inherit;padding:.5rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--bg2);color:var(--ink);width:100%}
+label{display:block;font-size:.82rem;color:var(--ink2);margin-top:.6rem}
+.menu{list-style:none;margin:0;padding:0}
+.menu li a{display:flex;justify-content:space-between;align-items:center;padding:.65rem .25rem;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none}
+.menu li a span{color:var(--mute);font-size:.8rem}
+nav.inferior{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--line);display:flex;justify-content:center;z-index:6;padding-bottom:env(safe-area-inset-bottom)}
+nav.inferior .in{display:flex;width:100%;max-width:32rem;justify-content:space-around;padding:.3rem 0}
+nav.inferior a{color:var(--mute);font-size:.68rem;display:flex;flex-direction:column;align-items:center;gap:.1rem;padding:.2rem .5rem;text-decoration:none}
+nav.inferior a.activo{color:var(--acc)}nav.inferior a span{font-size:1.3rem;line-height:1.2}
+.modal{border:1px solid var(--line);border-radius:12px;background:var(--bg2);color:var(--ink);padding:1rem 1.1rem;width:min(92vw,26rem);max-height:90dvh;overflow:auto}
+.modal::backdrop{background:rgba(0,0,0,.45)}
+.cabecera-modal{display:flex;align-items:center;gap:.5rem;margin:0 0 .4rem}
+.cabecera-modal h2{flex:1;min-width:0;margin:0;font-size:1.15rem}
+.cerrar{flex:none;background:none;border:0;color:var(--mute);font-size:1.25rem;line-height:1;cursor:pointer;padding:.15rem .3rem;border-radius:6px}
+.cerrar:hover{color:var(--ink);background:var(--line)}
+#toast{position:fixed;left:50%;bottom:4.5rem;transform:translateX(-50%) translateY(1rem);background:var(--ink);color:var(--bg);padding:.5rem .9rem;border-radius:8px;font-size:.85rem;opacity:0;transition:.2s;z-index:50;max-width:90vw;pointer-events:none;text-align:center}
+#toast.ver{opacity:1;transform:translateX(-50%)}
+
+/* ── Rejilla de accesos: 4 columnas fijas en todo tamaño, así una posición es la misma en el móvil y en el PC ── */
+.accesos{--gap:.6rem;--celda:calc((100cqi - 3 * var(--gap)) / 4);container-type:inline-size;position:relative}
+.rejilla{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:var(--celda);gap:var(--gap);position:relative;touch-action:pan-y}
+.acceso{--alto:var(--celda);position:relative;border:0;padding:0;background:none;cursor:pointer;font:inherit;color:#fff;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;filter:drop-shadow(0 2px 3px #0003);transition:transform .12s}
+.acceso[data-h="2"]{--alto:calc(var(--celda) * 2 + var(--gap))}
+.acceso .forma{position:absolute;inset:0;background:var(--color);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.1rem;padding:0 .3rem;text-align:center}
+.acceso .ico{font-size:calc(var(--alto) * .34);line-height:1}
+.acceso .nom{font-size:.72rem;font-weight:600;line-height:1.1;text-shadow:0 1px 2px #0005;max-width:100%;overflow-wrap:anywhere}
+.acceso[data-h="2"] .nom{font-size:.95rem}
+.acceso[data-w="2"][data-h="1"] .forma{flex-direction:row;gap:.45rem}
+.acceso[data-w="2"][data-h="1"] .ico{font-size:calc(var(--alto) * .42)}
+.acceso[data-w="2"][data-h="1"] .nom{font-size:.85rem;text-align:left}
+.acceso:active{transform:scale(.96)}
+/* Formas: el recorte usa la altura real del botón para que el hexágono no se deforme al ensancharse */
+.f-circulo .forma{border-radius:999px}
+.f-cuadrado .forma{border-radius:14px}
+.f-hoja .forma{border-radius:calc(var(--alto) * .5) 6px calc(var(--alto) * .5) 6px}
+.f-hexagono .forma{clip-path:polygon(calc(var(--alto) * .28) 0,calc(100% - var(--alto) * .28) 0,100% 50%,calc(100% - var(--alto) * .28) 100%,calc(var(--alto) * .28) 100%,0 50%);padding:0 calc(var(--alto) * .2)}
+.f-pentagono .forma{clip-path:polygon(50% 0,100% 38%,81% 100%,19% 100%,0 38%);padding-top:18%}
+/* Modo colocar */
+.colocando .acceso{touch-action:none;cursor:grab;animation:temblor .3s ease-in-out infinite alternate}
+.colocando .acceso:nth-child(2n){animation-delay:.15s}
+.colocando .acceso.arrastrando{animation:none;z-index:20;cursor:grabbing;opacity:.9;transition:none;filter:drop-shadow(0 8px 14px #0005)}
+@keyframes temblor{from{rotate:-1.2deg}to{rotate:1.2deg}}
+.quitar{position:absolute;top:-.35rem;left:-.35rem;z-index:3;width:1.45rem;height:1.45rem;border-radius:999px;border:2px solid var(--bg);background:var(--ink2);color:var(--bg);font-size:.75rem;line-height:1;display:none;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.colocando .quitar{display:flex}
+.hueco{border:2px dashed var(--line);border-radius:12px;display:none;align-items:center;justify-content:center;color:var(--mute);font-size:1.3rem;background:none;cursor:pointer;padding:0}
+.colocando .hueco{display:flex}
+.hueco:hover{border-color:var(--acc);color:var(--acc)}
+.destino{border:2px solid var(--acc);background:var(--acc2);border-radius:12px;pointer-events:none;z-index:1}
+.destino[hidden]{display:none}
+.vacio-accesos{border:2px dashed var(--line);border-radius:12px;padding:1rem;text-align:center;color:var(--mute);font-size:.88rem}
+.sugerencias{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-top:.7rem;font-size:.8rem;color:var(--mute)}
+.recien{animation:recien 1.2s ease-out 2}
+@keyframes recien{0%{transform:scale(1)}30%{transform:scale(1.1)}100%{transform:scale(1)}}
+
+/* ── Ventana «Fijar en inicio» ── */
+.muestras{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.3rem}
+.muestras input{position:absolute;opacity:0;pointer-events:none}
+.muestras label{margin:0;cursor:pointer}
+.color{width:2.1rem;height:2.1rem;border-radius:999px;background:var(--c);display:block;border:3px solid transparent;box-shadow:0 0 0 1px var(--line)}
+.muestras input:checked+.color{border-color:var(--bg2);box-shadow:0 0 0 2px var(--ink)}
+.muestras input:focus-visible+span{outline:2px solid var(--acc);outline-offset:2px}
+.opcion{display:flex;flex-direction:column;align-items:center;gap:.2rem;font-size:.72rem;color:var(--ink2);padding:.35rem .45rem;border:1px solid var(--line);border-radius:8px;min-width:3.6rem}
+.muestras input:checked+.opcion{border-color:var(--acc);background:var(--acc2);color:var(--acc)}
+.opcion i{display:block;width:1.6rem;height:1.6rem;background:var(--ink2)}
+.muestras input:checked+.opcion i{background:var(--acc)}
+.opcion i.f-circulo{border-radius:999px}.opcion i.f-cuadrado{border-radius:5px}.opcion i.f-hoja{border-radius:.8rem 2px .8rem 2px}
+.opcion i.f-hexagono{clip-path:polygon(28% 0,72% 0,100% 50%,72% 100%,28% 100%,0 50%)}.opcion i.f-pentagono{clip-path:polygon(50% 0,100% 38%,81% 100%,19% 100%,0 38%)}
+.opcion i.t-1x1{width:.9rem;height:.9rem;border-radius:3px;margin:.35rem}.opcion i.t-2x1{width:1.8rem;height:.9rem;border-radius:3px;margin:.35rem 0}.opcion i.t-2x2{width:1.6rem;height:1.6rem;border-radius:3px}
+.vista{margin-top:.8rem;padding:.8rem;border-radius:10px;background:var(--bg);display:flex;justify-content:center}
+.vista .accesos{width:min(100%,17rem)}
+.cuenta{float:right;color:var(--mute);font-size:.75rem}
+.nota-mock{font-size:.78rem;color:var(--mute);margin-top:1.5rem;border-top:1px solid var(--line);padding-top:.6rem}
+.nota-mock li{margin:.2rem 0}
+@media (prefers-reduced-motion:reduce){.colocando .acceso{animation:none}.recien{animation:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="cab"><h1 id="titulo">Hoy</h1><button class="fijar" id="btn-fijar" type="button" hidden>☆ Fijar en inicio</button><small id="sub"></small></header>
+  <main id="main"></main>
+</div>
+<nav class="inferior" aria-label="Principal"><div class="in">
+  <a href="#/hoy" data-nav="hoy"><span>☀</span>Hoy</a>
+  <a href="#/calendario" data-nav="calendario"><span>📅</span>Calendario</a>
+  <a href="#/mayordomo" data-nav="mayordomo"><span>🤵</span>Mayordomo</a>
+  <a href="#/buscador" data-nav="buscador"><span>🔎</span>Buscar</a>
+  <a href="#/menu" data-nav="menu"><span>☰</span>Menú</a>
+</div></nav>
+
+<dialog class="modal" id="dlg-fijar">
+  <form method="dialog" id="form-fijar">
+    <div class="cabecera-modal"><h2 id="dlg-fijar-titulo">Fijar en inicio</h2><button class="cerrar" type="button" data-cancelar aria-label="Cerrar">✕</button></div>
+    <label>Lleva a<select name="destino" id="sel-destino"></select></label>
+    <label>Nombre <span class="cuenta" id="cuenta">0/12</span><input name="nombre" maxlength="12" required autocomplete="off"></label>
+    <label>Icono<input name="icono" maxlength="4" autocomplete="off" style="display:block;width:4.5rem;text-align:center;font-size:1.3rem;padding:.3rem"></label>
+    <label>Color</label><div class="muestras" id="m-color"></div>
+    <label>Forma</label><div class="muestras" id="m-forma"></div>
+    <label>Tamaño</label><div class="muestras" id="m-tam"></div>
+    <div class="vista"><div class="accesos"><div class="rejilla" id="vista"></div></div></div>
+    <div class="acciones fin">
+      <button class="btn peligro" type="button" id="btn-quitar" hidden>Quitar</button>
+      <span style="flex:1"></span>
+      <button class="btn" type="button" data-cancelar>Cancelar</button>
+      <button class="btn p" type="submit" id="btn-guardar">Fijar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="modal" id="dlg-accion">
+  <div class="cabecera-modal"><h2 id="dlg-accion-titulo"></h2><button class="fijar" type="button" id="dlg-accion-fijar">☆</button><button class="cerrar" type="button" data-cancelar aria-label="Cerrar">✕</button></div>
+  <div id="dlg-accion-cuerpo"></div>
+  <div class="acciones fin"><button class="btn" type="button" data-cancelar>Cancelar</button><button class="btn p" type="button" data-cancelar data-ok>Guardar</button></div>
+</dialog>
+<div id="toast" role="status"></div>
+
+<script>
+'use strict';
+// Mock: nada de esto toca la app real. La disposición se guarda en su propia clave para poder jugar con ella.
+const CLAVE = 'maydom.mock.accesos';
+const COLS = 4;
+const TAM = { '1x1': [1, 1], '2x1': [2, 1], '2x2': [2, 2] };
+const NOMBRE_TAM = { '1x1': 'Pequeño', '2x1': 'Ancho', '2x2': 'Grande' };
+const FORMAS = { circulo: 'Círculo', cuadrado: 'Cuadrado', hexagono: 'Hexágono', pentagono: 'Pentágono', hoja: 'Hoja' };
+// Colores oscuros a propósito: el texto blanco se lee sobre todos, en claro y en oscuro.
+const COLORES = { verdeazul: '#0B6E7A', azul: '#1F5FBF', violeta: '#6B4FC8', magenta: '#A8307A', rojo: '#B8322A', naranja: '#B85C1E', ocre: '#8A6A12', verde: '#2E7D4F', pizarra: '#4A5A66' };
+
+// Secciones y sus acciones. En la app real cada destino sería una ruta: #/seccion o #/seccion?accion=...
+const SECCIONES = {
+  sueno: { titulo: 'Sueño', icono: '🌙', grupo: 'Cuerpo', acciones: [{ id: 'relato', t: 'Contar la noche', corto: 'Contar noche', icono: '🌙', campo: 'Cuéntame cómo has dormido…' }, { id: 'tecnicas', t: 'Técnicas de sueño', corto: 'Técnicas', icono: '📖' }] },
+  ejercicio: { titulo: 'Ejercicio', icono: '🏃', grupo: 'Cuerpo', acciones: [{ id: 'pildora', t: 'Píldora de movimiento', corto: 'Píldora', icono: '🏃', campo: '3 × 10 sentadillas. Hecha cuando termines.' }] },
+  meditacion: { titulo: 'Meditación', icono: '🧘', grupo: 'Cuerpo', acciones: [{ id: 'volver', t: 'Volver a dormir', corto: 'Meditar', icono: '🧘' }] },
+  notas: { titulo: 'Notas', icono: '📝', grupo: 'Agenda', acciones: [{ id: 'voz', t: 'Nota por voz', corto: 'Nota por voz', icono: '🎙', campo: 'Dicta la nota; el mayordomo le pone título.' }] },
+  calendario: { titulo: 'Calendario', icono: '📅', grupo: 'Agenda', acciones: [{ id: 'evento', t: 'Nuevo evento', corto: 'Evento', icono: '📅', campo: 'Qué, cuándo y cuánto dura.' }] },
+  alimentacion: { titulo: 'Alimentación', icono: '🥗', grupo: 'Mesa', acciones: [{ id: 'cocinar', t: 'Cocinar el menú de hoy', corto: 'Cocinar hoy', icono: '🍳' }, { id: 'registrar', t: 'Registrar comida', corto: 'Comida', icono: '🥗', campo: '¿Fue la del menú?' }] },
+  suplementos: { titulo: 'Suplementos', icono: '💊', grupo: 'Mesa', acciones: [{ id: 'toma', t: 'Marcar toma', corto: 'Toma', icono: '💊', campo: 'Magnesio · 1 cápsula · 22:00' }] },
+  compra: { titulo: 'Compra', icono: '🛒', grupo: 'Mesa', acciones: [{ id: 'lista', t: 'Lista de la compra', corto: 'Compra', icono: '🛒' }] },
+  finanzas: { titulo: 'Finanzas', icono: '💶', grupo: 'Vida', acciones: [{ id: 'gasto', t: 'Añadir gasto', corto: 'Añadir gasto', icono: '💶', campo: 'Importe, concepto y fecha.' }, { id: 'importar', t: 'Importar extracto', corto: 'Extracto', icono: '📥' }] },
+  ocio: { titulo: 'Ocio', icono: '🎭', grupo: 'Vida', acciones: [{ id: 'planes', t: 'Planes en Madrid', corto: 'Planes', icono: '🎭' }] },
+  mayordomo: { titulo: 'Mayordomo', icono: '🤵', grupo: 'Mayordomo', acciones: [{ id: 'preguntar', t: 'Preguntar al mayordomo', corto: 'Preguntar', icono: '🤵', campo: '¿Qué quieres saber?' }] },
+  buscador: { titulo: 'Buscador', icono: '🔎', grupo: 'Mayordomo', acciones: [{ id: 'buscar', t: 'Buscar producto', corto: 'Buscar', icono: '🔎' }] },
+};
+const destinos = () => Object.entries(SECCIONES).flatMap(([s, d]) => [{ clave: s, s, t: 'Abrir ' + d.titulo, corto: d.titulo, icono: d.icono }, ...d.acciones.map(a => ({ clave: s + '/' + a.id, s, a, t: a.t, corto: a.corto, icono: a.icono }))]);
+const destino = clave => destinos().find(d => d.clave === clave);
+
+const INICIAL = [
+  { id: 'a1', destino: 'sueno/relato', nombre: 'Contar noche', icono: '🌙', color: 'violeta', forma: 'circulo', tam: '2x2', x: 0, y: 0 },
+  { id: 'a2', destino: 'finanzas/gasto', nombre: 'Añadir gasto', icono: '💶', color: 'verde', forma: 'hexagono', tam: '2x1', x: 2, y: 0 },
+  { id: 'a3', destino: 'notas/voz', nombre: 'Nota por voz', icono: '🎙', color: 'naranja', forma: 'pentagono', tam: '1x1', x: 2, y: 1 },
+  { id: 'a4', destino: 'compra/lista', nombre: 'Compra', icono: '🛒', color: 'azul', forma: 'cuadrado', tam: '1x1', x: 3, y: 1 },
+  { id: 'a5', destino: 'alimentacion/cocinar', nombre: 'Cocinar hoy', icono: '🍳', color: 'ocre', forma: 'hoja', tam: '2x1', x: 0, y: 2 },
+  { id: 'a6', destino: 'ejercicio/pildora', nombre: 'Píldora', icono: '🏃', color: 'verdeazul', forma: 'circulo', tam: '1x1', x: 3, y: 2 },
+];
+let accesos = cargar();
+let colocando = false, recien = null;
+
+function cargar() { try { const v = JSON.parse(localStorage.getItem(CLAVE)); if (Array.isArray(v)) return v; } catch {} return structuredClone(INICIAL); }
+function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(accesos)); } catch {} }
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const dims = a => TAM[a.tam];
+const $ = s => document.querySelector(s);
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('ver'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('ver'), 2600); }
+
+// ── Colocación: casillas explícitas. Se puede dejar hueco; al soltar encima de otro, ese otro se va al sitio que dejaste. ──
+function solapan(a, ax, ay, b) { const [aw, ah] = dims(a), [bw, bh] = dims(b); return ax < b.x + bw && b.x < ax + aw && ay < b.y + bh && b.y < ay + ah; }
+function libre(t, x, y) { const [w] = dims(t); return x >= 0 && y >= 0 && x + w <= COLS && !accesos.some(b => b !== t && solapan(t, x, y, b)); }
+function primerHueco(t) { for (let y = 0; ; y++) for (let x = 0; x < COLS; x++) if (libre(t, x, y)) return { x, y }; }
+function colocar(a, x, y) {
+  const antes = { x: a.x, y: a.y };
+  a.x = x; a.y = y;
+  for (const b of accesos.filter(b => b !== a && solapan(a, a.x, a.y, b))) {
+    const bx = Math.min(antes.x, COLS - dims(b)[0]);
+    Object.assign(b, libre(b, bx, antes.y) ? { x: bx, y: antes.y } : primerHueco(b));
+  }
+}
+const filas = () => Math.max(0, ...accesos.map(a => a.y + dims(a)[1]));
+
+function htmlAcceso(a, extra = '') {
+  const [w, h] = dims(a);
+  return `<button class="acceso f-${a.forma}${a.id === recien ? ' recien' : ''}" type="button" data-id="${a.id}" data-w="${w}" data-h="${h}" ${extra}
+    style="grid-column:${a.x + 1} / span ${w};grid-row:${a.y + 1} / span ${h};--color:${COLORES[a.color]}"
+    aria-label="${esc(a.nombre)}"><span class="forma"><span class="ico">${esc(a.icono)}</span><span class="nom">${esc(a.nombre)}</span></span>
+    <span class="quitar" data-quitar="${a.id}" aria-label="Quitar ${esc(a.nombre)}">✕</span></button>`;
+}
+
+function htmlRejilla() {
+  const n = filas() + (colocando ? 1 : 0);
+  let huecos = '';
+  if (colocando) for (let y = 0; y < n; y++) for (let x = 0; x < COLS; x++)
+    if (!accesos.some(b => solapan({ tam: '1x1' }, x, y, b))) huecos += `<button class="hueco" type="button" data-hueco="${x},${y}" style="grid-column:${x + 1};grid-row:${y + 1}" aria-label="Añadir aquí">+</button>`;
+  return `<div class="accesos"><div class="rejilla${colocando ? ' colocando' : ''}" id="rejilla">${huecos}${accesos.map(a => htmlAcceso(a)).join('')}<div class="destino" id="destino" hidden></div></div></div>`;
+}
+
+// ── Pantallas ──
+function pintar() {
+  const [ruta, q] = (location.hash.slice(2) || 'hoy').split('?');
+  document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('activo', a.dataset.nav === ruta || (ruta !== 'hoy' && a.dataset.nav === 'menu' && !['calendario', 'mayordomo', 'buscador'].includes(ruta))));
+  const main = $('#main'), fijar = $('#btn-fijar');
+  fijar.hidden = true; $('#sub').textContent = '';
+  if (ruta === 'hoy') return pintarHoy(main);
+  if (ruta === 'menu') return pintarMenu(main);
+  const s = SECCIONES[ruta];
+  if (!s) { location.hash = '#/hoy'; return; }
+  $('#titulo').textContent = s.titulo;
+  fijar.hidden = false; fijar.onclick = () => abrirFijar({ destino: ruta });
+  main.innerHTML = `<div class="aviso-mock">Sección de ejemplo. Arriba, <b>☆ Fijar en inicio</b> fija la sección entera; cada ventana de acción lleva su propia ☆ junto a la cruz.</div>
+    <h3>Acciones</h3>${s.acciones.map(a => `<div class="tarjeta fila"><div class="t"><b>${a.icono} ${esc(a.t)}</b><div class="mini">#/${ruta}?accion=${a.id}</div></div><button class="btn" data-abrir="${ruta}/${a.id}">Abrir</button></div>`).join('')}
+    <div class="tarjeta mini">Aquí seguiría el contenido de siempre de ${esc(s.titulo)}.</div>`;
+  main.querySelectorAll('[data-abrir]').forEach(b => b.onclick = () => abrirAccion(b.dataset.abrir));
+  const accion = new URLSearchParams(q).get('accion');
+  if (accion) abrirAccion(ruta + '/' + accion);
+}
+
+function pintarHoy(main) {
+  $('#titulo').textContent = 'Hoy';
+  const d = new Date();
+  $('#sub').textContent = d.toLocaleDateString('es-ES', { weekday: 'long' }) + ' ' + d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  main.innerHTML = `<div class="aviso-mock"><b>Mock · accesos directos.</b> Toca un botón para ir directo a su acción. Mantén pulsado uno (o «Colocar») para moverlos, cambiarlos o quitarlos. Lo que cambies se queda en este navegador.</div>
+    <h3>Accesos <span class="sp"></span>${colocando ? '<button class="btn mini p" id="btn-listo">✓ Listo</button>' : '<button class="btn mini" id="btn-colocar">✎ Colocar</button>'}</h3>
+    ${accesos.length || colocando ? htmlRejilla() : '<div class="vacio-accesos">Sin accesos. Pulsa ☆ en cualquier sección para fijarla aquí.</div>'}
+    ${colocando ? `<div class="sugerencias">El mayordomo sugiere (por uso): <button class="pill" data-sug="finanzas/importar">+ Extracto</button><button class="pill" data-sug="suplementos/toma">+ Toma</button></div>
+      <div class="acciones"><button class="btn mini" id="btn-reset">Restablecer ejemplo</button></div>` : ''}
+    <h3>Hoy</h3>
+    <div class="tarjeta"><div class="fila"><div class="t"><b>Carga del día</b></div><span class="mini">4 h 30 de 7 h</span></div><div class="barra"><i style="width:64%"></i></div>
+      <div class="mini">Siguiente: <b>17:30 Llamada con el gestor</b></div></div>
+    <h3>Ahora</h3>
+    <div class="tarjeta fila"><div class="t"><b>Píldora de movimiento</b><div class="mini">1 hoy · cada 60 min de trabajo</div></div><button class="btn">Dame una</button></div>
+    <div class="tarjeta fila"><div class="t"><b>Anoche: 6 h 10</b><div class="mini">tramo largo 4 h 40 · calidad 3/5</div></div><button class="btn">Sueño ›</button></div>
+    <ul class="nota-mock">
+      <li>Rejilla de 4 columnas fijas: un botón queda en la misma casilla en el móvil y en el PC.</li>
+      <li>Tres tamaños (pequeño, ancho y grande) y cinco formas; se pueden dejar huecos.</li>
+      <li>Al soltar un botón encima de otro, el otro pasa al sitio que dejaste.</li>
+      <li>En la app, estos mismos accesos saldrían también al mantener pulsado el icono de maydom en el móvil (atajos del manifest).</li>
+    </ul>`;
+  $('#btn-colocar')?.addEventListener('click', () => { colocando = true; pintar(); });
+  $('#btn-listo')?.addEventListener('click', () => { colocando = false; pintar(); });
+  $('#btn-reset')?.addEventListener('click', () => { accesos = structuredClone(INICIAL); guardar(); pintar(); });
+  main.querySelectorAll('[data-sug]').forEach(b => b.onclick = () => abrirFijar({ destino: b.dataset.sug }));
+  main.querySelectorAll('[data-hueco]').forEach(b => b.onclick = () => { const [x, y] = b.dataset.hueco.split(',').map(Number); abrirFijar({ destino: (destinos().find(d => d.a && !accesos.some(z => z.destino === d.clave)) || destinos()[0]).clave, x, y }); });
+  enlazarRejilla();
+  if (recien) setTimeout(() => { recien = null; }, 100);
+}
+
+function pintarMenu(main) {
+  $('#titulo').textContent = 'Menú';
+  const grupos = {};
+  for (const [id, s] of Object.entries(SECCIONES)) (grupos[s.grupo] ||= []).push([id, s]);
+  main.innerHTML = `<div class="aviso-mock">Entra en una sección y pulsa <b>☆ Fijar en inicio</b>, o abre una de sus acciones y pulsa la ☆ de la ventana.</div>` +
+    Object.entries(grupos).map(([g, l]) => `<h3>${g}</h3><ul class="menu">${l.map(([id, s]) => `<li><a href="#/${id}">${s.icono} ${s.titulo}<span>›</span></a></li>`).join('')}</ul>`).join('');
+}
+
+function abrirAccion(clave) {
+  const d = destino(clave); if (!d || !d.a) return;
+  if (!d.a.campo) { toast(`Aquí se abriría «${d.t}»`); return; }
+  const dlg = $('#dlg-accion');
+  $('#dlg-accion-titulo').textContent = d.t;
+  $('#dlg-accion-cuerpo').innerHTML = `<textarea rows="4" placeholder="${esc(d.a.campo)}"></textarea>${d.a.id === 'relato' || d.a.id === 'voz' ? '<div class="acciones"><button class="btn" type="button">🎙 Dictar</button></div>' : ''}`;
+  $('#dlg-accion-fijar').onclick = () => { dlg.close(); abrirFijar({ destino: clave }); };
+  $('#dlg-accion-fijar').title = 'Fijar en inicio';
+  dlg.showModal();
+}
+
+// ── Tocar, mantener pulsado y arrastrar ──
+function enlazarRejilla() {
+  const rej = $('#rejilla'); if (!rej) return;
+  rej.addEventListener('contextmenu', e => e.preventDefault());
+  rej.querySelectorAll('.acceso').forEach(el => {
+    const a = accesos.find(x => x.id === el.dataset.id);
+    el.addEventListener('pointerdown', e => colocando ? empezarArrastre(e, el, a) : esperarPulsacion(e, el, a));
+    el.addEventListener('click', e => { if (e.detail === 0) colocando ? abrirFijar({ acceso: a }) : ir(a); }); // teclado
+  });
+  rej.querySelectorAll('[data-quitar]').forEach(q => q.addEventListener('pointerdown', e => e.stopPropagation()));
+  rej.querySelectorAll('[data-quitar]').forEach(q => q.addEventListener('click', e => {
+    e.stopPropagation(); const a = accesos.find(x => x.id === q.dataset.quitar);
+    accesos = accesos.filter(x => x !== a); guardar(); pintar(); toast(`«${a.nombre}» quitado`);
+  }));
+}
+
+function esperarPulsacion(e, el, a) {
+  const x0 = e.clientX, y0 = e.clientY; let largo = false;
+  const t = setTimeout(() => { largo = true; navigator.vibrate?.(30); colocando = true; pintar(); toast('Modo colocar: arrastra o toca para cambiar'); }, 550);
+  const mover = ev => { if (Math.hypot(ev.clientX - x0, ev.clientY - y0) > 8) fin(); };
+  const fin = () => { clearTimeout(t); el.removeEventListener('pointermove', mover); el.removeEventListener('pointerup', soltar); el.removeEventListener('pointercancel', fin); };
+  const soltar = () => { fin(); if (!largo) ir(a); };
+  el.addEventListener('pointermove', mover); el.addEventListener('pointerup', soltar); el.addEventListener('pointercancel', fin);
+}
+
+function ir(a) {
+  const d = destino(a.destino); if (!d) return;
+  location.hash = d.a ? `#/${d.s}?accion=${d.a.id}` : `#/${d.s}`;
+}
+
+function empezarArrastre(e, el, a) {
+  e.preventDefault();
+  el.setPointerCapture(e.pointerId);
+  const rej = $('#rejilla'), dest = $('#destino');
+  const r = rej.getBoundingClientRect(), gap = parseFloat(getComputedStyle(rej).rowGap);
+  const paso = (r.width - (COLS - 1) * gap) / COLS + gap;
+  const [w, h] = dims(a), x0 = e.clientX, y0 = e.clientY;
+  let movido = false, obj = null;
+  const mover = ev => {
+    const dx = ev.clientX - x0, dy = ev.clientY - y0;
+    if (!movido && Math.hypot(dx, dy) < 6) return;
+    movido = true; el.classList.add('arrastrando');
+    el.style.transform = `translate(${dx}px,${dy}px)`;
+    const x = Math.max(0, Math.min(COLS - w, Math.round(a.x + dx / paso)));
+    const y = Math.max(0, Math.min(filas(), Math.round(a.y + dy / paso)));
+    obj = { x, y };
+    Object.assign(dest.style, { gridColumn: `${x + 1} / span ${w}`, gridRow: `${y + 1} / span ${h}` });
+    dest.hidden = false;
+  };
+  const soltar = () => {
+    el.removeEventListener('pointermove', mover); el.removeEventListener('pointerup', soltar); el.removeEventListener('pointercancel', soltar);
+    if (!movido) return abrirFijar({ acceso: a });
+    if (obj && (obj.x !== a.x || obj.y !== a.y)) { colocar(a, obj.x, obj.y); guardar(); }
+    pintar();
+  };
+  el.addEventListener('pointermove', mover); el.addEventListener('pointerup', soltar); el.addEventListener('pointercancel', soltar);
+}
+
+// ── Ventana «Fijar en inicio» (también sirve para editar) ──
+function muestras(id, nombre, pares, pintarUna) {
+  $(id).innerHTML = pares.map(([v, t]) => `<label title="${t}"><input type="radio" name="${nombre}" value="${v}" aria-label="${t}">${pintarUna(v, t)}</label>`).join('');
+}
+muestras('#m-color', 'color', Object.keys(COLORES).map(c => [c, c]), c => `<span class="color" style="--c:${COLORES[c]}"></span>`);
+muestras('#m-forma', 'forma', Object.entries(FORMAS), (v, t) => `<span class="opcion"><i class="f-${v}"></i>${t}</span>`);
+muestras('#m-tam', 'tam', Object.entries(NOMBRE_TAM), (v, t) => `<span class="opcion"><i class="t-${v}"></i>${t}</span>`);
+
+const selDestino = $('#sel-destino');
+{
+  const grupos = {};
+  for (const d of destinos()) (grupos[SECCIONES[d.s].titulo] ||= []).push(d);
+  selDestino.innerHTML = Object.entries(grupos).map(([g, l]) => `<optgroup label="${g}">${l.map(d => `<option value="${d.clave}">${esc(d.t)}</option>`).join('')}</optgroup>`).join('');
+}
+
+function abrirFijar({ destino: clave, acceso, x, y }) {
+  const dlg = $('#dlg-fijar'), f = $('#form-fijar');
+  const d = destino(acceso ? acceso.destino : clave);
+  const usados = new Set(accesos.map(a => a.color));
+  const v = acceso || { destino: d.clave, nombre: d.corto.slice(0, 12), icono: d.icono, color: Object.keys(COLORES).find(c => !usados.has(c)) || 'verdeazul', forma: 'circulo', tam: '1x1' };
+  $('#dlg-fijar-titulo').textContent = acceso ? 'Editar acceso' : 'Fijar en inicio';
+  $('#btn-guardar').textContent = acceso ? 'Guardar' : 'Fijar';
+  $('#btn-quitar').hidden = !acceso;
+  f.destino.value = v.destino; f.nombre.value = v.nombre; f.icono.value = v.icono;
+  f.color.value = v.color; f.forma.value = v.forma; f.tam.value = v.tam;
+  let nombreTocado = !!acceso;
+  const vista = () => {
+    $('#cuenta').textContent = `${f.nombre.value.length}/12`;
+    const p = { id: 'vista', nombre: f.nombre.value || '…', icono: f.icono.value, color: f.color.value, forma: f.forma.value, tam: f.tam.value, x: 1, y: 0 };
+    $('#vista').innerHTML = htmlAcceso(p, 'tabindex="-1"');
+  };
+  f.oninput = e => {
+    if (e.target === f.nombre) nombreTocado = true;
+    if (e.target === f.destino && !nombreTocado) { const n = destino(f.destino.value); f.nombre.value = n.corto.slice(0, 12); f.icono.value = n.icono; }
+    vista();
+  };
+  f.onchange = f.oninput;
+  vista();
+  $('#btn-quitar').onclick = () => { accesos = accesos.filter(a => a !== acceso); guardar(); dlg.close(); pintar(); toast(`«${acceso.nombre}» quitado`); };
+  f.onsubmit = e => {
+    e.preventDefault();
+    const datos = { destino: f.destino.value, nombre: f.nombre.value.trim() || '…', icono: f.icono.value.trim() || '★', color: f.color.value, forma: f.forma.value, tam: f.tam.value };
+    if (acceso) {
+      const tamAntes = acceso.tam;
+      Object.assign(acceso, datos);
+      if (tamAntes !== acceso.tam) { acceso.x = Math.min(acceso.x, COLS - dims(acceso)[0]); colocar(acceso, acceso.x, acceso.y); }
+    } else {
+      const nuevo = { id: 'a' + Date.now().toString(36), ...datos };
+      const sitio = x != null && libre(nuevo, Math.min(x, COLS - dims(nuevo)[0]), y) ? { x: Math.min(x, COLS - dims(nuevo)[0]), y } : primerHueco(nuevo);
+      Object.assign(nuevo, sitio); accesos.push(nuevo); recien = nuevo.id;
+      toast(x != null ? 'Fijado' : 'Fijado en el primer hueco de Hoy. Mantenlo pulsado para moverlo');
+    }
+    guardar(); dlg.close();
+    if (!acceso && location.hash !== '#/hoy') location.hash = '#/hoy'; else pintar();
+  };
+  dlg.showModal();
+}
+
+document.querySelectorAll('dialog').forEach(dlg => dlg.addEventListener('click', e => {
+  if (e.target.closest('[data-cancelar]')) { dlg.close(); if (e.target.closest('[data-ok]')) toast('Guardado (en el mock no se guarda nada)'); }
+}));
+window.addEventListener('hashchange', pintar);
+pintar();
+</script>
+</body>
+</html>

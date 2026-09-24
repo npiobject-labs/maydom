@@ -1,0 +1,50 @@
+{
+  "fecha": "2026-09-24T18:15:00+02:00",
+  "titulo": "Skill «suplementos» y proceso recurrente",
+  "objetivo": "Encontrar la forma más sencilla de conseguir los datos de cada suplemento comprado online, convertir el procedimiento en un proceso recurrente que acumule suplementos sin perder los anteriores, construir el skill de claude.ai que lo ejecuta y dejarlo todo guardado para la primera inclusión en Drive.",
+  "prompts": [
+    {
+      "texto": "Olvida todo lo anterior: soy alguien que compra suplementos online. ¿Cuál es la forma más sencilla y fiable de conseguir el fichero de entrada para hacer el plan de dosificación y tomas? Céntrate en conseguir los datos de cada suplemento. Tengo acceso a los enlaces, casi siempre a la composición y supongo que a la factura. Descríbeme brevemente cómo lo harías.",
+      "nota": "dictado; limpio de muletillas"
+    },
+    {
+      "texto": "¿Cómo hago para que Fable use este proceso de forma recurrente? Hoy puedo subir tres suplementos y dentro de unos días añadir otro si no existe, sin perder lo que ya he guardado. No sé si conviene hacerlo con Fable o con otra herramienta que me salga gratis; tengo la suscripción Max. Quiero un proceso que pueda llamar a voluntad y que añada suplementos a la tabla de entrada si no existen. Dime qué tendría que hacer.",
+      "nota": "dictado; resumido fiel a lo pedido"
+    },
+    {
+      "texto": "¿Existe alguna herramienta especial dentro de Claude que pueda ayudar a ejecutar ese proceso?"
+    },
+    {
+      "texto": "Sí, construye el skill y guarda toda esta información. Seguiremos en otro momento para que me ayudes a hacer la primera inclusión de un suplemento en Drive; luego continuaré yo por mi cuenta. Almacena y cerramos sesión hasta la próxima.",
+      "nota": "dictado; limpio de muletillas"
+    }
+  ],
+  "cambios": [
+    "Nuevo skill de claude.ai docs/planificacion/suplementos/skill/suplementos/ (modos añadir, pauta y revisar; formatos y perfil como referencias), validado y empaquetado en suplementos.zip.",
+    "suplementos-pauta-externa.md §10: datos desde los enlaces de «Mis pedidos» con capturas para los huecos, las tres piezas (skill, Drive o Claude Docs, Claude en Chrome), las reglas para acumular sin perder nada y los pasos de la próxima sesión.",
+    "Nueva nota de preferencias memoria/preferencias/2026-09-24.md; línea en plan-maydom.md; regla en CLAUDE.md: la tabla, la pauta y el perfil reales nunca entran en el repositorio."
+  ],
+  "sha": "5324aaa",
+  "sha_completo": "5324aaa1f3be9401be199498986184de596280d3",
+  "run": 36026158379,
+  "mock": "mocks/004-suplementos-especialista.html",
+  "build": "MA-B1-20260924-003",
+  "pagina": "https://github.com/npiobject-labs/maydom/tree/main/docs/planificacion/suplementos/skill",
+  "fly": null,
+  "pendiente": [
+    "Próxima sesión: subir el skill a claude.ai, crear la carpeta en Drive y hacer con el usuario la primera inclusión de un suplemento",
+    "Comprobar que el conector de Drive escribe y si Claude en Chrome está en su plan",
+    "Más adelante: importador de pauta-suplementos.md en la app"
+  ],
+  "enlaces": [
+    {
+      "texto": "Skill (fuente y zip)",
+      "url": "https://github.com/npiobject-labs/maydom/tree/main/docs/planificacion/suplementos/skill"
+    },
+    {
+      "texto": "Proceso recurrente (§10)",
+      "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/suplementos-pauta-externa.md"
+    }
+  ],
+  "notas": "Cuatro prompts, los dos primeros dictados y resumidos fielmente. Las respuestas a los tres primeros fueron solo en el chat; lo que decidieron queda en la §10 y en la nota de preferencias."
+}

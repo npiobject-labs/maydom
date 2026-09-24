@@ -1,0 +1,39 @@
+{
+  "fecha": "2026-09-24T16:24:00+02:00",
+  "titulo": "Propuesta del especialista de suplementos",
+  "objetivo": "Convertir «Revisar horario con LLM» en un especialista que conozca todos los suplementos, vea incompatibilidades y proponga la hora y la dosis de cada uno, con análisis, crítica y un mock.",
+  "prompts": [
+    {
+      "texto": "Vamos a reestructurar «Revisar horario con LLM» en Suplementos. Aparecerán todos los suplementos que tomo, y esa opción tiene que ser más profunda que una revisión de horarios: conocer esos suplementos, ver incompatibilidades y proponer la mejor hora de toma, siempre buscando el máximo rendimiento en alimentación, ejercicio y salud. Una de las opciones de la toma tiene que ser la propuesta por la IA, y también la dosis. Lo del número de pastillas, gramos o cuánto se tomaba lo aparco de momento: en la primera fase, un agente especialista en suplementos me tiene que decir la pauta y la dosis adecuadas para combinar los que tomo, que son más de diez. Haz una propuesta y entrégame un mock donde se vea la propuesta de la hora de toma y la cantidad. Trabaja a fondo el agente que lo resuelva: tiene que tener conocimiento, así que quizá no pueda ser el modelo por defecto y haya que recurrir a uno más potente. Hazme un análisis, una crítica y propón un mock que detalle todo lo que propones.",
+      "nota": "dictado; limpio de muletillas y de errores del reconocimiento de voz («lelele m», «la gente» por el agente), fiel a lo pedido"
+    }
+  ],
+  "cambios": [
+    "Nuevo documento docs/planificacion/suplementos-especialista.md: qué falla hoy (modelo por defecto flash-lite, prompt de 120 palabras, sin dosis ni jornada, emparejado por nombre, cambios sin preguntar), crítica de la petición, diseño del agente (entrada, contrato JSON por anclas, prompt), tabla local de límites y choques que manda sobre el modelo, planificador de horas en la app, elección del modelo midiendo, cambios de backend, fases y supuestos.",
+    "Nuevo mock docs/mocks/004-suplementos-especialista.html: lista con la pauta, preparar (jornada, perfil de salud, objetivos, modelo y coste), pauta por tomas (entreno o descanso, óptima o sencilla), avisos por gravedad, preguntas del especialista, Ahora frente a ✦ IA por suplemento con aceptar, mantener o fijar, comprobación local con sumas por nutriente, ficha con «✦ Según la IA» en hora y dosis y el stock aparcado, y un resumen de por qué así.",
+    "plan-maydom.md: la sección Suplementos enlaza la propuesta."
+  ],
+  "sha": "e1703a2",
+  "sha_completo": "e1703a27e8bb2402590e7c8f159edb10e5db0119",
+  "run": 36012606825,
+  "mock": "mocks/004-suplementos-especialista.html",
+  "build": "MA-B1-20260924-003",
+  "pagina": "https://npiobject-labs.github.io/maydom/mocks/004-suplementos-especialista.html",
+  "fly": null,
+  "pendiente": [
+    "Decidir si se desarrolla; si sí, ADR-008",
+    "Workflow de evaluación de modelos (cuatro casos, el del anticoagulante eliminatorio) antes de fijar el modelo del especialista",
+    "Confirmar el identificador de Opus 5.5 en OpenRouter y que la pauta cabe en 120 s"
+  ],
+  "enlaces": [
+    {
+      "texto": "Análisis y propuesta",
+      "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/suplementos-especialista.md"
+    },
+    {
+      "texto": "Mocks archivados",
+      "url": "https://npiobject-labs.github.io/maydom/mocks/"
+    }
+  ],
+  "notas": "Un solo prompt dictado y largo; se transcribe limpio. Los 14 suplementos del mock son de ejemplo, no la lista real del usuario."
+}

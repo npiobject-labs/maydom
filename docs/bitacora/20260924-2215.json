@@ -1,0 +1,49 @@
+{
+  "fecha": "2026-09-24T22:15:00+02:00",
+  "titulo": "Notas por tipo: tareas, compras e ideas",
+  "objetivo": "Partir Notas en tareas con fecha tope, compras con etiquetas e ideas, primero en un mock para aprobar y después en la app.",
+  "prompts": [
+    {
+      "texto": "Dentro de la sección de notas se va a descomponer en varias partes: una se llama tareas, otra compras y una tercera ideas. ¿Cómo funciona? Cada vez que dicte una nota tiene que ser de un tipo. Una tarea ha de llevar una fecha tope; las compras pueden llevar etiquetas de alimentación u otras compras, y las ideas son en principio el texto tal y como está ahora. Ponte a trabajar en esto: hazme un mock y, si lo apruebo, pasamos a ejecución. Si tienes una idea mejor, me lo dices y la valoramos.",
+      "nota": "dictado; limpio de repeticiones y muletillas"
+    },
+    {
+      "texto": "B, A, de acuerdo",
+      "nota": "respuesta a los tres supuestos del mock: etiquetas de compra ampliables (B), tareas sin notificación (A) y «el jueves» dicho un jueves es el de la semana que viene; aprueba el mock y pasa a desarrollo"
+    }
+  ],
+  "cambios": [
+    "Mock docs/mocks/005-notas-por-tipo.html: un solo dictado que clasifica, tareas con fecha tope, compras en la lista de Compra, ideas como las notas de antes, tareas en Hoy y nota mezclada partida en dos.",
+    "Notas en tres pestañas con un único diálogo abrirNota(), usado también desde Hoy y el Calendario; reglas sin LLM en docs/app/interpretar-nota.js y una sola llamada «nota» al mayordomo por nota.",
+    "Tareas con fecha tope obligatoria leída del dictado: en Hoy las vencidas y las de hoy, y en el Calendario el día del tope sin sumar carga.",
+    "Compras partidas en líneas con cantidad y etiqueta ampliable dentro de la lista de Compra, sin duplicar; Compra enseña la etiqueta.",
+    "Las notas anteriores pasan a ideas; Preferencias, memoria exportada y contexto del mayordomo distinguen ideas de tareas.",
+    "ADR-008, preferencias del 24-sep, F17 en el plan, regla en CLAUDE.md y prueba de humo tools/prueba-notas.mjs."
+  ],
+  "sha": "f541c55",
+  "sha_completo": "f541c55ff257996b52e8c12880dfd12d8874fbe8",
+  "run": null,
+  "mock": "mocks/005-notas-por-tipo.html",
+  "build": "MA-B1-20260924-005",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/notas",
+  "fly": null,
+  "pendiente": [
+    "Fusionar la PR 21 y confirmar pages.yml en verde",
+    "Probar el dictado real en el móvil con el gateway (probado con el mayordomo simulado)"
+  ],
+  "enlaces": [
+    {
+      "texto": "Mock 5 · notas por tipo",
+      "url": "https://npiobject-labs.github.io/maydom/mocks/005-notas-por-tipo.html"
+    },
+    {
+      "texto": "PR 21",
+      "url": "https://github.com/npiobject-labs/maydom/pull/21"
+    },
+    {
+      "texto": "ADR-008",
+      "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/memoria/decisiones/ADR-008-notas-por-tipo.md"
+    }
+  ],
+  "notas": "Dos prompts; el primero, dictado, limpio de repeticiones. El trabajo va en la rama claude/fervent-pascal-dtwzp5 con la PR 21: el run de Pages (campo run) existe solo al fusionar en main."
+}

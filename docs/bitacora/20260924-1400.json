@@ -1,0 +1,36 @@
+{
+  "fecha": "2026-09-24T16:00:00+02:00",
+  "titulo": "Accesos directos en Hoy",
+  "objetivo": "Llevar a la app los accesos directos del mock 003: botones de colores con forma y nombre en la portada, fijados con ☆ y colocados donde quiera el usuario.",
+  "prompts": [
+    {
+      "texto": "Me gusta, desarrollarlo en la app."
+    }
+  ],
+  "cambios": [
+    "Nuevo docs/app/accesos.js: rejilla de 4 columnas fijas en lo alto de Hoy, con tres tamaños, cinco formas y nueve colores; se pueden dejar huecos.",
+    "Modo colocar al mantener pulsado o con «✎ Colocar»: arrastrar, intercambio al soltar encima, ✕ para quitar, «+» en los huecos y tocar para editar.",
+    "«☆ Fijar» en la cabecera de cada sección (sección, pestaña y botones) y ☆ en la ventana que abre un botón.",
+    "Rutas ?accion= que pulsan el botón de la sección al llegar: ninguna sección cambia para poder fijarse.",
+    "Sugerencias del mayordomo por uso, solo como propuesta.",
+    "ADR-007, F16 en el plan, convención en CLAUDE.md y prueba de humo tools/prueba-accesos.mjs."
+  ],
+  "sha": "102ebfb",
+  "sha_completo": "102ebfbde63deaf2d63567faa85b6d069a439d55",
+  "run": 36007476809,
+  "mock": "mocks/003-accesos-directos.html",
+  "build": "MA-B1-20260924-002",
+  "pagina": "https://npiobject-labs.github.io/maydom/",
+  "fly": null,
+  "pendiente": [
+    "Probar en el móvil mantener pulsado y arrastrar con el dedo",
+    "Atajos del manifest: son estáticos y no pueden seguir a los accesos del usuario"
+  ],
+  "enlaces": [
+    {
+      "texto": "Mock 003 · accesos directos",
+      "url": "https://npiobject-labs.github.io/maydom/mocks/003-accesos-directos.html"
+    }
+  ],
+  "notas": "Continuación de la sesión 20260924-1319, en la que se opinó sobre la idea y se montó el mock."
+}

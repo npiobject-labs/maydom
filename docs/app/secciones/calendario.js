@@ -1,5 +1,6 @@
 import { estado, guardar, h, lista, crudo, delegar, hoyISO, sumarDias, fechaLarga, fechaCorta, diaSemana, duracionTexto, navegar, seccion } from '../nucleo.js';
 import { eventosDe, cargaDia, crearEvento, borrarEvento, formularioEvento } from '../agenda.js';
+import { tareasDe, tarjetaTarea, marcarTarea, abrirNota } from './notas.js';
 
 const LETRAS = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 export function tarjetaDia(fecha, opciones = {}) {
@@ -10,6 +11,11 @@ export function tarjetaDia(fecha, opciones = {}) {
       <span>${e.titulo}</span> <small>${e.dur ? duracionTexto(e.dur) : ''}</small>
       ${opciones.check ? crudo(`<button class="chk" data-a="hecho" data-id="${e.id}" title="Hecho">${e.hecho ? '✓' : '○'}</button>`) : ''}
     </div>`).join('')}</div>`;
+}
+// Las tareas salen el día de su tope como marca, sin sumar horas a la carga del día.
+function bloqueTareas(fecha) {
+  const ts = tareasDe(fecha); if (!ts.length) return '';
+  return `<div class="mini">Vence${ts.length > 1 ? 'n' : ''} este día</div>${ts.map(tarjetaTarea).join('')}`;
 }
 export function barraCarga(fecha) {
   const carga = cargaDia(fecha), max = Number(estado.preferencias.cargaMax) || 6, pct = Math.min(100, carga / max * 100);
@@ -28,8 +34,8 @@ function render(cont, params) {
     <div class="fila cab"><button class="btn" data-a="ir" data-f="${sumarDias(fecha, vista === 'dia' ? -1 : -7)}">‹</button>
       <div class="t centro"><b>${fechaLarga(fecha)}</b>${fecha === hoyISO() ? '' : crudo(' <button class="btn mini" data-a="ir" data-f="' + hoyISO() + '">hoy</button>')}</div>
       <button class="btn" data-a="ir" data-f="${sumarDias(fecha, vista === 'dia' ? 1 : 7)}">›</button></div>
-    <div class="semana">${lista(semana.map(d => h`<div class="${d === fecha ? 'sel' : ''} ${d === hoyISO() ? 'hoy' : ''}" data-a="ir" data-f="${d}">${LETRAS[diaSemana(d)]}<b>${d.slice(8)}</b><i>${eventosDe(d).length ? '•' : ''}</i></div>`))}</div>
-    ${vista === 'dia' ? crudo(`<div class="tarjeta">${barraCarga(fecha)}</div>` + tarjetaDia(fecha, { check: true })) : crudo(semana.map(d => `<h3>${fechaLarga(d)} <span class="mini">${cargaDia(d).toFixed(1)} h</span></h3>${tarjetaDia(d, { check: true })}`).join(''))}
+    <div class="semana">${lista(semana.map(d => h`<div class="${d === fecha ? 'sel' : ''} ${d === hoyISO() ? 'hoy' : ''}" data-a="ir" data-f="${d}">${LETRAS[diaSemana(d)]}<b>${d.slice(8)}</b><i>${eventosDe(d).length || tareasDe(d).some(t => !t.hecha) ? '•' : ''}</i></div>`))}</div>
+    ${vista === 'dia' ? crudo(`<div class="tarjeta">${barraCarga(fecha)}</div>` + tarjetaDia(fecha, { check: true }) + bloqueTareas(fecha)) : crudo(semana.map(d => `<h3>${fechaLarga(d)} <span class="mini">${cargaDia(d).toFixed(1)} h</span></h3>${tarjetaDia(d, { check: true })}${bloqueTareas(d)}`).join(''))}
     <div class="acciones"><button class="btn p" data-a="nuevo">+ Evento</button>
       <button class="btn" data-a="vista" data-v="${vista === 'dia' ? 'semana' : 'dia'}">${vista === 'dia' ? 'Ver semana' : 'Ver día'}</button>
       <button class="btn" data-a="plantilla">Rellenar el día</button></div>
@@ -45,6 +51,8 @@ function render(cont, params) {
       Object.assign(ev, v); guardar();
     },
     hecho: (el, e) => { e.stopPropagation(); const ev = estado.eventos.find(x => x.id === el.dataset.id); if (ev) { ev.hecho = !ev.hecho; guardar(); } },
+    tareaHecha: (el, e) => { e.stopPropagation(); marcarTarea(el.dataset.id); },
+    verTarea: el => { const n = estado.notas.find(x => x.id === el.dataset.id); if (n) abrirNota({ previa: n }); },
     plantilla: async () => {
       // Propuesta mínima del día según preferencias: comidas, una tabla si toca, meditación antes de acostarse.
       const p = estado.preferencias; let n = 0;

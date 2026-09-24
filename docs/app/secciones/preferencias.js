@@ -20,7 +20,7 @@ const campos = [
 function render(cont) {
   const p = estado.preferencias;
   const filas = campos.filter(c => c.n !== 'notas').map(c => { let v = p[c.n]; if (Array.isArray(v)) v = v.join(', '); if (c.t === 'select') v = (c.o.find(o => o.v === v) || {}).l || v; return h`<div class="fila kv"><span>${c.l}</span><b>${v ?? '–'}</b></div>`; });
-  const prefNotas = estado.notas.filter(n => n.tipo === 'preferencia' || n.tipo === 'tendencia').slice(-5).reverse();
+  const prefNotas = estado.notas.filter(n => (n.clase || 'idea') === 'idea' && (n.tipo === 'preferencia' || n.tipo === 'tendencia')).slice(-5).reverse();
   cont.innerHTML = h`
     <div class="tarjeta"><div class="mini">${p.actualizado ? 'Actualizadas el ' + fechaCorta(p.actualizado) : 'Sin ajustar todavía'} · horizonte: ${(HORIZONTES.find(x => x.v === p.horizonte) || {}).l || p.horizonte}</div>
       ${p.foco ? crudo(crudoFoco(p.foco)) : ''}

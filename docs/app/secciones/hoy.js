@@ -5,7 +5,7 @@ import { registrarNoche, registrosOrdenados, calcular } from './sueno.js';
 import { tomadoHoy, bajoStock } from './suplementos.js';
 import { pildoraAleatoria, registrarPildora } from './ejercicio.js';
 import { refrescarConsejos } from '../reglas.js';
-import { guardarNota, campos as camposNota } from './notas.js';
+import { abrirNota, tareasPendientes, tarjetaTarea, marcarTarea, relativo } from './notas.js';
 import { tarjetaConsejo, accionesConsejo, consejosNuevos } from './mayordomo.js';
 import { rezagados } from './proyectos.js';
 import { htmlAccesos, enlazarAccesos } from '../accesos.js';
@@ -22,11 +22,15 @@ function render(cont) {
   const menu = estado.menus.find(m => m.fecha === hoy);
   const plato = id => estado.platos.find(p => p.id === id)?.nombre;
   const rez = rezagados();
+  // Tareas: las vencidas y las de hoy, con casilla; las de los tres días siguientes, solo nombradas.
+  const tareas = tareasPendientes().filter(n => n.tope && n.tope <= hoy), proximas = tareasPendientes().filter(n => n.tope > hoy && n.tope <= sumarDias(hoy, 3));
   cont.innerHTML = h`${crudo(htmlAccesos())}
     <div class="tarjeta">${crudo(barraCarga(hoy))}
       ${proximo ? h`<div class="mini">Siguiente: <b>${proximo.hora} ${proximo.titulo}</b></div>` : ''}</div>
     ${crudo(tarjetaDia(hoy, { check: true }))}
     <div class="acciones"><button class="btn p" data-a="nuevo">+ Evento</button><button class="btn" data-a="cal">Calendario ›</button></div>
+    ${tareas.length || proximas.length ? h`<h3>Tareas <a class="mini" href="#/notas?v=tareas">todas ›</a></h3>${lista(tareas.map(tarjetaTarea))}
+      ${proximas.length ? h`<p class="mini">Próximos días: ${proximas.map(n => `${n.titulo} (${relativo(n.tope)})`).join(' · ')}</p>` : ''}` : ''}
     <h3>Ahora</h3>
     ${trabajo ? h`<div class="tarjeta fila"><div class="t"><b>Trabajando en ${estado.proyectos.find(p => p.id === trabajo.proyectoId)?.nombre || '?'}</b><div class="mini">desde ${new Date(trabajo.inicio).toTimeString().slice(0, 5)}</div></div><button class="btn" data-a="ir" data-s="proyectos">Ver ›</button></div>` : ''}
     <div class="tarjeta fila"><div class="t"><b>Píldora de movimiento</b><div class="mini">${estado.pildoras.filter(p => p.fecha === hoy && p.hecha).length} hoy · cada ${estado.preferencias.pildoraCada} min de trabajo</div></div><button class="btn" data-a="pildora">Dame una</button></div>
@@ -45,11 +49,9 @@ function render(cont) {
     pildora: async () => { const e = pildoraAleatoria(); if (!e) return toast('Carga el catálogo de ejercicios en Ajustes'); const { pedir } = await import('../nucleo.js'); const ok = await pedir('Píldora: ' + e.nombre, [], {}, { texto: `${e.series} × ${e.reps}. ${e.descripcion}`, aceptar: 'Hecha' }); if (ok) { registrarPildora(e); toast('Anotada'); } },
     tomar: el => { const s = estado.suplementos.find(x => x.id === el.dataset.id); estado.tomas.push({ id: uid(), suplementoId: s.id, fecha: hoy, hora: horaActual() }); if (s.stock != null) s.stock = Math.max(0, Number(s.stock) - 1); guardar(); },
     sueno: async () => { if (await registrarNoche()) toast('Noche registrada'); },
-    nota: async () => {
-      const { pedir } = await import('../nucleo.js');
-      const v = await pedir('Nota rápida', camposNota.filter(c => c.n !== 'titulo' && c.n !== 'tipo'), {}, { dictar: 'texto' });
-      if (v) { guardarNota({ tipo: 'nota', ...v }); toast('Guardada; el mayordomo le pone título'); }
-    },
+    nota: () => abrirNota(),
+    tareaHecha: (el, e) => { e.stopPropagation(); marcarTarea(el.dataset.id); },
+    verTarea: el => { const n = estado.notas.find(x => x.id === el.dataset.id); if (n) abrirNota({ previa: n }); },
   }));
   enlazarAccesos(cont, () => render(cont));
 }

@@ -1,0 +1,40 @@
+{
+  "fecha": "2026-09-24T17:38:00+02:00",
+  "titulo": "Pauta de suplementos en Markdown, con identificación por fotos",
+  "objetivo": "Añadir al procedimiento un paso en el que el modelo identifica los suplementos a partir de fotos y textos y genera la tabla de entrada, pasar los ficheros de entrada y salida a Markdown y revisar si el procedimiento tiene problemas.",
+  "prompts": [
+    {
+      "texto": "Vamos a modificar el procedimiento añadiendo un paso a la entrada: lo que le voy a dar a Opus o a Fable es una colección de imágenes y textos, cada uno de un suplemento. Lo primero que tendrá que hacer es identificar esos suplementos y generar la tabla de entrada a partir de ellos, y con la tabla de entrada ya continúa el prompt que has hecho para generar la tabla de salida. Otra cosa: el formato no va a ser Excel, lo cambiaremos a .md; no sé si es el adecuado o prefieres otro para los ficheros de entrada y salida. Piensa que el fichero de salida es el que te voy a dar para que generes las pautas, las cantidades y el horario de tomas. ¿Hay algún problema con este nuevo procedimiento? Reescribe el prompt y los ficheros de entrada y salida.",
+      "nota": "dictado; limpio de muletillas y de errores del reconocimiento de voz («afable» por Fable, «Tomás» por tomas), fiel a lo pedido"
+    }
+  ],
+  "cambios": [
+    "prompt-especialista.md reescrito: prompt 1 en dos pasos (identificar y generar la entrada, pausa para revisar, y la pauta), prompt 2 de segunda opinión y prompt 3 para corregir con ella.",
+    "Nuevos perfil.md, formato-entrada.md (Origen, Fuente etiqueta/conocida/falta, Confianza) y formato-salida.md (Resumen, Jornada, Suplementos, Pauta, Avisos, Totales y Preguntas), con reglas de Markdown estricto y ejemplos que cumplen el formato.",
+    "Se retiran las plantillas .xlsx.",
+    "suplementos-pauta-externa.md reescrito: por qué Markdown y no JSON, CSV, YAML o Excel, y los siete problemas del procedimiento nuevo con su solución; la pauta real no se sube al repositorio."
+  ],
+  "sha": "504c81d",
+  "sha_completo": "504c81dc485c6890eba1c944026bafa50b4e31fb",
+  "run": 36021594121,
+  "mock": "mocks/004-suplementos-especialista.html",
+  "build": "MA-B1-20260924-003",
+  "pagina": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/suplementos/prompt-especialista.md",
+  "fly": null,
+  "pendiente": [
+    "Rellenar perfil.md, fotografiar los botes y generar la pauta con el prompt 1",
+    "Pasar la pauta en una sesión sin subirla al repositorio",
+    "Después: importador de Markdown en Suplementos y vista de la toma diaria"
+  ],
+  "enlaces": [
+    {
+      "texto": "Análisis del procedimiento",
+      "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/suplementos-pauta-externa.md"
+    },
+    {
+      "texto": "Formato de salida",
+      "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/suplementos/formato-salida.md"
+    }
+  ],
+  "notas": "Un solo prompt dictado; se transcribe limpio. No hay mock nuevo: el campo mock apunta al de la sesión del especialista."
+}

@@ -122,3 +122,25 @@ Del pedido se sacan identificación, tienda, enlace limpio (sin seguimiento), pr
 - **`formato-salida.md`**: «Tienda» y «Enlace» en la sección «Suplementos», para que al importar queden en la ficha.
 
 **Cómo probarlo antes de decidir**, como se hizo con las plantillas de búsqueda (nada se da por bueno sin verlo funcionar): tres pedidos reales (uno de iHerb, uno de Amazon y otro de una tienda española) en un chat con el prompt 1. Se apunta de cuáles saca la composición sola, con `Fuente = web` y la variante correcta, y para cuáles pide captura. Con eso se sabe, tienda por tienda, si el pedido basta o hace falta la foto.
+
+## 10. El proceso recurrente: skill + almacén + captura (24-sep 18:15)
+
+Decidido con el usuario. La primera versión del procedimiento hacía una pauta de golpe; la de verdad tiene que **acumular**: hoy tres suplementos, dentro de unos días otro, sin perder lo guardado y sin repetir prompts.
+
+**Cómo se consiguen los datos de cada suplemento (lo más sencillo para quien compra online)**: los enlaces salen de «Mis pedidos» de cada tienda; el modelo abre cada página y rellena la tabla; donde la tienda bloquee o la composición sea una imagen, una captura de la sección «Composición» desde el móvil. La factura no vale como origen (sin composición, sin enlace útil, con datos personales) y la foto del bote queda como comprobación de los que suman con otros (multi, zinc, magnesio, D).
+
+**Las tres piezas, todas dentro de Claude y con la suscripción Max:**
+
+| Pieza | Herramienta | Qué hace |
+|---|---|---|
+| Proceso | **Skill «suplementos»** en claude.ai (Ajustes → Capacidades → Skills) | Se activa solo al hablar de suplementos. Tres modos: **añadir** (identificar desde enlace, foto, pedido o texto y meter en la tabla sin duplicar ni renumerar ID), **pauta** (generar `pauta-suplementos.md`) y **revisar** (segunda opinión). Fuente: [`suplementos/skill/suplementos/`](suplementos/skill/suplementos/SKILL.md); paquete [`suplementos/skill/suplementos.zip`](suplementos/skill/suplementos.zip) (el `.skill` es el mismo zip). Sin ningún dato personal. |
+| Almacén | **Conector de Google Drive** (o un Claude Doc) | `suplementos-entrada.md`, `perfil.md` y `pauta-suplementos.md` en una carpeta privada del Drive del usuario. El skill los lee y los guarda; si no puede escribir, devuelve el fichero completo en un bloque de código. [SUPUESTO] el conector de Drive de claude.ai escribe, no solo lee (en esta sesión tiene `update_file`); plan B: reemplazar el fichero a mano. Alternativa: Claude Docs, una tabla que Claude edita en el sitio; [SUPUESTO] activo en su claude.ai. |
+| Captura | **Claude en Chrome** | Navega con el navegador y la sesión del usuario: abre «Mis pedidos» y lee la composición aunque la tienda bloquee robots (patrón del ADR-006: el humano abre, Claude lee). [SUPUESTO] disponible en su plan y región; plan B: pegar enlaces y capturas. |
+
+Lo que no sirve: la memoria de Claude (resume, no guarda tablas), las tareas programadas (el proceso es a voluntad) y las sesiones de Claude Code (el sandbox no alcanza las tiendas).
+
+**Reglas que hacen que acumular funcione** (están en el skill): los ID son para siempre (`S15` después de `S14`, aunque falte `S09`), un suplemento que se deja se marca `retirado` y no se borra, «ya existe» se decide por marca + producto + presentación, ninguna fila se reescribe sin decirlo, y la pauta se pide aparte cuando la tabla o el perfil cambian.
+
+**Este proyecto (maydom) no guarda datos del usuario**: el repositorio es público. La tabla y la pauta reales viven en su Drive y, cuando exista el importador, en su móvil. Aquí solo están el skill, los formatos y el análisis.
+
+**Próxima sesión**: primera inclusión de un suplemento en Drive con el usuario delante: (1) subir el zip a claude.ai como skill; (2) crear la carpeta en Drive con `perfil.md` relleno y `suplementos-entrada.md` vacío (la cabecera de `formato-entrada.md`, sin filas de ejemplo); (3) activar el conector de Drive; (4) en un chat con Fable 5.1 y razonamiento extendido, pegar un enlace de «Mis pedidos» y decir «añade este suplemento»; (5) comprobar en Drive que la fila está y que la cabecera no cambió. Después el usuario sigue solo.

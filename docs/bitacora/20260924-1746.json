@@ -1,0 +1,31 @@
+{
+  "fecha": "2026-09-24T17:46:00+02:00",
+  "titulo": "Notas de compra en lugar de fotos para identificar los suplementos",
+  "objetivo": "Analizar si las notas de compra de las tiendas, con el enlace a cada producto, pueden sustituir a las fotos de los botes para obtener la información de los suplementos.",
+  "prompts": [
+    {
+      "texto": "¿Y si en lugar de pasarte fotos de los suplementos te paso la nota de compra de cada uno, de las tiendas donde los compro? Desde ahí podríamos obtener el enlace al suplemento y, desde ese enlace, toda la información necesaria. Analiza esto a ver qué te parece.",
+      "nota": "dictado; limpio de muletillas"
+    }
+  ],
+  "cambios": [
+    "suplementos-pauta-externa.md, §9: el pedido sirve para identificar el producto (marca, presentación, tienda, enlace, precio y fecha), no para saber qué lleva; los fallos de la cadena pedido → enlace → composición; la propuesta de aceptar cualquier mezcla con la fuente de la composición ordenada por fiabilidad; los cambios en el prompt y en los formatos si se adopta, y cómo probarlo con tres pedidos reales."
+  ],
+  "sha": "f751182",
+  "sha_completo": "f7511825b871fa6b8abd119cabe9458f5b171624",
+  "mock": "mocks/004-suplementos-especialista.html",
+  "build": "MA-B1-20260924-003",
+  "pagina": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/suplementos-pauta-externa.md",
+  "fly": null,
+  "pendiente": [
+    "Decidir si se adopta la mezcla de fuentes; si sí, aplicar los cambios al prompt y a los formatos",
+    "Probar con tres pedidos reales qué tiendas dejan leer la composición"
+  ],
+  "enlaces": [
+    {
+      "texto": "Análisis (§9)",
+      "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/suplementos-pauta-externa.md"
+    }
+  ],
+  "notas": "Un solo prompt dictado. Solo análisis: no cambian el prompt ni los formatos. El campo run se omite porque este commit solo toca documentación de planificación y el run de Pages del cierre lo verifica."
+}

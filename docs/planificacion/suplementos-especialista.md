@@ -1,6 +1,6 @@
 # Suplementos: del «Revisar horario con LLM» a un especialista que propone pauta y dosis
 
-**Fecha:** 2026-09-24 · **Estado:** propuesta, pendiente de decisión · **Mock:** [`docs/mocks/004-suplementos-especialista.html`](../mocks/004-suplementos-especialista.html)
+**Fecha:** 2026-09-24 · **Estado:** propuesta; como fase 1 la sustituye [`suplementos-pauta-externa.md`](suplementos-pauta-externa.md) (pauta hecha en el chat con el mejor modelo e importada como tabla), y este agente integrado queda para más adelante si hace falta · **Mock:** [`docs/mocks/004-suplementos-especialista.html`](../mocks/004-suplementos-especialista.html)
 
 ## 1. Qué se pide
 

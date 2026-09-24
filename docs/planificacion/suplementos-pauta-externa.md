@@ -83,3 +83,42 @@ Lo que ya estaba resuelto en la versión anterior sigue igual: columnas para la 
 - [SUPUESTO] **El chat de claude.ai entrega ficheros `.md` descargables.** Plan B: el prompt pide, si no puede, el fichero dentro de un bloque de código, que se copia exacto.
 - [SUPUESTO] **El plan del usuario incluye Fable 5.1.** Plan B: Opus 5.5 para la pauta y Sonnet 5 para la segunda opinión.
 - [SUPUESTO] **La pausa se respeta.** Los modelos suelen parar cuando se les pide, pero puede que alguno siga. Plan B: si sigue sin parar, revisar igualmente la sección Suplementos de la pauta antes del prompt 2.
+
+## 9. Variante: notas de compra en lugar de fotos (análisis, 24-sep 17:46)
+
+**La idea**: en vez de fotografiar los botes, pasar al modelo la nota de compra de cada tienda (el correo de confirmación, la factura en PDF o el historial de pedidos). De ahí sale el enlace al producto, y del enlace, toda la información.
+
+**Veredicto: el pedido sirve muy bien para identificar el producto, pero no para saber qué lleva.** La composición sigue saliendo mejor de la etiqueta. Como complemento de las fotos suma mucho; como sustituto, falla justo en el dato que más importa.
+
+**Lo que aporta el pedido**
+
+- **Identificación exacta**: marca, producto y presentación (25 o 50 mg, 60 o 120 cápsulas). La foto de un frente a veces no la deja clara.
+- **Varios suplementos en un solo documento**, y sin tener los botes delante.
+- **Tienda y enlace para volver a comprar**: rellenan el campo «Tienda habitual» que la ficha ya tiene y sirven al Buscador y a Compra cuando vuelva el stock.
+- **Precio y fecha**: con las unidades por envase y las de la pauta, sale **cuánto cuesta cada suplemento al mes**. Es un extra para Finanzas, no para ahora.
+
+**Dónde falla la cadena pedido → enlace → composición**
+
+1. **Muchos pedidos no traen un enlace útil.** Una factura en PDF suele llevar el nombre y la referencia, no la URL. Los correos llevan enlaces de seguimiento que redirigen o caducan. Un tique de farmacia o de herbolario abrevia el nombre.
+2. **La página puede no abrirse.** El chat solo lee una página si la tienda deja entrar a un robot, y aquí ya sabemos que muchas no lo hacen: 12 de 29 tiendas del catálogo rechazan a un robot, y de cinco plantillas de búsqueda escritas a ojo fallaron cuatro. Forzarlo contradice el ADR-006. [SUPUESTO] el lector web del chat choca con los mismos bloqueos; plan B: la captura del usuario (punto 5).
+3. **Aunque se abra, la composición suele estar en una imagen**, la foto de la tabla del envase, y no en el texto. Los datos estructurados de la página (JSON-LD, Open Graph) dan nombre, marca, EAN y precio, pero nunca la composición.
+4. **La página no tiene por qué ser del bote que tienes.** Enseña la variante por defecto o la fórmula actual; el bote de casa puede ser de otra concentración o de antes de un cambio de fórmula. **La etiqueta del bote es lo que tomas.**
+5. **Donde la página sí vale es abierta por ti**: una captura de la sección de composición en tu navegador (el ADR-006 la da por buena, porque es el humano quien abre la página) cuesta lo mismo que la foto del bote y no depende de robots.
+6. **Los pedidos llevan datos personales**: nombre, dirección, teléfono, número de pedido y últimos dígitos de la tarjeta. En tu chat no importa, pero el modelo no debe copiarlos a los ficheros.
+
+**Propuesta: aceptar cualquier mezcla y ordenar las fuentes por fiabilidad.** Cada suplemento puede llegar por foto, texto, pedido o enlace, y en «Fuente» se anota de dónde sale la composición:
+
+1. `etiqueta`: la foto de la tabla del bote. Es la mejor.
+2. `web`: la página del producto, en una captura tuya o abierta por el modelo si la tienda lo deja, **con la variante comprobada** contra la del pedido.
+3. `conocida`: de memoria. Hay que confirmarla.
+4. `falta`.
+
+Del pedido se sacan identificación, tienda, enlace limpio (sin seguimiento), precio y fecha. Si el modelo no puede abrir un enlace, lo dice y pide la captura; nunca rellena en silencio.
+
+**Cambios si se adopta** (pocos, no aplicados todavía):
+
+- **Prompt 1**: aceptar notas de compra y enlaces además de fotos y textos; sacar de un pedido solo los suplementos, ignorando el resto y los datos personales; comprobar la presentación exacta; y pedir captura o foto cuando un enlace no abra o la composición sea una imagen que no ve.
+- **`formato-entrada.md`**: columnas **Tienda**, **Enlace** y **Presentación** (concentración y unidades por envase), y el valor `web` en «Fuente».
+- **`formato-salida.md`**: «Tienda» y «Enlace» en la sección «Suplementos», para que al importar queden en la ficha.
+
+**Cómo probarlo antes de decidir**, como se hizo con las plantillas de búsqueda (nada se da por bueno sin verlo funcionar): tres pedidos reales (uno de iHerb, uno de Amazon y otro de una tienda española) en un chat con el prompt 1. Se apunta de cuáles saca la composición sola, con `Fuente = web` y la variante correcta, y para cuáles pide captura. Con eso se sabe, tienda por tienda, si el pedido basta o hace falta la foto.

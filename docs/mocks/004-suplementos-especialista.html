@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="build" content="MA-B1-20260924-003">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0B6E7A">
+<title>maydom · mock 4 · especialista de suplementos</title>
+<style>
+:root{--bg:#F6F7F4;--bg2:#FFFFFF;--ink:#1B2430;--ink2:#4B5563;--mute:#8A93A0;--line:#D9DED8;--acc:#0B6E7A;--acc2:#0B6E7A1A;--ia:#6B4FBF;--ia2:#6B4FBF17;--warn:#B85C1E;--warn2:#B85C1E14;--ok:#2E7D4F;--ok2:#2E7D4F14;--mal:#B00020;--mal2:#B0002014;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#131A20;--bg2:#1B232B;--ink:#E6EAE7;--ink2:#B7C0C7;--mute:#7F8A94;--line:#2C3740;--acc:#4FB3BF;--acc2:#4FB3BF22;--ia:#A993F0;--ia2:#A993F022;--warn:#E08A4C;--warn2:#E08A4C1F;--ok:#5FBF87;--ok2:#5FBF871F;--mal:#FF6B6B;--mal2:#FF6B6B1F}}
+:root[data-theme="dark"]{--bg:#131A20;--bg2:#1B232B;--ink:#E6EAE7;--ink2:#B7C0C7;--mute:#7F8A94;--line:#2C3740;--acc:#4FB3BF;--acc2:#4FB3BF22;--ia:#A993F0;--ia2:#A993F022;--warn:#E08A4C;--warn2:#E08A4C1F;--ok:#5FBF87;--ok2:#5FBF871F;--mal:#FF6B6B;--mal2:#FF6B6B1F}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans)}
+.app{max-width:32rem;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
+header.cab{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:.6rem 1rem .5rem}
+header.cab .l1{display:flex;align-items:center;gap:.5rem}
+header.cab h1{font-size:1.1rem;margin:0;flex:1}
+header.cab small{color:var(--mute);font-size:.72rem;text-align:right}
+.volver{background:none;border:0;color:var(--acc);font-size:1.2rem;cursor:pointer;padding:0 .2rem}
+.pantallas{display:flex;gap:.3rem;overflow-x:auto;margin-top:.45rem;scrollbar-width:none}
+.pantallas::-webkit-scrollbar{display:none}
+.pantallas a{flex:none;font-size:.76rem;padding:.22rem .6rem;border-radius:999px;border:1px solid var(--line);color:var(--ink2);text-decoration:none;white-space:nowrap}
+.pantallas a.activo{background:var(--acc);border-color:var(--acc);color:#fff}
+main{flex:1;padding:.9rem 1rem 4rem}
+.aviso-mock{font-size:.78rem;color:var(--ink2);background:var(--acc2);border-radius:8px;padding:.5rem .7rem;margin-bottom:.7rem}
+h3{font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:1.3rem 0 .45rem;display:flex;align-items:center;gap:.5rem}
+h3 .sp{flex:1}
+h3 .n{text-transform:none;letter-spacing:0;font-size:.75rem}
+.tarjeta{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:.8rem .95rem;margin:.45rem 0}
+.tarjeta.ia{border-color:var(--ia);background:linear-gradient(var(--ia2),var(--ia2)),var(--bg2)}
+.fila{display:flex;align-items:center;gap:.7rem}.fila .t{flex:1;min-width:0}
+.mini{color:var(--mute);font-size:.8rem}
+.txt{font-size:.88rem;color:var(--ink2);margin:.35rem 0 0}
+.btn{font:500 .85rem var(--sans);color:var(--acc);background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:.42rem .72rem;cursor:pointer;display:inline-flex;align-items:center;gap:.3rem;text-decoration:none}
+.btn:hover{border-color:var(--acc)}.btn.p{background:var(--acc);color:#fff;border-color:var(--acc)}
+.btn.ia{background:var(--ia);border-color:var(--ia);color:#fff}.btn.ia-l{color:var(--ia);border-color:var(--ia)}
+.btn.mini{font-size:.74rem;padding:.24rem .5rem}.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.hecho{background:var(--ok2);color:var(--ok);border-color:var(--ok)}
+.acciones{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.6rem;align-items:center}
+.pill{font-size:.7rem;padding:.1rem .5rem;border-radius:999px;background:var(--acc2);color:var(--acc);white-space:nowrap;display:inline-block;line-height:1.5}
+.pill.ia{background:var(--ia2);color:var(--ia)}.pill.w{background:var(--warn2);color:var(--warn)}.pill.m{background:var(--mal2);color:var(--mal)}.pill.ok{background:var(--ok2);color:var(--ok)}.pill.g{background:var(--line);color:var(--ink2)}
+input,select,textarea{font:inherit;font-size:.92rem;padding:.45rem .55rem;border:1px solid var(--line);border-radius:6px;background:var(--bg2);color:var(--ink);width:100%}
+input[disabled],select[disabled]{opacity:.55}
+label{display:block;font-size:.8rem;color:var(--ink2);margin-top:.6rem}
+.rej2{display:grid;grid-template-columns:1fr 1fr;gap:0 .6rem}
+.rej3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 .6rem}
+.chips{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.35rem}
+.chip{font:500 .8rem var(--sans);padding:.28rem .65rem;border-radius:999px;border:1px solid var(--line);background:var(--bg2);color:var(--ink2);cursor:pointer}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin:.35rem 0}
+.seg button{flex:1;font:500 .8rem var(--sans);padding:.42rem .3rem;border:0;background:var(--bg2);color:var(--ink2);cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--acc);color:#fff}
+.opcion{display:flex;gap:.6rem;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:.55rem .7rem;margin-top:.4rem;cursor:pointer;background:var(--bg2)}
+.opcion input[type=radio]{width:auto;margin-top:.25rem}
+.opcion>span{flex:1;min-width:0}.opcion>span input{display:block;margin-top:.3rem}
+.opcion.on{border-color:var(--ia);background:linear-gradient(var(--ia2),var(--ia2)),var(--bg2)}
+.opcion .mini{display:block}
+details.plegable{border:1px solid var(--line);border-radius:10px;background:var(--bg2);margin:.45rem 0}
+details.plegable>summary{cursor:pointer;padding:.65rem .9rem;font-weight:600;font-size:.9rem;list-style:none;display:flex;gap:.5rem;align-items:center}
+details.plegable>summary::after{content:'▸';margin-left:auto;color:var(--mute);transition:.15s}
+details.plegable[open]>summary::after{rotate:90deg}
+details.plegable .cuerpo{padding:0 .9rem .8rem}
+details.aparcado{opacity:.7}
+/* Pauta: tomas del día */
+.toma{display:grid;grid-template-columns:3.4rem 1fr;gap:.2rem .7rem;padding:.6rem 0;border-bottom:1px dashed var(--line)}
+.toma:last-child{border-bottom:0}
+.toma .h{font-weight:700;font-variant-numeric:tabular-nums;font-size:1rem;padding-top:.05rem}
+.toma .a{font-weight:600;font-size:.9rem}
+.toma .a .mini{font-weight:400}
+.toma .items{grid-column:2;display:flex;flex-wrap:wrap;gap:.3rem}
+.it{font-size:.76rem;padding:.16rem .5rem;border-radius:6px;background:var(--ia2);color:var(--ink);border:1px solid transparent}
+.it b{font-weight:600}
+.it.fijo{background:var(--acc2)}
+.it.cambio{border-color:var(--ia)}
+/* Comparación Ahora / IA */
+.cmp{display:grid;grid-template-columns:3.2rem 1fr;gap:.2rem .6rem;font-size:.85rem;margin-top:.45rem}
+.cmp .k{color:var(--mute);font-size:.74rem;padding-top:.1rem}
+.cmp .ia-v{color:var(--ia);font-weight:600}
+.cmp s{color:var(--mute)}
+.ev{display:flex;gap:.8rem;flex-wrap:wrap;font-size:.74rem;color:var(--mute);margin-top:.4rem}
+.dots{letter-spacing:.05em}.dots i{font-style:normal;color:var(--ia)}
+.decidido{font-size:.8rem;font-weight:600}
+.decidido.ok{color:var(--ok)}.decidido.mia{color:var(--ink2)}
+.aviso{display:flex;gap:.6rem;padding:.55rem .7rem;border-radius:8px;margin:.35rem 0;font-size:.85rem;background:var(--bg2);border:1px solid var(--line);border-left-width:4px}
+.aviso.alta{border-left-color:var(--mal)}.aviso.media{border-left-color:var(--warn)}.aviso.baja{border-left-color:var(--ok)}
+.aviso .ic{flex:none}
+.aviso .acc{display:block;color:var(--ink2);font-size:.78rem;margin-top:.15rem}
+.check{display:flex;gap:.5rem;font-size:.84rem;margin:.25rem 0}
+.check .s{flex:none;width:1.1rem;text-align:center}
+.barra{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:.3rem 0 .1rem;position:relative}
+.barra i{display:block;height:100%;background:var(--ok)}
+.barra i.w{background:var(--warn)}
+.barra b{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink)}
+.flujo{display:flex;flex-direction:column;gap:.35rem;margin:.4rem 0}
+.paso{display:flex;gap:.6rem;align-items:flex-start;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:.5rem .7rem;font-size:.85rem}
+.paso .num{flex:none;width:1.5rem;height:1.5rem;border-radius:999px;background:var(--acc);color:#fff;font-size:.78rem;font-weight:700;display:flex;align-items:center;justify-content:center}
+.paso.ia .num{background:var(--ia)}
+.paso b{display:block}
+.flecha{text-align:center;color:var(--mute);font-size:.8rem;line-height:1}
+table.t{width:100%;border-collapse:collapse;font-size:.8rem;margin:.3rem 0}
+table.t th,table.t td{text-align:left;padding:.35rem .3rem;border-bottom:1px solid var(--line);vertical-align:top}
+table.t th{color:var(--mute);font-weight:600;font-size:.72rem}
+table.t tr.rec td{background:var(--ia2)}
+pre{font-size:.72rem;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:.6rem;overflow-x:auto;line-height:1.4}
+ul.l{margin:.3rem 0;padding-left:1.1rem;font-size:.86rem}ul.l li{margin:.2rem 0}
+.modal{border:1px solid var(--line);border-radius:12px;background:var(--bg2);color:var(--ink);padding:1rem 1.1rem;width:min(92vw,27rem);max-height:90dvh;overflow:auto}
+.modal::backdrop{background:rgba(0,0,0,.45)}
+.cabecera-modal{display:flex;align-items:center;gap:.5rem;margin:0 0 .3rem}
+.cabecera-modal h2{flex:1;min-width:0;margin:0;font-size:1.15rem}
+.cerrar{flex:none;background:none;border:0;color:var(--mute);font-size:1.25rem;line-height:1;cursor:pointer;padding:.15rem .3rem;border-radius:6px}
+.cerrar:hover{color:var(--ink);background:var(--line)}
+.progreso{list-style:none;padding:0;margin:.6rem 0}
+.progreso li{display:flex;gap:.6rem;align-items:center;padding:.45rem 0;font-size:.9rem;color:var(--mute)}
+.progreso li .s{width:1.3rem;text-align:center}
+.progreso li.act{color:var(--ink)}.progreso li.hecho{color:var(--ok)}
+@keyframes gira{to{rotate:360deg}}
+.progreso li.act .s{animation:gira 1s linear infinite}
+#toast{position:fixed;left:50%;bottom:1.2rem;transform:translateX(-50%) translateY(1rem);background:var(--ink);color:var(--bg);padding:.5rem .9rem;border-radius:8px;font-size:.85rem;opacity:0;transition:.2s;z-index:50;max-width:90vw;pointer-events:none;text-align:center}
+#toast.ver{opacity:1;transform:translateX(-50%)}
+.banda{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:.6rem 0;margin-top:1rem;display:flex;gap:.5rem;align-items:center}
+.banda .t{flex:1;font-size:.8rem;color:var(--ink2)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="cab">
+    <div class="l1"><button class="volver" id="volver" hidden aria-label="Volver">‹</button><h1 id="titulo">💊 Suplementos</h1><small>mock 4<br>MA-B1-20260924-003</small></div>
+    <nav class="pantallas" id="pantallas">
+      <a href="#lista">1 · Suplementos</a><a href="#preparar">2 · Preparar</a><a href="#pauta">3 · Pauta</a><a href="#ficha">4 · Ficha</a><a href="#diseno">Por qué así</a>
+    </nav>
+  </header>
+  <main id="main"></main>
+</div>
+
+<dialog class="modal" id="dlg-progreso">
+  <div class="cabecera-modal"><h2>✦ Pidiendo la pauta</h2></div>
+  <p class="mini" id="prog-modelo"></p>
+  <ul class="progreso" id="prog-lista"></ul>
+  <p class="mini">En la app real el segundo paso tarda entre 30 y 90 s; aquí se simula.</p>
+</dialog>
+
+<dialog class="modal" id="dlg-ficha">
+  <div class="cabecera-modal"><h2 id="ficha-titulo">Editar</h2><button class="cerrar" data-cerrar aria-label="Cerrar">✕</button></div>
+  <div id="ficha-cuerpo"></div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+// ─────────────────────────── Datos de ejemplo ───────────────────────────
+// Lista inventada para el mock: la real vive en el móvil (localStorage), nunca en docs/.
+const J = { levantarse: '07:00', desayuno: '07:30', comida: '14:30', cena: '21:00', acostarse: '23:00',
+  entreno: { dias: [1, 3, 5], hora: '18:30', dur: 60 }, cafe: '08:00 y 16:00' };
+const SUENO = { latencia: 12, despertar: '03:40', media: '6 h 10 min' };
+const DIAS = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+
+const ANCLAS = {
+  al_levantarse: { l: 'Al levantarte', de: 'levantarte', ico: '🌅' },
+  desayuno: { l: 'Desayuno', de: 'desayunar', ico: '🥣' },
+  comida: { l: 'Comida', de: 'comer', ico: '🍽️', nota: 'la más grasa del día' },
+  pre_entreno: { l: 'Antes de entrenar', de: 'entrenar', ico: '🏋️' },
+  post_entreno: { l: 'Al terminar de entrenar', de: 'terminar de entrenar', ico: '🥤' },
+  cena: { l: 'Cena', de: 'cenar', ico: '🌙' },
+  antes_de_dormir: { l: 'Antes de acostarte', de: 'acostarte', ico: '😴' },
+};
+const A = (a, d = 0, dias = 'todos') => ({ a, d, dias });
+
+// ahora: lo que tiene hoy la ficha · ia: lo que devuelve el especialista (contrato del §5.2 del documento)
+const S = [
+  { id: 's1', nombre: 'Multivitamínico', ahora: { dosis: '1 comprimido', mom: 'Mañana', hora: '08:30' },
+    comp: '1 comp. = D3 25 µg · zinc 10 mg · B6 5 mg · magnesio 100 mg · B12 25 µg · …', obj: 'por si acaso',
+    ia: { accion: 'ajustar', dosis: '1 comprimido', anclas: [A('comida')],
+      motivo: 'Lleva A, D, E y K, que se absorben con grasa: pásalo a la comida. Su zinc, B6, D y magnesio se suman a los que tomas sueltos (mira los avisos).',
+      ev: { dosis: 2, hora: 2 }, conf: 85 } },
+  { id: 's2', nombre: 'Vitamina D3 + K2', ahora: { dosis: '2000 UI + 100 µg', mom: 'Mañana', hora: '08:30' },
+    comp: '1 cáps. = D3 50 µg (2000 UI) + K2 MK-7 100 µg', obj: 'huesos, invierno',
+    ia: { accion: 'ajustar', dosis: '2000 UI + 100 µg (1 cápsula)', anclas: [A('comida')],
+      motivo: 'Liposolubles: con la comida más grasa la D se absorbe bastante mejor que en ayunas. Con el multi sumas 3000 UI, dentro del límite (4000). Sin analítica, no subas.',
+      ev: { dosis: 2, hora: 3 }, conf: 80 } },
+  { id: 's3', nombre: 'Omega-3', ahora: { dosis: '2 cápsulas', mom: 'Noche', hora: '22:30' },
+    comp: '2 cáps. = EPA 660 mg + DHA 440 mg', obj: 'corazón, recuperación',
+    ia: { accion: 'ajustar', dosis: '2 cápsulas (1,1 g EPA+DHA)', anclas: [A('comida')],
+      motivo: 'Con la comida más grasa se absorbe mejor y repite menos; tomarlo por la noche no aporta nada. 1,1 g de EPA+DHA está en el rango que tiene evidencia.',
+      ev: { dosis: 2, hora: 2 }, conf: 80 } },
+  { id: 's4', nombre: 'Magnesio bisglicinato', ahora: { dosis: '3 cápsulas (300 mg)', mom: 'Noche', hora: '22:30' },
+    comp: '1 cáps. = 100 mg de magnesio (bisglicinato)', obj: 'dormir, calambres',
+    ia: { accion: 'ajustar', dosis: '200 mg (2 cápsulas)', anclas: [A('antes_de_dormir', -45)],
+      motivo: 'Con los 100 mg del multi sumabas 400 de magnesio suplementado. Con 2 cápsulas quedan 300: todavía por encima de los 250 de EFSA, un límite que existe por el efecto laxante, y el bisglicinato se tolera bien. Si notas el estómago suelto, 1 cápsula.',
+      ev: { dosis: 2, hora: 1 }, conf: 70, limite: 'Magnesio suplementado 300 mg > 250 mg (EFSA)' } },
+  { id: 's5', nombre: 'Zinc', ahora: { dosis: '25 mg (1 cápsula)', mom: 'Noche', hora: '22:00' },
+    comp: '1 cáps. = 25 mg de zinc (bisglicinato)', obj: 'defensas',
+    ia: { accion: 'ajustar', dosis: '25 mg en días alternos', alterno: true, anclas: [A('cena')],
+      sencilla: { anclas: [A('comida')], pierde: 'nada relevante: a estas dosis puede ir con el multi' },
+      motivo: 'Con el multi sumabas 35 mg al día y el límite es 25; mantenido, el exceso de zinc baja el cobre. En días alternos quedan 22,5 de media. Con la cena sienta mejor que en ayunas.',
+      ev: { dosis: 3, hora: 1 }, conf: 85 } },
+  { id: 's6', nombre: 'Complejo B', ahora: { dosis: '1 cápsula', mom: 'Mañana', hora: '08:30' },
+    comp: '1 cáps. = B6 25 mg · B12 500 µg · B1, B2, B3…', obj: 'energía',
+    ia: { accion: 'suspender', dosis: '—', anclas: [],
+      motivo: 'Con el multi tomas 30 mg de B6 al día; EFSA puso el límite en 12 mg en 2023, y mantener la B6 alta se asocia a neuropatía. El multi ya cubre las B. Si lo que buscas es B12 (comes poca carne o pescado), tómala sola.',
+      ev: { dosis: 3, hora: 0 }, conf: 90 } },
+  { id: 's7', nombre: 'Creatina monohidrato', ahora: { dosis: '5 g', mom: 'Cuando me acuerdo', hora: '' },
+    comp: '1 cacito = 5 g', obj: 'fuerza',
+    ia: { accion: 'ajustar', dosis: '5 g todos los días', anclas: [A('post_entreno', 0, 'entreno'), A('desayuno', 0, 'descanso')],
+      sencilla: { anclas: [A('desayuno')], pierde: 'muy poco: tomarla después de entrenar da una ventaja pequeña' },
+      motivo: 'Funciona por acumulación: lo que cuenta es no saltarse días, tampoco los de descanso. Después de entrenar, con el batido, rinde algo más; los demás días, con el desayuno.',
+      ev: { dosis: 3, hora: 1 }, conf: 85 } },
+  { id: 's8', nombre: 'Proteína whey', ahora: { dosis: '30 g', mom: 'Fijado por mí', hora: '19:30' }, fijo: true,
+    comp: '1 cacito = 30 g (24 g de proteína)', obj: 'músculo',
+    ia: { accion: 'mantener', dosis: '30 g', anclas: [A('post_entreno', 0, 'entreno')],
+      motivo: 'Lo tienes fijado y está bien puesto: 30 g al terminar de entrenar. Los días de descanso, solo si no llegas a ~1,6 g de proteína por kilo (dime tu peso y lo cruzo con Alimentación).',
+      ev: { dosis: 3, hora: 2 }, conf: 85 } },
+  { id: 's9', nombre: 'Colágeno hidrolizado', ahora: { dosis: '10 g', mom: 'Mañana', hora: '08:30' },
+    comp: '1 cacito = 10 g', obj: 'tendones',
+    ia: { accion: 'ajustar', dosis: '15 g con la vitamina C', anclas: [A('pre_entreno', -45, 'entreno'), A('desayuno', 0, 'descanso')],
+      sencilla: { anclas: [A('desayuno')], pierde: 'el efecto sobre el tendón, que se busca teniendo el colágeno en sangre mientras entrenas' },
+      motivo: 'Para tendones, 15 g con unos 50 mg de vitamina C entre 30 y 60 min antes de entrenar, que es como se ha estudiado. Los días sin entreno, con el desayuno.',
+      ev: { dosis: 1, hora: 2 }, conf: 65 } },
+  { id: 's10', nombre: 'Vitamina C', ahora: { dosis: '1000 mg', mom: 'Mañana', hora: '08:30' },
+    comp: '1 comp. = 1000 mg', obj: 'defensas',
+    ia: { accion: 'ajustar', dosis: '250 mg', anclas: [A('pre_entreno', -45, 'entreno'), A('desayuno', 0, 'descanso')],
+      sencilla: { anclas: [A('desayuno')], pierde: 'acompañar al colágeno antes de entrenar' },
+      motivo: 'Por encima de ~200 mg la absorción se satura y el resto se elimina, y 1 g cerca del entreno puede restar parte de la adaptación. 250 mg junto al colágeno bastan. Tu comprimido es de 1000: habrá que buscar uno de 250.',
+      ev: { dosis: 2, hora: 2 }, conf: 75 } },
+  { id: 's11', nombre: 'Ashwagandha', ahora: { dosis: '600 mg (2 cápsulas)', mom: 'Mañana', hora: '08:30' },
+    comp: '1 cáps. = 300 mg de extracto KSM-66', obj: 'estrés',
+    ia: { accion: 'ajustar', dosis: '600 mg · 8 semanas sí, 2 no', anclas: [A('cena')],
+      sencilla: { anclas: [A('antes_de_dormir', -45)], pierde: 'nada' },
+      motivo: 'La evidencia (estrés, sueño) es con 300–600 mg. Por la noche ayuda a descansar en vez de adormilarte por la mañana. Ciclos de 8 semanas con 2 de pausa, por prudencia.',
+      ev: { dosis: 2, hora: 1 }, conf: 70 } },
+  { id: 's12', nombre: 'Melatonina', ahora: { dosis: '1,9 mg', mom: 'Noche', hora: '23:00' },
+    comp: '1 comp. = 1,9 mg', obj: 'dormir',
+    ia: { accion: 'preguntar', dosis: '1 mg (medio comprimido) o prueba sin ella', anclas: [A('antes_de_dormir', -45)],
+      motivo: 'Según Sueño te duermes en 12 min de media; lo tuyo es el despertar de las 03:40, y la melatonina de liberación inmediata apenas llega ahí. Prueba 2 semanas sin ella y mira Sueño. Si la mantienes, 0,5–1 mg rinde igual que 1,9.',
+      ev: { dosis: 2, hora: 3 }, conf: 70 } },
+  { id: 's13', nombre: 'Glicina', ahora: { dosis: '3 g', mom: 'Noche', hora: '22:15' },
+    comp: '1 cacito = 3 g', obj: 'dormir',
+    ia: { accion: 'mantener', dosis: '3 g', anclas: [A('antes_de_dormir', -45)],
+      motivo: '3 g antes de acostarte mejoraron la calidad del sueño en estudios pequeños. Va bien en la misma toma que el magnesio.',
+      ev: { dosis: 1, hora: 2 }, conf: 70 } },
+  { id: 's14', nombre: 'Probiótico', ahora: { dosis: '1 cápsula', mom: 'Noche', hora: '22:30' },
+    comp: '', obj: 'digestión',
+    ia: { accion: 'ajustar', dosis: '1 cápsula', anclas: [A('desayuno')],
+      motivo: 'Resiste mejor el ácido del estómago si va con comida; la hora importa menos que tomarlo a diario. Con el desayuno aligeras la toma de la noche, que ya es la más cargada.',
+      ev: { dosis: 1, hora: 1 }, conf: 60 } },
+];
+
+const AVISOS = [
+  { g: 'alta', ic: '⛔', t: 'B6: 30 mg al día (Complejo B 25 + multi 5). EFSA la limita a 12 mg.', acc: 'Suspender el Complejo B', ids: ['s6', 's1'] },
+  { g: 'alta', ic: '⛔', t: 'Zinc: 35 mg al día (suelto 25 + multi 10). El límite es 25 y, mantenido, baja el cobre.', acc: 'Zinc en días alternos: 22,5 de media', ids: ['s5', 's1'] },
+  { g: 'media', ic: '⚠️', t: 'Magnesio suplementado: 300 mg con la propuesta (antes 400). EFSA pone 250 por el efecto laxante.', acc: 'Aceptarlo leyendo el aviso, o bajar a 1 cápsula', ids: ['s4', 's1'] },
+  { g: 'media', ic: '💊', t: 'La K2 y el omega-3 no se toman con anticoagulantes (acenocumarol, warfarina…) sin hablar con tu médico. No sé si tomas medicación.', acc: 'Contesta la pregunta 1', ids: ['s2', 's3'] },
+  { g: 'media', ic: '🏋️', t: '1 g de vitamina C cerca del entreno puede restar parte de la adaptación.', acc: 'Bajar a 250 mg', ids: ['s10'] },
+  { g: 'media', ic: '💊', t: 'Ashwagandha: cuidado si tomas hormona tiroidea o sedantes, o en el embarazo; hay casos raros de daño en el hígado.', acc: 'Ciclos de 8 + 2 semanas', ids: ['s11'] },
+  { g: 'baja', ic: '🤝', t: 'Multi, D3 + K2 y omega-3 juntos en la comida: todos se absorben con grasa y se ayudan.', ids: ['s1', 's2', 's3'] },
+  { g: 'baja', ic: 'ℹ️', t: 'Magnesio, glicina y melatonina juntos: son compatibles, pero dan sueño. No conduzcas después.', ids: ['s4', 's12', 's13'] },
+  { g: 'baja', ic: 'ℹ️', t: 'A estas dosis no hace falta separar el zinc del magnesio: van en tomas distintas porque encajan mejor así, no porque haya que separarlos.', ids: ['s4', 's5'] },
+];
+const PREGUNTAS = [
+  { id: 'medicacion', t: '¿Tomas algún medicamento? Anticoagulantes, levotiroxina, antidepresivos, algo para la tensión o la diabetes cambian la K2, el omega-3, la ashwagandha, el magnesio y la melatonina.', ph: 'nada / acenocumarol 4 mg…' },
+  { id: 'analitica', t: '¿Tienes una analítica reciente con vitamina D (25-OH-D) o B12? Sin ella me quedo en dosis de mantenimiento.', ph: '25-OH-D 28 ng/ml, marzo 2026…' },
+  { id: 'peso', t: '¿Cuánto pesas? Es para ajustar la proteína de los días de descanso.', ph: '78 kg' },
+];
+const MEDICO = [
+  'Si tomas anticoagulante: la K2 y el omega-3, antes que nada.',
+  'Si tomas levotiroxina: la ashwagandha, y el multi, el zinc y el magnesio, 4 h separados de ella.',
+  'Una analítica de vitamina D antes de mantener 3000 UI todo el año.',
+];
+const FUERA = ['El café de las 16:00 queda a 7 h de acostarte. Si el sueño no mejora, tómalo antes de las 15:00.'];
+
+// ─────────────────────────── Estado del mock ───────────────────────────
+const st = { tipo: 'entreno', modo: 'optima', modelo: 'especialista', objetivos: new Set(['entreno', 'sueno']), pedida: false, dec: {}, fichaId: 's11', diasPrep: new Set(J.entreno.dias) };
+
+// ─────────────────────────── Utilidades ───────────────────────────
+const $ = s => document.querySelector(s);
+const aMin = h => { const [a, b] = h.split(':').map(Number); return a * 60 + b; };
+const hhmm = m => { m = ((m % 1440) + 1440) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+// Planificador local (§5.4): el modelo no da horas, da anclas con desfase; la hora sale de la jornada.
+function base(a) {
+  switch (a) {
+    case 'al_levantarse': return aMin(J.levantarse);
+    case 'desayuno': return aMin(J.desayuno);
+    case 'comida': return aMin(J.comida);
+    case 'cena': return aMin(J.cena);
+    case 'antes_de_dormir': return aMin(J.acostarse);
+    case 'pre_entreno': return aMin(J.entreno.hora);
+    case 'post_entreno': return aMin(J.entreno.hora) + J.entreno.dur;
+  }
+}
+const hora = x => hhmm(base(x.a) + (x.d || 0));
+const desc = x => x.d ? `${Math.abs(x.d)} min ${x.d < 0 ? 'antes' : 'después'} de ${ANCLAS[x.a].de}` : ANCLAS[x.a].l;
+const diasTxt = x => x.dias === 'entreno' ? ' · días de entreno' : x.dias === 'descanso' ? ' · días de descanso' : '';
+const anclasDe = (s, modo) => s.ia.accion === 'suspender' ? [] : (modo === 'sencilla' && s.ia.sencilla ? s.ia.sencilla.anclas : s.ia.anclas);
+function tomasDelDia(tipo, modo) {
+  const g = {};
+  for (const s of S) for (const x of anclasDe(s, modo)) {
+    if (x.dias !== 'todos' && x.dias !== tipo) continue;
+    const k = x.a + '|' + (x.d || 0);
+    (g[k] ||= { a: x.a, d: x.d || 0, items: [] }).items.push(s);
+  }
+  return Object.values(g).sort((p, q) => (base(p.a) + p.d) - (base(q.a) + q.d));
+}
+const iaTexto = (s, modo = 'optima') => { const an = anclasDe(s, modo); return an.length ? an.map(x => `${desc(x)} · ${hora(x)}${diasTxt(x)}`).join('<br>') : 'Suspender'; };
+const iaCorto = s => { const an = anclasDe(s, 'optima'); return an.length ? an.map(x => `${ANCLAS[x.a].l} ${hora(x)}`).join(' / ') : 'suspender'; };
+const dots = n => '<span class="dots">' + '<i>●</i>'.repeat(n) + '○'.repeat(3 - n) + '</span>';
+const EVN = ['—', 'baja', 'moderada', 'alta'];
+const ACC = { ajustar: ['Ajustar', 'ia'], mantener: ['Mantener', 'ok'], suspender: ['Suspender', 'm'], preguntar: ['Preguntar', 'w'] };
+function toast(t, ms = 2400) { const e = $('#toast'); e.textContent = t; e.classList.add('ver'); clearTimeout(toast.h); toast.h = setTimeout(() => e.classList.remove('ver'), ms); }
+const pendientes = () => S.filter(s => !st.dec[s.id] && s.ia.accion !== 'mantener');
+
+// ─────────────────────────── Pantalla 1: lista ───────────────────────────
+function vLista() {
+  const pend = pendientes().length;
+  const cab = st.pedida
+    ? `<div class="tarjeta ia"><div class="fila"><div class="t"><b>✦ Pauta del especialista</b> <span class="pill ok">vigente</span>
+        <div class="mini">24/09/2026 · Opus 5.5 · ${pend ? `<b style="color:var(--ia)">${pend} propuestas sin decidir</b>` : 'todo decidido'}</div></div>
+        <a class="btn ia" href="#pauta">Ver</a></div></div>`
+    : `<div class="tarjeta ia"><div class="fila"><div class="t"><b>✦ Pauta del especialista</b>
+        <div class="mini">Qué tomar, cuánto y cuándo, cruzando los 14 entre sí, con tu jornada, tu entreno y tu sueño.</div></div>
+        <a class="btn ia" href="#preparar">Preparar</a></div></div>`;
+  const filas = S.map(s => {
+    const d = st.dec[s.id];
+    const usaIA = d === 'ia' || (s.ia.accion === 'mantener' && st.pedida);
+    const sus = d === 'ia' && s.ia.accion === 'suspender';
+    let linea;
+    if (sus) linea = `<span class="pill m">suspendido por la pauta</span>`;
+    else if (usaIA) linea = `<span class="pill ia">✦ IA</span> ${s.ia.dosis} · ${iaCorto(s)}`;
+    else linea = `${s.fijo ? '<span class="pill">fijado por mí</span> ' : ''}${s.ahora.dosis} · ${s.ahora.mom}${s.ahora.hora ? ' ' + s.ahora.hora : ''}`;
+    const prop = st.pedida && !d && s.ia.accion !== 'mantener' ? ' <span class="pill w">propuesta</span>' : '';
+    return `<div class="tarjeta"><div class="fila"><div class="t" style="cursor:pointer" data-ficha="${s.id}"><b>${s.nombre}</b>${prop}<div class="mini">${linea}</div></div>
+      ${sus ? '' : `<button class="btn mini" data-tomar>Tomado</button>`}</div></div>`;
+  }).join('');
+  const hoy = st.pedida ? tomasDelDia('entreno', st.modo) : null;
+  return `
+  <div class="aviso-mock">Mock con 14 suplementos <b>de ejemplo</b> (tu lista real vive en el móvil). Empieza por <b>Preparar</b>, pide la pauta y decide en <b>Pauta</b>; vuelve aquí para ver cómo queda. «Por qué así» resume el análisis.</div>
+  ${cab}
+  <div class="tarjeta"><div class="fila"><div class="t"><b>14 suplementos</b><div class="mini">stock y reposición aparcados en esta fase</div></div><button class="btn p" onclick="toast('Nuevo suplemento: nombre, composición y para qué lo tomas')">+ Suplemento</button></div></div>
+  ${hoy ? `<h3>Hoy, por tomas <span class="sp"></span><span class="pill g n">fase 2</span></h3>
+    <div class="tarjeta">${hoy.map(t => `<div class="fila" style="padding:.3rem 0"><div class="t"><b>${hhmm(base(t.a) + t.d)}</b> ${ANCLAS[t.a].ico} ${ANCLAS[t.a].l}<div class="mini">${t.items.map(s => s.nombre).join(' · ')}</div></div><button class="btn mini" data-tomar>✓ todo</button></div>`).join('')}</div>` : ''}
+  <h3>Tus suplementos</h3>
+  ${filas}
+  <p class="mini">Toca un suplemento para abrir su ficha (pantalla 4). Criterio general, no médico: lo marcado como «médico» no se aplica sin consultarlo.</p>`;
+}
+
+// ─────────────────────────── Pantalla 2: preparar ───────────────────────────
+function vPreparar() {
+  const chip = (k, l) => `<button class="chip ${st.objetivos.has(k) ? 'on' : ''}" data-obj="${k}">${l}</button>`;
+  const dia = i => `<button class="chip ${st.diasPrep.has(i) ? 'on' : ''}" data-dia="${i}">${DIAS[i]}</button>`;
+  const sinComp = S.filter(s => !s.comp).length;
+  return `
+  <div class="aviso-mock">Lo que el especialista va a mirar. Casi todo sale ya de la app (Preferencias, Sueño, Ejercicio): aquí solo se repasa. Cambiar la jornada después <b>recoloca la pauta sin volver a llamar a la IA</b>.</div>
+  <h3>Tu jornada tipo <span class="sp"></span><span class="n mini">de Sueño, Ejercicio y Preferencias</span></h3>
+  <div class="tarjeta">
+    <div class="rej3">
+      <label>Me levanto<input type="time" data-j="levantarse" value="${J.levantarse}"></label>
+      <label>Desayuno<input type="time" data-j="desayuno" value="${J.desayuno}"></label>
+      <label>Comida ★<input type="time" data-j="comida" value="${J.comida}"></label>
+      <label>Cena<input type="time" data-j="cena" value="${J.cena}"></label>
+      <label>Me acuesto<input type="time" data-j="acostarse" value="${J.acostarse}"></label>
+      <label>Café<input value="${J.cafe}" disabled></label>
+    </div>
+    <p class="mini" style="margin:.4rem 0 0">★ la comida con más grasa, donde van los liposolubles.</p>
+    <label>Días de entreno</label><div class="chips">${[1, 2, 3, 4, 5, 6, 0].map(dia).join('')}</div>
+    <div class="rej2"><label>Hora del entreno<input type="time" data-j="entreno" value="${J.entreno.hora}"></label><label>Duración<select disabled><option>60 min</option></select></label></div>
+    <p class="mini" style="margin:.5rem 0 0">De Sueño (14 noches): te duermes en ${SUENO.latencia} min de media, despertar hacia las ${SUENO.despertar}, ${SUENO.media} dormidas.</p>
+  </div>
+  <h3>Para qué los tomas</h3>
+  <div class="chips">${chip('entreno', 'Rendir entrenando')}${chip('sueno', 'Dormir')}${chip('salud', 'Salud general')}${chip('recuperacion', 'Recuperación')}</div>
+  <details class="plegable"><summary>🩺 Perfil de salud <span class="pill w">opcional · cambia la pauta</span></summary><div class="cuerpo">
+    <div class="rej2"><label>Edad<input type="number" placeholder="47"></label><label>Peso (kg)<input type="number" placeholder="78"></label></div>
+    <label>Medicación que tomas<textarea rows="2" placeholder="nada / levotiroxina 50 µg en ayunas…"></textarea></label>
+    <label>Condiciones<input placeholder="tensión, tiroides, reflujo…"></label>
+    <label>Analíticas<input placeholder="25-OH-D 28 ng/ml, ferritina 90, B12 400 (marzo 2026)"></label>
+    <p class="mini">🔒 Se queda en el móvil. Solo sale en esta consulta, hacia el gateway y el modelo, y se pide al proveedor que no la guarde.</p>
+  </div></details>
+  <h3>Suplementos que entran</h3>
+  <div class="tarjeta"><b>14 de 14</b> · 1 fijado por ti (se respeta) · ${sinComp} sin composición
+    <div class="mini">Sin composición la dosis sale en mg y no en cápsulas. Se rellena en la ficha: «1 cáps. = 100 mg de magnesio».</div></div>
+  <h3>Quién la hace</h3>
+  <label class="opcion ${st.modelo === 'especialista' ? 'on' : ''}"><input type="radio" name="modelo" value="especialista" ${st.modelo === 'especialista' ? 'checked' : ''}>
+    <span><b>✦ Especialista</b> · Claude Opus 5.5, razonamiento medio<span class="mini">≈ 0,20–0,30 $ por pauta · 30–90 s · el recomendado para dosis</span></span></label>
+  <label class="opcion ${st.modelo === 'rapido' ? 'on' : ''}"><input type="radio" name="modelo" value="rapido" ${st.modelo === 'rapido' ? 'checked' : ''}>
+    <span><b>Rápido</b> · el del gateway (gemini-2.5-flash-lite)<span class="mini">&lt; 0,01 $ · 5 s · el que se usa hoy; para probar, no para decidir dosis</span></span></label>
+  <div class="banda"><span class="t">Se guarda con su firma: si no cambian ni la lista ni la jornada ni el perfil, no se vuelve a pedir.</span><button class="btn ia" id="pedir">✦ Pedir pauta</button></div>`;
+}
+
+// ─────────────────────────── Pantalla 3: pauta ───────────────────────────
+function vPauta() {
+  if (!st.pedida) return `<div class="aviso-mock">Aún no hay pauta. Ve a <a href="#preparar">Preparar</a> y pídela (se simula).</div>`;
+  const tomas = tomasDelDia(st.tipo, st.modo);
+  const otra = tomasDelDia(st.tipo, st.modo === 'optima' ? 'sencilla' : 'optima').length;
+  const cuenta = a => S.filter(s => s.ia.accion === a).length;
+  const rapido = st.modelo === 'rapido';
+  const seg = (k, v, l) => `<button class="${st[k] === v ? 'on' : ''}" data-${k}="${v}">${l}</button>`;
+  const timeline = tomas.map(t => `<div class="toma"><div class="h">${hhmm(base(t.a) + t.d)}</div>
+      <div class="a">${ANCLAS[t.a].ico} ${t.d ? desc(t) : ANCLAS[t.a].l}${ANCLAS[t.a].nota ? ` <span class="mini">· ${ANCLAS[t.a].nota}</span>` : ''}</div>
+      <div class="items">${t.items.map(s => `<span class="it ${s.fijo ? 'fijo' : ''} ${s.ia.accion !== 'mantener' ? 'cambio' : ''}"><b>${s.nombre}</b> ${s.ia.dosis.replace(/ ·.*/, '')}</span>`).join('')}</div></div>`).join('');
+  const tarjeta = s => {
+    const [al, cl] = ACC[s.ia.accion]; const d = st.dec[s.id];
+    const ahora = `${s.ahora.dosis} · ${s.ahora.mom}${s.ahora.hora ? ' ' + s.ahora.hora : ''}`;
+    const botones = s.ia.accion === 'mantener' ? `<span class="decidido ok">✓ sin cambios</span>`
+      : d === 'ia' ? `<span class="decidido ok">✓ Aceptada</span> <button class="btn mini" data-deshacer="${s.id}">deshacer</button>`
+      : d === 'mia' ? `<span class="decidido mia">Mantienes la tuya</span> <button class="btn mini" data-deshacer="${s.id}">deshacer</button>`
+      : s.ia.limite ? `<button class="btn ia-l mini" data-aceptar="${s.id}">Aceptar con el aviso</button><button class="btn mini" data-mia="${s.id}">Mantener la mía</button><button class="btn mini" data-ficha="${s.id}">Fijar a mano</button>`
+      : `<button class="btn ia mini" data-aceptar="${s.id}">Aceptar</button><button class="btn mini" data-mia="${s.id}">Mantener la mía</button><button class="btn mini" data-ficha="${s.id}">Fijar a mano</button>`;
+    return `<div class="tarjeta ${d ? '' : 'ia'}" id="t-${s.id}">
+      <div class="fila"><div class="t"><b>${s.nombre}</b> <span class="pill ${cl}">${al}</span>${s.fijo ? ' <span class="pill">fijado por mí</span>' : ''}</div><span class="mini">${s.ia.conf} %</span></div>
+      <div class="cmp"><span class="k">Ahora</span><span>${s.ia.accion === 'mantener' ? ahora : `<s>${ahora}</s>`}</span>
+        <span class="k" style="color:var(--ia)">✦ IA</span><span class="ia-v">${s.ia.dosis}<br><span style="font-weight:400">${iaTexto(s)}</span></span></div>
+      ${s.ia.limite ? `<div class="aviso media" style="margin-top:.5rem"><span class="ic">⚠️</span><span>La tabla local lo frena: <b>${s.ia.limite}</b>. El especialista lo justifica, pero no se acepta de un toque.</span></div>` : ''}
+      <p class="txt">${s.ia.motivo}</p>
+      ${s.ia.sencilla ? `<p class="mini" style="margin:.35rem 0 0">Sencilla: ${iaTexto(s, 'sencilla')} — pierdes ${s.ia.sencilla.pierde}.</p>` : ''}
+      <div class="ev"><span>Evidencia de la dosis ${dots(s.ia.ev.dosis)} ${EVN[s.ia.ev.dosis]}</span><span>de la hora ${dots(s.ia.ev.hora)} ${EVN[s.ia.ev.hora]}</span></div>
+      <div class="acciones">${botones}</div></div>`;
+  };
+  const orden = { suspender: 0, preguntar: 1, ajustar: 2, mantener: 3 };
+  const lista = S.slice().sort((a, b) => orden[a.ia.accion] - orden[b.ia.accion]);
+  const barra = (n, v, lim, u) => { return `<div style="margin:.35rem 0"><div class="fila mini"><span class="t">${n}</span><span>${v} / ${lim} ${u}</span></div><div class="barra"><i class="${v > lim ? 'w' : ''}" style="width:${Math.min(100, v / lim * 80)}%"></i><b style="left:80%"></b></div></div>`; };
+  return `
+  ${rapido ? `<div class="aviso alta"><span class="ic">⛔</span><span><b>Hecha con el modelo rápido.</b> En la evaluación prevista, un modelo que no ve el anticoagulante del caso B queda fuera. Úsala para probar, no para cambiar dosis.</span></div>` : ''}
+  <div class="tarjeta ia">
+    <b>✦ ${cuenta('ajustar')} ajustes, ${cuenta('suspender')} suspensión, ${cuenta('preguntar')} a falta de una respuesta y ${cuenta('mantener')} sin cambios</b>
+    <p class="txt">Tienes dos excesos escondidos en el multivitamínico (B6 y zinc), dos liposolubles lejos de la grasa que necesitan (el omega-3 por la noche y la D en el desayuno) y una toma nocturna demasiado cargada. Hay 3 preguntas que pueden cambiar la pauta.</p>
+    <div class="mini" style="margin-top:.4rem">${rapido ? 'gemini-2.5-flash-lite · 5 s · < 0,01 $' : 'Claude Opus 5.5 · razonamiento medio · 48 s · ≈ 0,22 $'} · 24/09/2026 · firma a3f9 · <a href="#diseno">cómo se ha hecho</a></div>
+  </div>
+
+  <h3>Tu día con la pauta</h3>
+  <div class="seg">${seg('tipo', 'entreno', 'Día de entreno (L·X·V)')}${seg('tipo', 'descanso', 'Día de descanso')}</div>
+  <div class="seg">${seg('modo', 'optima', 'Óptima')}${seg('modo', 'sencilla', 'Sencilla')}</div>
+  <div class="tarjeta">
+    <div class="mini" style="margin-bottom:.2rem">${tomas.length} tomas ${st.modo === 'optima' ? `(la sencilla, ${otra})` : `(la óptima, ${otra})`} · las horas salen de tu jornada, no del modelo · <span class="it cambio" style="padding:0 .3rem">borde</span> = cambia algo</div>
+    ${timeline}
+  </div>
+
+  <h3>Avisos <span class="sp"></span><span class="n mini">${AVISOS.filter(a => a.g === 'alta').length} graves · ${AVISOS.filter(a => a.g === 'media').length} a vigilar</span></h3>
+  ${AVISOS.map(a => `<div class="aviso ${a.g}"><span class="ic">${a.ic}</span><span>${a.t}${a.acc ? `<span class="acc">→ ${a.acc}</span>` : ''}</span></div>`).join('')}
+  ${FUERA.map(f => `<div class="aviso baja"><span class="ic">☕</span><span>${f}<span class="acc">fuera de los suplementos, pero afecta al sueño</span></span></div>`).join('')}
+
+  <h3>El especialista pregunta</h3>
+  <div class="tarjeta">${PREGUNTAS.map((p, i) => `<label>${i + 1}. ${p.t}<input placeholder="${p.ph}"></label>`).join('')}
+    <div class="acciones"><button class="btn ia-l" onclick="toast('Se pide otra pauta con las respuestas y se compara con esta: solo vuelve como propuesta lo que cambie')">✦ Rehacer con las respuestas</button></div></div>
+
+  <h3>Cada suplemento <span class="sp"></span><span class="n mini" id="cuenta">${pendientes().length} por decidir</span></h3>
+  ${lista.map(tarjeta).join('')}
+
+  <h3>Para hablar con tu médico</h3>
+  <div class="tarjeta"><ul class="l">${MEDICO.map(m => `<li>${m}</li>`).join('')}</ul>
+    <div class="acciones"><button class="btn mini" onclick="toast('En la app: copia la lista con la pauta para enseñarla en la consulta')">Copiar para la consulta</button></div></div>
+
+  <h3>Comprobación local <span class="sp"></span><span class="n mini">sin IA · la tabla manda</span></h3>
+  <div class="tarjeta">
+    <div class="check"><span class="s">✓</span><span>14 de 14 suplementos con su id: ninguno inventado ni perdido.</span></div>
+    <div class="check"><span class="s">✓</span><span>«Fijado por mí» respetado (Proteína whey).</span></div>
+    <div class="check"><span class="s">✓</span><span>Separaciones de la tabla: ningún choque (no hay hierro ni calcio sueltos).</span></div>
+    <div class="check"><span class="s">⚠️</span><span>Sumas por nutriente con la propuesta, frente al límite diario:</span></div>
+    ${barra('Vitamina D (multi + D3)', 75, 100, 'µg')}${barra('Zinc (media, días alternos)', 22.5, 25, 'mg')}${barra('B6 (sin el Complejo B)', 5, 12, 'mg')}${barra('Magnesio suplementado', 300, 250, 'mg')}
+    <p class="mini">La marca negra es el límite. Lo que lo pasa no tiene botón de «Aceptar» a secas.</p>
+  </div>
+
+  <div class="banda"><span class="t">Aceptar todo acepta lo que no lleva aviso ni pregunta; eso queda para ti.</span><button class="btn ia" id="aceptar-todo">Aceptar todo</button></div>`;
+}
+
+// ─────────────────────────── Pantalla 4: ficha ───────────────────────────
+function vFicha() {
+  const s = S.find(x => x.id === st.fichaId);
+  return `
+  <div class="aviso-mock">La ficha de un suplemento con las dos opciones nuevas: <b>«✦ Según la IA»</b> en el momento de toma y <b>«✦ La de la IA»</b> en la dosis. En la app es una ventana; aquí también se abre al tocar un suplemento en la pantalla 1.</div>
+  <div class="tarjeta"><div class="cabecera-modal"><h2>${s.nombre}</h2></div>${fichaForm(s)}</div>
+  <label>Ver otra ficha<select id="otra-ficha">${S.map(x => `<option value="${x.id}" ${x.id === s.id ? 'selected' : ''}>${x.nombre}</option>`).join('')}</select></label>`;
+}
+function fichaForm(s) {
+  const dIA = st.dec[s.id] !== 'mia';
+  const tomaIA = s.ia.accion === 'suspender' ? 'la pauta propone suspenderlo' : iaTexto(s).replace(/<br>/g, ' / ');
+  const hoy = !st.pedida ? `<p class="mini" style="color:var(--ia)">Aún no hay pauta: «✦ Según la IA» se llena al pedirla.</p>` : '';
+  return `${hoy}
+    <label>Suplemento<input value="${s.nombre}"></label>
+    <label>Para qué lo tomo <span class="pill g">nuevo</span><input value="${s.obj}"></label>
+    <label>Composición por unidad <span class="pill g">nuevo · opcional</span><input value="${s.comp}" placeholder="1 cáps. = 100 mg de magnesio (bisglicinato)"><span class="mini">Con ella la dosis de la IA se dice en cápsulas o cacitos; sin ella, en mg. En la fase 2, con una foto de la etiqueta.</span></label>
+    <label>Dosis</label>
+    <label class="opcion ${dIA ? 'on' : ''}"><input type="radio" name="dosis-${s.id}" ${dIA ? 'checked' : ''}><span><b>✦ La de la IA</b>: ${s.ia.dosis}<span class="mini">${s.ia.motivo.split('. ')[0]}.</span></span></label>
+    <label class="opcion ${!dIA ? 'on' : ''}"><input type="radio" name="dosis-${s.id}" ${!dIA ? 'checked' : ''}><span><b>La mía</b><input value="${s.ahora.dosis}"></span></label>
+    <label>Momento de toma<select id="mom-${s.id}">
+      <option value="ia" ${dIA ? 'selected' : ''}>✦ Según la IA — ${tomaIA}</option>
+      <option>Mañana</option><option>Con la comida</option><option>Tarde</option><option>Noche</option><option ${s.fijo ? 'selected' : ''}>Fijado por mí</option></select></label>
+    <label>Hora del aviso<input type="time" id="hora-${s.id}" value="${(anclasDe(s, 'optima')[0] && hora(anclasDe(s, 'optima')[0])) || s.ahora.hora}" ${dIA ? 'disabled' : ''}><span class="mini" id="hora-nota-${s.id}">${dIA ? 'La pone la pauta con tu jornada; si cambias la hora de cenar, se mueve sola.' : 'La pones tú.'}</span></label>
+    <p class="mini" style="margin-top:.6rem">Una pauta nueva nunca cambia esto sola: si propone otra cosa, vuelve como propuesta. «Fijado por mí» no lo toca nunca.</p>
+    <details class="plegable aparcado"><summary>📦 Stock y reposición <span class="pill g">aparcado en esta fase</span></summary><div class="cuerpo">
+      <div class="rej2"><label>Unidades que quedan<input type="number" disabled value="42"></label><label>Envase completo<input type="number" disabled value="60"></label></div>
+      <label>Avisar al llegar al (%)<input type="number" disabled value="10"></label>
+      <p class="mini">Fase 3: se descontará con la dosis aceptada, en cápsulas o gramos.</p></div></details>
+    <div class="acciones" style="justify-content:flex-end"><button class="btn" data-cerrar>Cancelar</button><button class="btn p" data-cerrar onclick="toast('Guardado (mock)')">Guardar</button></div>`;
+}
+
+// ─────────────────────────── Pantalla 5: por qué así ───────────────────────────
+function vDiseno() {
+  return `
+  <div class="aviso-mock">Resumen del análisis. El documento completo está en el repo: <a href="https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/suplementos-especialista.md">docs/planificacion/suplementos-especialista.md</a>.</div>
+  <h3>Qué falla hoy en «Revisar horario con LLM»</h3>
+  <div class="tarjeta"><ul class="l">
+    <li>Lo resuelve <b>gemini-2.5-flash-lite</b>, el modelo por defecto del gateway, elegido porque mapeaba bien columnas de un BOM. Para farmacología no se ha medido.</li>
+    <li>Usa el prompt del mayordomo: <b>120 palabras y 3 puntos como máximo</b>. Encima, 2000 tokens de salida y el resumen de toda la app de contexto.</li>
+    <li>Solo sabe decir «mañana, comida, tarde, noche»: <b>ni dosis</b>, ni entreno, ni «45 min antes de acostarte».</li>
+    <li>Empareja por <b>nombre exacto</b> y <b>aplica los cambios sin preguntar</b>, contra el principio «aconsejar, no imponer».</li>
+    <li>No sabe qué lleva cada producto ni qué medicación tomas: <b>no puede ver</b> el exceso de zinc y B6 del multivitamínico ni los choques con fármacos.</li>
+  </ul></div>
+  <h3>Cómo se resuelve</h3>
+  <div class="flujo">
+    <div class="paso"><span class="num">1</span><span><b>Tus datos</b>Jornada, entreno, sueño, perfil de salud opcional, objetivos y cada suplemento con su id, su composición y para qué lo tomas.</span></div><div class="flecha">↓</div>
+    <div class="paso ia"><span class="num">2</span><span><b>Especialista (LLM potente)</b>Con un prompt propio, sin límite de palabras, y los hechos de la tabla delante. Devuelve qué tomar, cuánto y en qué momento (anclas), avisos, evidencia y preguntas, en un JSON con esquema.</span></div><div class="flecha">↓</div>
+    <div class="paso"><span class="num">3</span><span><b>Comprobación local</b>Suma cada nutriente entre productos, comprueba los límites EFSA, las separaciones, los id y lo fijado. Si choca con el modelo, manda la tabla.</span></div><div class="flecha">↓</div>
+    <div class="paso"><span class="num">4</span><span><b>Planificador de horas</b>Ancla + desfase + tu jornada = la hora, distinta en días de entreno y de descanso, en versión óptima o sencilla. Si cambias la jornada, no hace falta llamar otra vez a la IA.</span></div><div class="flecha">↓</div>
+    <div class="paso"><span class="num">5</span><span><b>Tú decides</b>Aceptar, mantener la tuya o fijar a mano, uno a uno. «✦ IA» en hora y dosis de la ficha. Nada cambia solo.</span></div>
+  </div>
+  <h3>El modelo</h3>
+  <div class="tarjeta">
+    <table class="t"><tr><th>Candidato</th><th>$/M entrada · salida</th><th>Una pauta</th></tr>
+      <tr><td>gemini-2.5-flash-lite (hoy)</td><td>céntimos</td><td>&lt; 0,01 $</td></tr>
+      <tr><td>Claude Sonnet 5</td><td>2 · 10</td><td>≈ 0,10–0,15 $</td></tr>
+      <tr class="rec"><td><b>Claude Opus 5.5</b> ✦</td><td>4 · 20</td><td>≈ 0,20–0,30 $</td></tr>
+      <tr><td>Claude Fable 5.1</td><td>10 · 50</td><td>≈ 0,50–0,80 $</td></tr></table>
+    <p class="txt">Unas 4 pautas al mes salen por menos de 1,5 $, así que <b>el precio no decide</b>. Lo que limita es el tiempo: el gateway corta a los 120 s, y por eso las horas se calculan en la app. El modelo lo elige el backend (variable <code>LLM_MODELO_SUPLEMENTOS</code>), nunca el navegador.</p>
+    <p class="txt">Se elige <b>midiendo</b>: un workflow lanza cuatro casos contra los candidatos (este, uno con anticoagulante, otro con levotiroxina + hierro + calcio y otro vegano que entrena por la mañana) y puntúa esquema, límites, choques que tiene que ver, id y tiempo. El del anticoagulante es eliminatorio.</p>
+  </div>
+  <h3>Contrato de salida (extracto)</h3>
+  <pre>{ "id": "s4", "accion": "ajustar",
+  "dosis": { "cantidad": 200, "unidad": "mg",
+             "texto": "200 mg (2 cápsulas)" },
+  "anclas": [{ "ancla": "antes_de_dormir",
+               "desfase_min": -45, "dias": "todos" }],
+  "sencilla": { … }, "motivo": "…",
+  "evidencia": { "dosis": "moderada", "hora": "baja" },
+  "medico": false }</pre>
+  <h3>Fases</h3>
+  <div class="tarjeta"><ul class="l">
+    <li><b>1 · Pauta</b> (esto): jornada, perfil y composición, el agente, la tabla local, el planificador, la vista de pauta y «✦ IA» en hora y dosis. Más la evaluación de modelos.</li>
+    <li><b>2 · Tomas</b>: Hoy agrupado por toma («✓ todo lo de la cena»), foto de la etiqueta y ciclos.</li>
+    <li><b>3 · Stock</b>: pastillas y gramos a partir de la dosis. Aparcado.</li>
+  </ul></div>
+  <h3>Supuestos <span class="sp"></span><span class="n mini">con plan B en el documento</span></h3>
+  <div class="tarjeta"><ul class="l">
+    <li>[SUPUESTO] El identificador exacto de Opus 5.5 en OpenRouter: se saca de <code>GET /v1/models</code> del gateway.</li>
+    <li>[SUPUESTO] Que una pauta de 14 productos cabe en 120 s; si no, razonamiento bajo, Sonnet 5 o más tiempo en el gateway.</li>
+    <li>[SUPUESTO] Que el gateway deja pasar <code>reasoning</code> y <code>provider</code>: reenvía el cuerpo tal cual.</li>
+    <li>[SUPUESTO] Los límites de hierro y de melatonina en España: se comprueban antes de escribirlos en la tabla.</li>
+  </ul></div>`;
+}
+
+// ─────────────────────────── Router y eventos ───────────────────────────
+const VISTAS = { lista: ['💊 Suplementos', vLista], preparar: ['✦ Preparar la pauta', vPreparar], pauta: ['✦ Pauta del especialista', vPauta], ficha: ['Ficha del suplemento', vFicha], diseno: ['Por qué así', vDiseno] };
+function pintar() {
+  const v = (location.hash || '#lista').slice(1); const [t, f] = VISTAS[v] || VISTAS.lista;
+  $('#titulo').textContent = t; $('#main').innerHTML = f();
+  $('#volver').hidden = v === 'lista';
+  document.querySelectorAll('#pantallas a').forEach(a => a.classList.toggle('activo', a.getAttribute('href') === '#' + (VISTAS[v] ? v : 'lista')));
+}
+const repintar = () => { const y = scrollY; pintar(); scrollTo(0, y); };
+addEventListener('hashchange', () => { pintar(); scrollTo(0, 0); });
+$('#volver').onclick = () => { location.hash = '#lista'; };
+
+function abrirFicha(id) { st.fichaId = id; const s = S.find(x => x.id === id); $('#ficha-titulo').textContent = s.nombre; $('#ficha-cuerpo').innerHTML = fichaForm(s); $('#dlg-ficha').showModal(); }
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-ficha],[data-aceptar],[data-mia],[data-deshacer],[data-tipo],[data-modo],[data-obj],[data-dia],[data-tomar],[data-cerrar],#pedir,#aceptar-todo');
+  if (!el) return;
+  const d = el.dataset;
+  if ('cerrar' in d) { el.closest('dialog')?.close(); return; }
+  if (d.ficha) { if (location.hash === '#ficha') { st.fichaId = d.ficha; repintar(); } else abrirFicha(d.ficha); return; }
+  if (d.aceptar) { st.dec[d.aceptar] = 'ia'; repintar(); toast('Aceptada: en la ficha queda «✦ Según la IA»'); return; }
+  if (d.mia) { st.dec[d.mia] = 'mia'; repintar(); return; }
+  if (d.deshacer) { delete st.dec[d.deshacer]; repintar(); return; }
+  if (d.tipo) { st.tipo = d.tipo; repintar(); return; }
+  if (d.modo) { st.modo = d.modo; repintar(); return; }
+  if (d.obj) { st.objetivos.has(d.obj) ? st.objetivos.delete(d.obj) : st.objetivos.add(d.obj); repintar(); return; }
+  if (d.dia) { const i = Number(d.dia); st.diasPrep.has(i) ? st.diasPrep.delete(i) : st.diasPrep.add(i); J.entreno.dias = [...st.diasPrep].sort(); repintar(); return; }
+  if ('tomar' in d) { d.txt ||= el.textContent; el.classList.toggle('hecho'); el.textContent = el.classList.contains('hecho') ? '✓ hecho' : d.txt; return; }
+  if (el.id === 'pedir') { pedir(); return; }
+  if (el.id === 'aceptar-todo') {
+    let n = 0; for (const s of S) if (!st.dec[s.id] && s.ia.accion !== 'mantener' && !s.ia.limite && s.ia.accion !== 'preguntar') { st.dec[s.id] = 'ia'; n++; }
+    repintar(); toast(`${n} aceptadas; quedan ${pendientes().length} que tienes que mirar tú (aviso o pregunta)`, 3500);
+  }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.j) { if (t.dataset.j === 'entreno') J.entreno.hora = t.value; else J[t.dataset.j] = t.value; toast('Jornada cambiada: la pauta se recoloca sin llamar a la IA'); return; }
+  if (t.name === 'modelo') { st.modelo = t.value; repintar(); return; }
+  if (t.id === 'otra-ficha') { st.fichaId = t.value; repintar(); return; }
+  if (t.id?.startsWith('mom-')) {
+    const id = t.id.slice(4); const ia = t.value === 'ia'; const h = document.getElementById('hora-' + id); h.disabled = ia;
+    document.getElementById('hora-nota-' + id).textContent = ia ? 'La pone la pauta con tu jornada; si cambias la hora de cenar, se mueve sola.' : 'La pones tú.';
+  }
+  if (t.type === 'radio' && t.name.startsWith('dosis-')) t.closest('div,.tarjeta,dialog').querySelectorAll('.opcion').forEach(o => o.classList.toggle('on', o.contains(t)));
+});
+$('#dlg-ficha').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+
+function pedir() {
+  const pasos = st.modelo === 'rapido'
+    ? ['Reuniendo jornada, sueño y 14 suplementos', 'Consultando al modelo rápido (flash-lite)', 'Comprobando límites y choques con la tabla', 'Calculando las horas con tu jornada']
+    : ['Reuniendo jornada, sueño y 14 suplementos', 'Consultando al especialista (Opus 5.5, razonamiento medio)', 'Comprobando límites y choques con la tabla', 'Calculando las horas con tu jornada'];
+  $('#prog-modelo').textContent = st.modelo === 'rapido' ? 'Modelo rápido · < 0,01 $' : 'Especialista · ≈ 0,22 $ · operación maydom-suplementos-pauta';
+  const ul = $('#prog-lista'); ul.innerHTML = pasos.map(p => `<li><span class="s">○</span>${p}</li>`).join('');
+  const dlg = $('#dlg-progreso'); dlg.showModal();
+  const lis = [...ul.children]; let i = 0;
+  const paso = () => {
+    if (i > 0) { lis[i - 1].className = 'hecho'; lis[i - 1].firstChild.textContent = '✓'; }
+    if (i === lis.length) { setTimeout(() => { dlg.close(); st.pedida = true; st.dec = {}; location.hash = '#pauta'; }, 350); return; }
+    lis[i].className = 'act'; lis[i].firstChild.textContent = '◌'; i++;
+    setTimeout(paso, i === 2 ? 1400 : 600);
+  };
+  paso();
+}
+pintar();
+</script>
+</body>
+</html>

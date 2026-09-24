@@ -64,6 +64,8 @@ Guiones **sencillos** (2–5 min) sin preparar nada: respiración 4-6, escaneo c
 ### Suplementos
 Lista de suplementos en casa con **stock**, dosis y **hora de toma propuesta** por criterio general (ej. magnesio noche, vitamina D con comida grasa) que el usuario puede fijar a mano. Aviso de toma. **Umbral del 10 %** de stock: pasa a Compra. Buscador en tiendas online habituales.
 
+**Propuesta en estudio (24-sep)**: sustituir «Revisar horario con LLM» por un **especialista** que propone pauta y dosis de todos los suplementos a la vez, con su propio modelo (candidato: Opus 5.5, elegido midiendo), una tabla local de límites y choques que manda sobre el modelo y las horas calculadas en la app a partir de la jornada; «✦ Según la IA» como opción de hora y de dosis en la ficha. El stock queda aparcado. Análisis en [`suplementos-especialista.md`](suplementos-especialista.md) y mock en `docs/mocks/004-suplementos-especialista.html`.
+
 ### Compra
 Lista unificada: lo que baja del umbral en Alimentación y Suplementos más lo que se añade a mano. Cada línea con tienda preferida. Marcar comprado repone stock.
 

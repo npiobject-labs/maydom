@@ -1,0 +1,40 @@
+{
+  "fecha": "2026-09-24T17:23:00+02:00",
+  "titulo": "Pauta de suplementos hecha en el chat e importada como tabla",
+  "objetivo": "Analizar la alternativa de generar la pauta y la dosis de los suplementos con un prompt en el chat, a partir de una tabla Excel, e importar el resultado en la app, con críticas y ventajas, sin programar.",
+  "prompts": [
+    {
+      "texto": "Me gusta el mock, pero quiero proponer otra cosa: que me des un prompt para pasárselo yo a Opus 5.5, a partir de una tabla en Excel (o en Hojas de Drive) con cada suplemento, sus componentes y su composición, y que genere otra tabla en la que a cada suplemento se le añadan dos campos, la pauta (cuándo tomarlo) y la dosis. Tú sabrás el formato de esa tabla de salida. Luego pones un botón de incorporar esa tabla y lo incorporas todo a la toma diaria de suplementos. El seguimiento de si lo tomo o no, no hace falta, y tampoco que me avises de cuándo se acaba: eso lo resuelvo aparte. No programes nada de momento: analiza esta opción del prompt con el formato en Excel, dime si hay otro modelo que funcionaría mejor que Opus 5.5, y dame críticas y bondades.",
+      "nota": "dictado; limpio de muletillas y de errores del reconocimiento de voz («Brown» y «pro» por prompt), fiel a lo pedido"
+    }
+  ],
+  "cambios": [
+    "Nuevo análisis docs/planificacion/suplementos-pauta-externa.md: veredicto (mejor fase 1 que el agente integrado), bondades, críticas con su corrección, qué modelo (Fable 5.1 si está, Opus 5.5 y segunda opinión con el otro), flujo paso a paso y qué hará la app al importar.",
+    "Nuevo docs/planificacion/suplementos/prompt-especialista.md con el prompt de la pauta y el de la segunda opinión.",
+    "Nuevas plantillas docs/planificacion/suplementos/plantilla-entrada.xlsx y formato-salida.xlsx: cabeceras comentadas, filas de ejemplo, celdas a rellenar marcadas y listas desplegables.",
+    "plan-maydom.md y suplementos-especialista.md apuntan a la alternativa."
+  ],
+  "sha": "24b5301",
+  "sha_completo": "24b53019c1b96bf6a9c9b3cc8a568198af477368",
+  "run": 36019854058,
+  "mock": "mocks/004-suplementos-especialista.html",
+  "build": "MA-B1-20260924-003",
+  "pagina": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/suplementos-pauta-externa.md",
+  "fly": null,
+  "pendiente": [
+    "Rellenar la plantilla, generar la pauta con el prompt 1 y la segunda opinión con el prompt 2",
+    "Pasar la pauta para revisarla contra el formato",
+    "Después: importador en Suplementos (extracto.js leyendo hojas por nombre) y vista de la toma diaria"
+  ],
+  "enlaces": [
+    {
+      "texto": "Prompt del especialista",
+      "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/suplementos/prompt-especialista.md"
+    },
+    {
+      "texto": "Mock 4 (vista de pauta y ficha)",
+      "url": "https://npiobject-labs.github.io/maydom/mocks/004-suplementos-especialista.html"
+    }
+  ],
+  "notas": "Un solo prompt dictado; se transcribe limpio. No hay mock nuevo: el campo mock apunta al de la sesión anterior, cuyas vistas de pauta y ficha siguen valiendo."
+}

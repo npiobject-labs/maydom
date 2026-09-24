@@ -1,5 +1,6 @@
 // Arranque de maydom: registra secciones, pinta la shell y enruta por hash.
-import { estado, guardar, registrar, secciones, seccion, rutaActual, alCambiar, arrancarVigilante, h, lista, fechaLarga, hoyISO, toast } from './nucleo.js';
+import { estado, guardar, registrar, secciones, seccion, rutaActual, alCambiar, arrancarVigilante, h, lista, fechaLarga, hoyISO, toast, anotarOrigen } from './nucleo.js';
+import { esFijable, opcionDeBoton, opcionesDePantalla, lanzarAccion, contarUso, abrirFijar } from './accesos.js';
 import { cargarSemillas, aplicarTema } from './secciones/ajustes.js';
 import { sincronizarCompra } from './secciones/compra.js';
 import { consejosNuevos } from './secciones/mayordomo.js';
@@ -27,7 +28,7 @@ if (!estado.ajustes.semillasCargadas) cargarSemillas(false);
 sincronizarCompra();
 aplicarTema();
 
-const main = document.getElementById('main'), titulo = document.getElementById('titulo'), sub = document.getElementById('sub'), nav = document.getElementById('nav');
+const main = document.getElementById('main'), titulo = document.getElementById('titulo'), sub = document.getElementById('sub'), nav = document.getElementById('nav'), fijar = document.getElementById('fijar');
 const BARRA = ['hoy', 'calendario', 'mayordomo', 'buscador', 'menu'];
 let actual = null, scrollPos = {};
 function pintarNav() {
@@ -44,8 +45,19 @@ function render() {
   document.title = (s.id === 'hoy' ? 'maydom' : s.titulo + ' · maydom');
   try { s.render(main, params); } catch (e) { main.innerHTML = h`<div class="tarjeta"><b>Error en ${s.titulo}</b><div class="mini">${e.message}</div><div class="acciones"><a class="btn" href="#/ajustes">Ajustes</a></div></div>`; console.error(e); }
   pintarNav();
+  fijar.hidden = ['hoy', 'menu'].includes(s.id);
+  if (!mismo && !BARRA.includes(s.id)) contarUso({ destino: '#/' + s.id, texto: 'Abrir ' + s.titulo, icono: s.icono, corto: s.titulo });
+  if (params.accion) lanzarAccion(s, params);
   if (!mismo) window.scrollTo(0, scrollPos[s.id] || 0);
 }
+// Accesos directos (ADR-007): ☆ Fijar en la cabecera ofrece la sección, su vista y sus botones; y
+// cada botón que se pulsa queda anotado para que su ventana lleve ☆ y para las sugerencias por uso.
+fijar.onclick = () => abrirFijar(opcionesDePantalla());
+main.addEventListener('click', e => {
+  // Todo clic en #main borra la anotación anterior: la ☆ nunca se queda con un botón que no abrió la ventana.
+  const b = e.target.closest('[data-a]'), op = b && esFijable(b) ? opcionDeBoton(b) : null;
+  anotarOrigen(op); if (op) contarUso(op);
+}, true);
 window.addEventListener('hashchange', render);
 alCambiar(() => { if (!document.querySelector('dialog[open]')) render(); });
 render();

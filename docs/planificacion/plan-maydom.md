@@ -33,7 +33,7 @@ En móvil: barra inferior con **Hoy · Calendario · Mayordomo · Buscar · Men�
 ## 3. Secciones: qué hace cada una
 
 ### Hoy
-Portada. Agenda del día con carga (horas ocupadas vs límite), próximas tomas de suplementos, siguiente píldora de movimiento, consejos nuevos del mayordomo, registro rápido de sueño de anoche y de comida hecha.
+Portada. **Accesos directos** arriba del todo (ADR-007): botones de colores con forma, icono y nombre que el usuario fija con ☆ desde cualquier sección o ventana y coloca en una rejilla de 4 columnas; llevan a la sección o directamente a una acción. Debajo, agenda del día con carga (horas ocupadas vs límite), próximas tomas de suplementos, siguiente píldora de movimiento, consejos nuevos del mayordomo, registro rápido de sueño de anoche y de comida hecha.
 
 ### Calendario
 Vista día y semana. Eventos con sección de origen (ejercicio, comida, meditación, proyecto, ocio, aviso). **Regla de carga**: límite de horas planificadas al día (preferencias, por defecto 6) y aviso al superarlo. **Conflictos**: al añadir algo que choca con otro evento se pregunta si se sustituye o se descarta (nota de ocio). Planificación a corto plazo: se rellena día a día; las plantillas semanales son opcionales.
@@ -178,6 +178,7 @@ Se revisa si aparece un segundo usuario, si hace falta sincronizar varios dispos
 | F14 | Cruz de cerrar en todas las ventanas; catálogo de tiendas con dominio, verificación y búsqueda en el sitio por defecto | Hecha 21-sep (builds 009 a 011) |
 
 | F15 | Formato único de la ficha del plato y **modo cocina**: comprobar ingredientes (lo que falta, a Compra), pasos con «hecho», temporizadores con aviso al acabar y para remover, ficha plegada, pantalla encendida y voz opcional | Hecha 23-sep (build 20260923-002) |
+| F16 | **Accesos directos en Hoy** (ADR-007): ☆ Fijar en cada sección y en cada ventana, rejilla de 4 columnas con tres tamaños, cinco formas y nueve colores, modo colocar con arrastre y huecos, sugerencias por uso | Hecha 24-sep (build 20260924-002; mock 003 el mismo día) |
 ## 7. Deuda de desarrollo
 
 Lo que las notas piden y no se puede cerrar sin servicios externos, datos reales o decisiones del usuario:

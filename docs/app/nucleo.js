@@ -16,6 +16,7 @@ const vacio = () => ({
   sueno: [], alimentos: [], platos: [], menus: [], comidas: [],
   suplementos: [], tomas: [], compra: [], proyectos: [], horas: [], sesionTrabajo: null,
   ocio: [], movimientos: [], recurrentes: [], importaciones: [], tiendas: [], consejos: [], chat: [], memoria: [],
+  accesos: [], usos: {},
   ajustes: { backend: '', clave: '', avisos: false, tema: 'auto', semillasCargadas: false, llm: null },
 });
 
@@ -57,6 +58,8 @@ export function guardar() {
   try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch (e) { toast('No se pudo guardar: ' + e.message); }
   for (const fn of oyentes) fn();
 }
+// Escribe sin avisar a los oyentes: para lo que no cambia nada visible (contar usos) y no debe repintar.
+export function persistir() { try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch { } }
 export function reemplazarEstado(nuevo) {
   for (const k of Object.keys(estado)) delete estado[k];
   Object.assign(estado, vacio(), nuevo);
@@ -110,15 +113,21 @@ export function toast(msg, ms = 2600) {
   clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('ver'), ms);
 }
 
+// Botón que acaba de abrir una ventana (lo anota app.js): pedir() le pone ☆ para fijarlo en Hoy.
+let origen = null;
+export function anotarOrigen(o) { origen = o ? { ...o, t: Date.now() } : null; }
+
 // Formulario declarativo dentro de un <dialog>. Devuelve el objeto con los valores o null.
 // campo: {n, l, t:'text|number|date|time|select|textarea|check|tags', o:[{v,l}]|[str], v, req, min, max, step, ph, ayuda}
 export function pedir(titulo, campos, valores = {}, opciones = {}) {
   return new Promise(resolve => {
     const dlg = document.createElement('dialog');
     dlg.className = 'modal';
+    const fijable = origen && Date.now() - origen.t < 3000 ? origen : null; origen = null;
     const f = campos.map(c => campoHTML(c, valores[c.n] ?? c.v)).join('');
     dlg.innerHTML = h`<form method="dialog" class="form">
       <div class="cabecera-modal"><h2>${titulo}</h2>
+        ${fijable ? crudo('<button type="button" class="fijar" data-fijar aria-label="Fijar en inicio" title="Fijar en inicio">☆</button>') : ''}
         <button type="button" class="cerrar" data-cancelar aria-label="Cerrar sin guardar" title="Cerrar sin guardar">✕</button></div>${crudo(f)}
       ${opciones.texto ? crudo('<p class="mini">' + esc(opciones.texto) + '</p>') : ''}
       ${opciones.acciones ? crudo('<div class="acciones" data-acciones>' + opciones.acciones.map((x, i) => `<button type="button" class="btn ${esc(x.clase || '')}" data-accion="${i}">${esc(x.l)}</button>`).join('') + '</div>') : ''}
@@ -131,6 +140,7 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
     const form = dlg.querySelector('form');
     const cerrar = v => { dlg.close(); dlg.remove(); resolve(v); };
     dlg.querySelectorAll('[data-cancelar]').forEach(b => { b.onclick = () => cerrar(null); });
+    const fj = dlg.querySelector('[data-fijar]'); if (fj) fj.onclick = () => { cerrar(null); import('./accesos.js').then(m => m.abrirFijar({ ops: [fijable] })); };
     const ex = dlg.querySelector('[data-extra]'); if (ex) ex.onclick = () => cerrar({ __extra: true });
     const ot = dlg.querySelector('[data-otro]'); if (ot) ot.onclick = () => cerrar({ __otro: true });
     const leer = () => Object.fromEntries(campos.map(c => [c.n, form.elements[c.n]?.value]));

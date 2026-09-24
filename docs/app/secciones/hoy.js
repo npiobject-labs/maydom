@@ -8,6 +8,7 @@ import { refrescarConsejos } from '../reglas.js';
 import { guardarNota, campos as camposNota } from './notas.js';
 import { tarjetaConsejo, accionesConsejo, consejosNuevos } from './mayordomo.js';
 import { rezagados } from './proyectos.js';
+import { htmlAccesos, enlazarAccesos } from '../accesos.js';
 
 function render(cont) {
   const hoy = hoyISO(), ahora = minutos(horaActual());
@@ -21,7 +22,7 @@ function render(cont) {
   const menu = estado.menus.find(m => m.fecha === hoy);
   const plato = id => estado.platos.find(p => p.id === id)?.nombre;
   const rez = rezagados();
-  cont.innerHTML = h`
+  cont.innerHTML = h`${crudo(htmlAccesos())}
     <div class="tarjeta">${crudo(barraCarga(hoy))}
       ${proximo ? h`<div class="mini">Siguiente: <b>${proximo.hora} ${proximo.titulo}</b></div>` : ''}</div>
     ${crudo(tarjetaDia(hoy, { check: true }))}
@@ -50,5 +51,6 @@ function render(cont) {
       if (v) { guardarNota({ tipo: 'nota', ...v }); toast('Guardada; el mayordomo le pone título'); }
     },
   }));
+  enlazarAccesos(cont, () => render(cont));
 }
 export default { id: 'hoy', titulo: 'Hoy', grupo: null, icono: '☀', render };

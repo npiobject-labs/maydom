@@ -1,0 +1,43 @@
+{
+  "fecha": "2026-09-25T14:21:00+02:00",
+  "titulo": "Cierre: etiquetas y revisión de notas publicadas",
+  "objetivo": "Publicar en Pages el desarrollo del mock 6, comprobar la publicación y cerrar la sesión.",
+  "prompts": [
+    {
+      "texto": "No veo actualización.",
+      "nota": "con una captura del diálogo de una tarea todavía sin ✨ Revisar ni asa; la PR aún no estaba fusionada"
+    },
+    {
+      "texto": "Funciona. Haz lo que tengas que hacer, que ya lo veo y funciona como he dicho, y cierra sesión.",
+      "nota": "dictado; limpio de repeticiones"
+    }
+  ],
+  "cambios": [
+    "Fusión de la PR 23 en main: etiquetas en las tareas, ✨ Revisar en Notas y cajas de texto redimensionables (build MA-B1-20260925-007).",
+    "Run de pages.yml en verde, con la verificación de que Pages sirve la portada con el build nuevo y todos los módulos, incluido app/revisar-texto.js.",
+    "Probado por el usuario en el móvil: funciona."
+  ],
+  "sha": "cea6e2b",
+  "sha_completo": "cea6e2b2afd6616966bcb1d722b9c7d9370b21db",
+  "run": 36133928005,
+  "mock": "mocks/006-etiquetas-y-revision.html",
+  "build": "MA-B1-20260925-007",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/notas",
+  "fly": null,
+  "pendiente": [],
+  "enlaces": [
+    {
+      "texto": "PR 23",
+      "url": "https://github.com/npiobject-labs/maydom/pull/23"
+    },
+    {
+      "texto": "Run de Pages",
+      "url": "https://github.com/npiobject-labs/maydom/actions/runs/36133928005"
+    },
+    {
+      "texto": "ADR-009",
+      "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/memoria/decisiones/ADR-009-revision-de-notas.md"
+    }
+  ],
+  "notas": "Continúa la entrada 20260925-1410, que se escribió antes de fusionar y por eso dejaba run a null y la fusión como pendiente. La captura del primer prompt traía texto personal dictado y no se copia."
+}

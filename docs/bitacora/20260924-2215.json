@@ -10,6 +10,10 @@
     {
       "texto": "B, A, de acuerdo",
       "nota": "respuesta a los tres supuestos del mock: etiquetas de compra ampliables (B), tareas sin notificación (A) y «el jueves» dicho un jueves es el de la semana que viene; aprueba el mock y pasa a desarrollo"
+    },
+    {
+      "texto": "Sí, fusiona y verifica",
+      "nota": "confirmación para fusionar la PR 21 en main"
     }
   ],
   "cambios": [
@@ -20,15 +24,14 @@
     "Las notas anteriores pasan a ideas; Preferencias, memoria exportada y contexto del mayordomo distinguen ideas de tareas.",
     "ADR-008, preferencias del 24-sep, F17 en el plan, regla en CLAUDE.md y prueba de humo tools/prueba-notas.mjs."
   ],
-  "sha": "f541c55",
-  "sha_completo": "f541c55ff257996b52e8c12880dfd12d8874fbe8",
-  "run": null,
+  "sha": "a021f43",
+  "sha_completo": "a021f43b1ed446f46c85df6574e22717bbb189cf",
+  "run": 36053824754,
   "mock": "mocks/005-notas-por-tipo.html",
   "build": "MA-B1-20260924-005",
   "pagina": "https://npiobject-labs.github.io/maydom/#/notas",
   "fly": null,
   "pendiente": [
-    "Fusionar la PR 21 y confirmar pages.yml en verde",
     "Probar el dictado real en el móvil con el gateway (probado con el mayordomo simulado)"
   ],
   "enlaces": [
@@ -45,5 +48,5 @@
       "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/memoria/decisiones/ADR-008-notas-por-tipo.md"
     }
   ],
-  "notas": "Dos prompts; el primero, dictado, limpio de repeticiones. El trabajo va en la rama claude/fervent-pascal-dtwzp5 con la PR 21: el run de Pages (campo run) existe solo al fusionar en main."
+  "notas": "Dos prompts; el primero, dictado, limpio de repeticiones. Implementación en f541c55 (rama claude/fervent-pascal-dtwzp5), publicada con la fusión de la PR 21 (a021f43) tras la confirmación del usuario («Sí, fusiona y verifica»)."
 }

@@ -1,0 +1,53 @@
+{
+  "fecha": "2026-09-25T14:10:00+02:00",
+  "titulo": "Etiquetas y revisión de notas, cajas de texto redimensionables",
+  "objetivo": "Poner etiquetas a las notas al guardar, añadir un botón de IA que corrija y dé formato al texto, y hacer redimensionables todas las cajas de texto; primero en un mock para aprobar y después en la app.",
+  "prompts": [
+    {
+      "texto": "En la captura de notas, añade una funcionalidad para ponerle etiquetas; no sé si cuando se guarda la nota o con un botón de llamada a la IA. Si se hace ese botón, como analiza el texto, a lo mejor convendría que la IA formatee el texto y analice errores sintácticos o algún problema que pueda tener. Genera un mock, no desarrolles todavía: quiero ver ese mock. No preguntes; termina el mock y, cuando lo pruebe, ya desarrollas. También convendría que las cajas de texto sean redimensionables, en general para toda la app.",
+      "nota": "dictado, con una captura de la pestaña Tareas; limpio de repeticiones y muletillas"
+    },
+    {
+      "texto": "Te recuerdo que tienes que darme un enlace al mock para que pueda verlo.",
+      "nota": "dictado: «MOOC» por «mock»"
+    },
+    {
+      "texto": "Aprobado, desarrolla el mock tal y como está, gracias."
+    }
+  ],
+  "cambios": [
+    "Mock docs/mocks/006-etiquetas-y-revision.html: etiquetas en tareas e ideas, botón ✨ Revisar con los cambios que se pueden desmarcar y cajas de texto con asa táctil y pantalla completa.",
+    "Las tareas llevan etiquetas: fichas en el diálogo, puestas por la llamada «nota» al guardar si se dejan vacías, filtro por etiqueta en la lista y «✨ Etiquetarlas» para las tareas antiguas.",
+    "✨ Revisar (operación nota-revisar): texto corregido, versión en lista, avisos, y propuesta de título, etiquetas y tipo; diff por palabras en docs/app/revisar-texto.js, aplicar y deshacer, y el original guardado en nota.original.",
+    "Una tarea que junta varias cosas que hacer se ofrece guardar como varias, con la misma fecha tope.",
+    "Todas las cajas de texto llevan asa táctil y ⤢ pantalla completa (montarCajas() en nucleo.js), con la altura recordada por campo.",
+    "ADR-009, preferencias del 25-sep, F18 en el plan, reglas en CLAUDE.md y prueba de humo tools/prueba-revisar-notas.mjs."
+  ],
+  "sha": "73356a8",
+  "sha_completo": "73356a85c2eff95d43a139b100a31cbabff76de3",
+  "run": null,
+  "mock": "mocks/006-etiquetas-y-revision.html",
+  "build": "MA-B1-20260925-007",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/notas",
+  "fly": null,
+  "pendiente": [
+    "Fusionar la PR 23 y confirmar pages.yml en verde",
+    "Probar ✨ Revisar con el gateway real (probado con el mayordomo simulado)",
+    "Probar el asa con el dedo en el móvil"
+  ],
+  "enlaces": [
+    {
+      "texto": "Mock 6 · etiquetas y revisión de notas",
+      "url": "https://npiobject-labs.github.io/maydom/mocks/006-etiquetas-y-revision.html"
+    },
+    {
+      "texto": "PR 23",
+      "url": "https://github.com/npiobject-labs/maydom/pull/23"
+    },
+    {
+      "texto": "ADR-009",
+      "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/memoria/decisiones/ADR-009-revision-de-notas.md"
+    }
+  ],
+  "notas": "Tres prompts, dictados; el primero, limpio de repeticiones. La captura adjunta al primero traía tareas personales y no se copia. El trabajo va en la rama claude/trusting-dijkstra-l4kvfy con la PR 23: el run de Pages (campo run) solo existe al fusionar en main."
+}

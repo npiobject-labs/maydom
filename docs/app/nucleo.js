@@ -121,6 +121,102 @@ export function anotarOrigen(o) { origen = o ? { ...o, t: Date.now() } : null; }
 // El botón fijable que acaba de abrir una ventana (o null), y se olvida: solo lo toma una ventana.
 export function tomarOrigen() { const o = origen && Date.now() - origen.t < 3000 ? origen : null; origen = null; return o; }
 
+// ---------- cajas de texto redimensionables (mock 6) ----------
+// El tirador nativo de la esquina no se arrastra con el dedo en el móvil: bajo cada <textarea> va un
+// asa a lo ancho (arrastre, doble toque para compacta ↔ grande, flechas) y ⤢ para escribir a pantalla
+// completa. La caja crece sola mientras se escribe hasta que el usuario la ajusta (lo manual manda), y
+// esa altura se recuerda por sección y campo en una clave aparte, fuera del estado.
+const CLAVE_TEXTOS = 'maydom.textos';
+const tamanos = () => { try { return JSON.parse(localStorage.getItem(CLAVE_TEXTOS)) || {}; } catch { return {}; } };
+function recordarTamano(clave, alto) {
+  try { const t = tamanos(); if (alto) t[clave] = Math.round(alto); else delete t[clave]; localStorage.setItem(CLAVE_TEXTOS, JSON.stringify(t)); } catch { }
+}
+export function crecer(t, tope = Number(t.dataset.tope) || 0.6) {
+  if (t.dataset.manual) return;
+  t.style.height = 'auto';
+  t.style.height = Math.min(t.scrollHeight + 2, innerHeight * tope) + 'px';
+}
+// Lo que se coloca detrás de una caja (botones, micrófono) va después de su asa.
+export const finCaja = t => (t.nextElementSibling?.classList.contains('asa-texto') ? t.nextElementSibling : t);
+// Toda caja nueva fuera de pedir() llama a esto al crearse; `tope` es la fracción de pantalla hasta la que crece sola.
+export function montarCajas(raiz, tope = 0.6) { raiz.querySelectorAll('textarea:not(.con-asa)').forEach(t => montarCaja(t, tope)); }
+function montarCaja(ta, tope) {
+  ta.classList.add('con-asa'); ta.dataset.tope = tope;
+  const clave = `${rutaActual().id}:${ta.name || ta.id}`;
+  const barra = document.createElement('div');
+  barra.className = 'asa-texto';
+  barra.innerHTML = '<div class="asa" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Arrastra para cambiar el alto" title="Arrastra · doble toque: compacta o grande"><span></span></div><button type="button" class="ampliar" aria-label="Escribir a pantalla completa" title="Pantalla completa">⤢</button>';
+  ta.insertAdjacentElement('afterend', barra);
+  const asa = barra.firstElementChild;
+  const fijar = alto => { alto = Math.max(72, Math.min(alto, innerHeight * 0.8)); ta.style.height = alto + 'px'; ta.dataset.manual = '1'; return alto; };
+  const guardada = tamanos()[clave];
+  if (guardada) fijar(guardada);
+  ta.addEventListener('input', () => crecer(ta));
+  let y0 = 0, h0 = 0, movido = false, ultimo = 0;
+  asa.addEventListener('pointerdown', e => {
+    e.preventDefault(); asa.setPointerCapture?.(e.pointerId);
+    y0 = e.clientY; h0 = ta.getBoundingClientRect().height; movido = false;
+    barra.classList.add('arrastrando');
+  });
+  asa.addEventListener('pointermove', e => {
+    if (!barra.classList.contains('arrastrando')) return;
+    if (Math.abs(e.clientY - y0) > 3) movido = true;
+    if (movido) fijar(h0 + e.clientY - y0);
+  });
+  const soltar = () => {
+    if (!barra.classList.contains('arrastrando')) return;
+    barra.classList.remove('arrastrando');
+    if (movido) return recordarTamano(clave, ta.getBoundingClientRect().height);
+    // Doble toque: compacta ↔ grande. Un toque suelto no hace nada.
+    const ahora = Date.now();
+    if (ahora - ultimo > 350) { ultimo = ahora; return; }
+    ultimo = 0;
+    if (ta.getBoundingClientRect().height < innerHeight * 0.45) recordarTamano(clave, fijar(innerHeight * 0.6));
+    else { delete ta.dataset.manual; recordarTamano(clave, 0); crecer(ta); }
+  };
+  asa.addEventListener('pointerup', soltar);
+  asa.addEventListener('pointercancel', soltar);
+  asa.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    e.preventDefault();
+    recordarTamano(clave, fijar(ta.getBoundingClientRect().height + (e.key === 'ArrowDown' ? 32 : -32)));
+  });
+  barra.querySelector('.ampliar').onclick = () => pantallaCompleta(ta, true);
+}
+// A pantalla completa la caja no se mueve de sitio (ni pierde el foco ni lo escrito): pasa a fija y
+// encima va una cabecera con «Listo». Con el teclado abierto se encoge a lo que queda visible.
+function pantallaCompleta(ta, on) {
+  const vv = window.visualViewport;
+  if (on) {
+    const cab = document.createElement('div');
+    cab.className = 'cab-pantalla';
+    cab.innerHTML = '<b></b><button type="button" class="btn p">Listo</button>';
+    const etiqueta = ta.id ? ta.closest('form, dialog, main')?.querySelector(`label[for="${ta.id}"]`) : null;
+    cab.querySelector('b').textContent = etiqueta?.textContent.trim() || 'Texto';
+    cab.querySelector('button').onclick = () => pantallaCompleta(ta, false);
+    finCaja(ta).insertAdjacentElement('afterend', cab);
+    ta.cabPantalla = cab;
+    ta.ajustarPantalla = () => { if (vv) ta.style.bottom = Math.max(0, innerHeight - vv.height - vv.offsetTop) + 'px'; };
+    vv?.addEventListener('resize', ta.ajustarPantalla);
+    ta.ajustarPantalla();
+    ta.classList.add('a-pantalla'); document.documentElement.classList.add('con-pantalla');
+  } else {
+    ta.cabPantalla?.remove(); ta.cabPantalla = null;
+    vv?.removeEventListener('resize', ta.ajustarPantalla);
+    ta.style.bottom = '';
+    ta.classList.remove('a-pantalla'); document.documentElement.classList.remove('con-pantalla');
+    crecer(ta);
+  }
+  ta.focus();
+}
+// Esc o «atrás» con una caja a pantalla completa la devuelven a su sitio en vez de cerrar la ventana.
+export function salirPantalla(raiz = document) {
+  const t = raiz.querySelector('textarea.a-pantalla');
+  if (!t) return false;
+  pantallaCompleta(t, false);
+  return true;
+}
+
 // Formulario declarativo dentro de un <dialog>. Devuelve el objeto con los valores o null.
 // campo: {n, l, t:'text|number|date|time|select|textarea|check|tags', o:[{v,l}]|[str], v, req, min, max, step, ph, ayuda}
 export function pedir(titulo, campos, valores = {}, opciones = {}) {
@@ -142,20 +238,20 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
         <button type="submit" class="btn p">${opciones.aceptar || 'Guardar'}</button></div></form>`;
     document.body.appendChild(dlg);
     const form = dlg.querySelector('form');
-    const cerrar = v => { dlg.close(); dlg.remove(); resolve(v); };
+    montarCajas(form);
+    const cerrar = v => { salirPantalla(dlg); dlg.close(); dlg.remove(); resolve(v); };
     dlg.querySelectorAll('[data-cancelar]').forEach(b => { b.onclick = () => cerrar(null); });
     const fj = dlg.querySelector('[data-fijar]'); if (fj) fj.onclick = () => { cerrar(null); import('./accesos.js').then(m => m.abrirFijar({ ops: [fijable] })); };
     const ex = dlg.querySelector('[data-extra]'); if (ex) ex.onclick = () => cerrar({ __extra: true });
     const ot = dlg.querySelector('[data-otro]'); if (ot) ot.onclick = () => cerrar({ __otro: true });
     const leer = () => Object.fromEntries(campos.map(c => [c.n, form.elements[c.n]?.value]));
-    // Las cajas de texto crecen con lo que se escribe, se dicta o genera la IA (hasta el 60 % de la pantalla; luego, barra).
-    const crecer = t => { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight + 2, innerHeight * 0.6) + 'px'; };
-    form.addEventListener('input', e => { if (e.target.tagName === 'TEXTAREA') crecer(e.target); });
+    // Las cajas de texto crecen con lo que se escribe, se dicta o genera la IA (hasta el 60 % de la pantalla; luego, barra),
+    // salvo que el usuario les haya dado alto con el asa.
     const escribir = datos => { for (const [k, v] of Object.entries(datos)) { const el = form.elements[k]; if (el && v != null && v !== '') { el.value = v; if (el.tagName === 'TEXTAREA') crecer(el); } } };
     const zonaAcciones = dlg.querySelector('[data-acciones]');
     if (zonaAcciones && opciones.accionesTras) {
       const campo = form.elements[opciones.accionesTras];
-      if (campo) campo.insertAdjacentElement('afterend', zonaAcciones);
+      if (campo) finCaja(campo).insertAdjacentElement('afterend', zonaAcciones);
     }
     dlg.querySelectorAll('[data-accion]').forEach(b => {
       const acc = opciones.acciones[Number(b.dataset.accion)];
@@ -169,10 +265,10 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
     if (opciones.dictar) import('./voz.js').then(v => {
       const campo = form.elements[opciones.dictar];
       const zona = opciones.accionesTras === opciones.dictar ? dlg.querySelector('[data-acciones]') : null;
-      if (campo) v.botonDictado(campo, zona || (campo.parentElement === form ? campo.insertAdjacentElement('afterend', document.createElement('div')) : null),
+      if (campo) v.botonDictado(campo, zona || (campo.parentElement === form ? finCaja(campo).insertAdjacentElement('afterend', document.createElement('div')) : null),
         opciones.alDictar ? texto => opciones.alDictar(texto, { escribir, form }) : null);
     }).catch(() => { });
-    dlg.addEventListener('cancel', e => { e.preventDefault(); cerrar(null); });
+    dlg.addEventListener('cancel', e => { e.preventDefault(); if (!salirPantalla(dlg)) cerrar(null); });
     form.onsubmit = e => {
       e.preventDefault();
       const out = {};
@@ -189,7 +285,7 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
       cerrar(out);
     };
     dlg.showModal();
-    form.querySelectorAll('textarea').forEach(crecer);
+    form.querySelectorAll('textarea').forEach(t => crecer(t));
     const primero = form.querySelector('input:not([type=checkbox]),select,textarea'); if (primero) primero.focus();
   });
 }

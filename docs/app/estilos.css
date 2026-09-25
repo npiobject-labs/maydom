@@ -210,3 +210,58 @@ h3.cab-accesos{display:flex;align-items:center;gap:.5rem;margin-top:.3rem}h3.cab
 h3.mal{color:var(--mal)}
 h3 a.mini{text-transform:none;letter-spacing:0;font-weight:400;margin-left:.3rem}
 .pestanas .n.mal{background:var(--mal2);color:var(--mal)}
+
+/* ── Cajas de texto redimensionables (mock 6): asa táctil bajo cada caja y pantalla completa ── */
+textarea.con-asa{display:block;resize:none;border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom-style:dashed}
+.asa-texto{display:flex;border:1px solid var(--line);border-top:0;border-radius:0 0 6px 6px;background:var(--bg2)}
+textarea.con-asa:focus{outline:none;border-color:var(--acc)}
+textarea.con-asa:focus+.asa-texto{border-color:var(--acc)}
+.asa-texto .asa{flex:1;height:1.6rem;display:flex;align-items:center;justify-content:center;cursor:ns-resize;touch-action:none;user-select:none;-webkit-user-select:none}
+.asa-texto .asa span{width:2.8rem;height:.3rem;border-radius:99px;background:var(--mute);opacity:.5;transition:opacity .15s,background .15s}
+.asa-texto .asa:hover span,.asa-texto .asa:focus-visible span,.asa-texto.arrastrando .asa span{background:var(--acc);opacity:1}
+.asa-texto .asa:focus-visible{outline:none}
+.asa-texto .ampliar{flex:none;width:2.6rem;background:none;border:0;border-left:1px dashed var(--line);color:var(--ink2);font-size:1rem;cursor:pointer;padding:0}
+.asa-texto .ampliar:hover,.asa-texto .ampliar:focus-visible{color:var(--acc)}
+html.con-pantalla{overflow:hidden}
+.cab-pantalla{position:fixed;left:0;right:0;top:0;z-index:1001;height:calc(env(safe-area-inset-top,0px) + 3.2rem);padding:env(safe-area-inset-top,0px) 1rem 0;display:flex;align-items:center;gap:.5rem;background:var(--bg2);border-bottom:1px solid var(--line)}
+.cab-pantalla b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+textarea.a-pantalla{position:fixed;left:0;right:0;bottom:0;top:calc(env(safe-area-inset-top,0px) + 3.2rem);z-index:1001;width:100%;height:auto!important;max-height:none;border:0;border-radius:0;padding:.8rem 1rem calc(env(safe-area-inset-bottom,0px) + .8rem);font-size:1.05rem;line-height:1.6;background:var(--bg2)}
+
+/* ── Notas: etiquetas como fichas y revisión con ✨ Revisar (mock 6) ── */
+.bajo-texto{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:.45rem}
+.bajo-texto .btn.dictar{margin-top:0}
+.bajo-texto [data-voz]:empty{display:none}
+.bajo-texto>span[data-para]:not([hidden]){display:contents}
+.fichas{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;border:1px solid var(--line);border-radius:6px;padding:.3rem .4rem;background:var(--bg2);margin-top:.2rem}
+.fichas:focus-within{border-color:var(--acc)}
+.ficha{display:inline-flex;align-items:center;font-size:.8rem;background:var(--acc2);color:var(--acc);border-radius:999px;padding:.1rem .15rem .1rem .6rem}
+.ficha button{background:none;border:0;color:inherit;cursor:pointer;font-size:.78rem;padding:0 .35rem;line-height:1.4}
+.fichas input{flex:1;min-width:7rem;width:auto;border:0;padding:.2rem .1rem;background:transparent;font-size:.9rem;outline:none}
+.etqs{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.3rem}
+.etq{font:500 .72rem var(--sans);padding:.05rem .5rem;border-radius:999px;border:1px solid var(--line);background:none;color:var(--ink2)}
+.etq::before{content:'#';opacity:.55;margin-right:.08rem}
+button.etq{cursor:pointer}button.etq:hover{border-color:var(--acc);color:var(--acc)}
+.lote{background:var(--acc2);border-color:transparent}
+.enlace{background:none;border:0;color:var(--acc);font:inherit;font-size:.82rem;cursor:pointer;padding:0 .15rem;text-decoration:underline;text-underline-offset:2px}
+.revision{border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:.6rem .75rem .7rem;margin-top:.6rem}
+.rev-cab{display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem}
+.rev-cab b{flex:1;font-size:.95rem}
+.rev-cab .cerrar{background:none;border:0;color:var(--mute);font-size:1.1rem;cursor:pointer;padding:.1rem .3rem;border-radius:6px}
+.revision h4{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:.8rem 0 .15rem}
+.segmento.dos{grid-template-columns:repeat(2,1fr);margin:.1rem 0 .5rem}
+.segmento.dos button{font-size:.8rem;padding:.35rem .2rem}
+.diff{white-space:pre-wrap;font-size:.92rem;line-height:1.65;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:.55rem .65rem;overflow-wrap:anywhere;max-height:40dvh;overflow:auto}
+.diff del{background:var(--mal2);color:var(--mal);text-decoration:line-through;border-radius:3px}
+.diff ins{background:var(--ok2);color:var(--ok);text-decoration:none;font-weight:600;border-radius:3px}
+.fmt{display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:.5rem}
+.prob{display:flex;gap:.55rem;align-items:flex-start;padding:.45rem 0;border-top:1px dashed var(--line);font-size:.86rem;cursor:pointer;margin:0;color:var(--ink)}
+.prob input{flex:none;width:1.1rem;height:1.1rem;margin:.2rem 0 0;padding:0;accent-color:var(--acc)}
+.prob small{display:block;color:var(--mute);font-size:.76rem}
+.prob s{color:var(--mal)}.prob b{color:var(--ok)}
+.tipo-p{font-size:.64rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2);background:var(--line);border-radius:4px;padding:.05rem .35rem;margin-right:.35rem;vertical-align:.1em}
+.avisos{margin:.2rem 0 0;padding-left:1.1rem;font-size:.85rem}.avisos li{margin:.25rem 0}
+.propone{font-size:.86rem}.propone .fila{gap:.4rem;margin:.2rem 0;align-items:baseline;flex-wrap:wrap}
+.cargando{display:flex;gap:.55rem;align-items:center;color:var(--ink2);font-size:.88rem;padding:.3rem 0}
+.cargando i{width:.6rem;height:.6rem;border-radius:99px;background:var(--acc);animation:latido 1s ease-in-out infinite}
+.rev-hecha{font-size:.84rem;color:var(--ok);margin-top:.45rem}
+.rev-hecha blockquote{margin:.35rem 0 0;padding:.4rem .6rem;border-left:3px solid var(--line);color:var(--ink2);white-space:pre-wrap;font-size:.84rem}

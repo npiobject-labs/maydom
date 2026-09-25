@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="build" content="MA-B1-20260925-006">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0B6E7A">
+<title>maydom · mock 6 · etiquetas y revisión de notas</title>
+<style>
+:root{--bg:#F6F7F4;--bg2:#FFFFFF;--ink:#1B2430;--ink2:#4B5563;--mute:#8A93A0;--line:#D9DED8;--acc:#0B6E7A;--acc2:#0B6E7A1A;--warn:#B85C1E;--warn2:#B85C1E14;--ok:#2E7D4F;--ok2:#2E7D4F14;--mal:#B00020;--mal2:#B0002014;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#131A20;--bg2:#1B232B;--ink:#E6EAE7;--ink2:#B7C0C7;--mute:#7F8A94;--line:#2C3740;--acc:#4FB3BF;--acc2:#4FB3BF22;--warn:#E08A4C;--warn2:#E08A4C1F;--ok:#5FBF87;--ok2:#5FBF871F;--mal:#FF6B6B;--mal2:#FF6B6B1F}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#131A20;--bg2:#1B232B;--ink:#E6EAE7;--ink2:#B7C0C7;--mute:#7F8A94;--line:#2C3740;--acc:#4FB3BF;--acc2:#4FB3BF22;--warn:#E08A4C;--warn2:#E08A4C1F;--ok:#5FBF87;--ok2:#5FBF871F;--mal:#FF6B6B;--mal2:#FF6B6B1F}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans)}
+.app{max-width:32rem;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
+header.cab{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:.6rem 1rem;display:flex;align-items:center;gap:.5rem}
+header.cab h1{font-size:1.1rem;margin:0;flex:1}
+header.cab small{color:var(--mute);font-size:.72rem;text-align:right}
+.fijar{flex:none;background:none;border:1px solid var(--line);border-radius:999px;color:var(--acc);font:500 .78rem var(--sans);padding:.2rem .6rem;cursor:pointer;white-space:nowrap}
+main{flex:1;padding:.9rem 1rem 5.5rem}
+.aviso-mock{font-size:.78rem;color:var(--ink2);background:var(--acc2);border-radius:8px;padding:.5rem .7rem;margin-bottom:.7rem}
+h3{font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:1.1rem 0 .4rem;display:flex;align-items:center;gap:.5rem}
+h3.mal{color:var(--mal)}
+.tarjeta{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:.7rem .9rem;margin:.4rem 0}
+.fila{display:flex;align-items:center;gap:.7rem}.fila .t{flex:1;min-width:0}
+[data-abrir]{cursor:pointer}
+.mini{color:var(--mute);font-size:.8rem}
+.btn{font:500 .85rem var(--sans);color:var(--acc);background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:.42rem .72rem;cursor:pointer;display:inline-flex;align-items:center;gap:.3rem}
+.btn:hover{border-color:var(--acc)}.btn.p{background:var(--acc);color:#fff;border-color:var(--acc)}.btn.peligro{color:var(--mal)}
+.btn[disabled]{opacity:.6;cursor:default}
+.acciones{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.55rem;align-items:center}.acciones.fin{justify-content:flex-end}
+.pill{font-size:.72rem;padding:.12rem .55rem;border-radius:999px;background:var(--acc2);color:var(--acc);border:0;font-family:inherit;white-space:nowrap;cursor:pointer}
+.pill.sel{background:var(--acc);color:#fff}
+.chips{display:flex;gap:.35rem;flex-wrap:wrap;margin:.7rem 0 .2rem}
+input,select,textarea{font:inherit;padding:.5rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--bg2);color:var(--ink);width:100%}
+label{display:block;font-size:.82rem;color:var(--ink2);margin-top:.6rem}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.pestanas{display:flex;gap:.1rem;margin:0 0 .9rem;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.pestanas::-webkit-scrollbar{display:none}
+.pestanas button{font:500 .85rem var(--sans);color:var(--ink2);background:none;border:0;border-bottom:2px solid transparent;padding:.5rem .7rem;cursor:pointer;white-space:nowrap;margin-bottom:-1px}
+.pestanas button.sel{color:var(--acc);border-bottom-color:var(--acc)}
+.pestanas .n{font-style:normal;font-size:.7rem;background:var(--acc2);color:var(--acc);border-radius:999px;padding:.05rem .35rem;margin-left:.3rem}
+.chk{flex:none;width:1.6rem;height:1.6rem;border-radius:999px;border:2px solid var(--line);background:none;color:var(--ok);font-size:.9rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.chk:hover{border-color:var(--ok)}
+.hecha .chk{background:var(--ok);border-color:var(--ok);color:#fff}
+.hecha b{text-decoration:line-through;color:var(--mute);font-weight:500}
+.tope{flex:none;font-size:.72rem;padding:.12rem .5rem;border-radius:999px;background:var(--line);color:var(--ink2);white-space:nowrap}
+.tope.hoy{background:var(--warn2);color:var(--warn)}.tope.vencida{background:var(--mal2);color:var(--mal)}
+.nota .cuerpo{font-size:.88rem;color:var(--ink2);margin-top:.25rem;white-space:pre-line}
+.nota.t-preferencia{border-left:3px solid var(--acc)}.nota.t-tendencia{border-left:3px solid var(--warn)}
+details.plegable{background:var(--bg2);border:1px solid var(--line);border-radius:10px;margin:.8rem 0 .45rem;overflow:hidden}
+details.plegable>summary{list-style:none;cursor:pointer;padding:.6rem .9rem;font-weight:600;font-size:.9rem;display:flex;align-items:center;gap:.5rem}
+details.plegable>summary::-webkit-details-marker{display:none}
+details.plegable>summary::after{content:'▾';margin-left:auto;color:var(--mute);font-size:.8rem}
+details.plegable .cuerpo{padding:0 .9rem .7rem}
+/* Etiquetas en las tarjetas: se tocan para filtrar */
+.etqs{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.35rem}
+.etq{font:500 .72rem var(--sans);padding:.08rem .5rem;border-radius:999px;border:1px solid var(--line);background:none;color:var(--ink2);cursor:pointer}
+.etq::before{content:'#';opacity:.55;margin-right:.08rem}
+.etq.nueva{animation:brillo 1.8s ease-out}
+@keyframes brillo{from{background:var(--acc);color:#fff;border-color:var(--acc)}to{background:transparent}}
+.etiquetando{color:var(--acc);font-size:.75rem}
+.lote{background:var(--acc2);border-color:transparent}
+nav.inferior{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--line);display:flex;justify-content:center;z-index:6;padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.inferior .in{display:flex;width:100%;max-width:32rem;justify-content:space-around;padding:.3rem 0}
+nav.inferior a{color:var(--mute);font-size:.68rem;display:flex;flex-direction:column;align-items:center;gap:.1rem;padding:.2rem .5rem;text-decoration:none;cursor:pointer}
+nav.inferior a span{font-size:1.3rem;line-height:1.2}
+/* Modal */
+.modal{border:1px solid var(--line);border-radius:12px;background:var(--bg2);color:var(--ink);padding:1rem 1.1rem;width:min(94vw,28rem);max-height:92dvh;overflow:auto}
+.modal::backdrop{background:rgba(0,0,0,.45)}
+.cabecera-modal{display:flex;align-items:center;gap:.5rem;margin:0 0 .3rem}
+.cabecera-modal h2{flex:1;min-width:0;margin:0;font-size:1.15rem}
+.cerrar{flex:none;background:none;border:0;color:var(--mute);font-size:1.25rem;line-height:1;cursor:pointer;padding:.15rem .3rem;border-radius:6px}
+.cerrar:hover{color:var(--ink);background:var(--line)}
+.segmento{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:.3rem}
+.segmento.dos{grid-template-columns:repeat(2,1fr);margin:.1rem 0 .5rem}
+.segmento button{font:500 .88rem var(--sans);background:var(--bg2);color:var(--ink2);border:0;border-left:1px solid var(--line);padding:.5rem .2rem;cursor:pointer}
+.segmento.dos button{font-size:.8rem;padding:.35rem .2rem}
+.segmento button:first-child{border-left:0}
+.segmento button.sel{background:var(--acc);color:#fff}
+.detectado{font-size:.75rem;color:var(--acc);margin-top:.3rem;min-height:1.1em}
+.rapidas{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.4rem;align-items:center}
+.ejemplos{margin-top:.5rem;font-size:.75rem;color:var(--mute);display:flex;gap:.3rem;flex-wrap:wrap;align-items:center}
+.ejemplos .pill{background:none;border:1px dashed var(--line);color:var(--ink2)}
+.bajo-texto{display:flex;align-items:center;gap:.5rem;margin-top:.45rem;flex-wrap:wrap}
+.micro{flex:none;width:2.4rem;height:2.4rem;border-radius:999px;border:1px solid var(--line);background:var(--bg2);font-size:1.1rem;cursor:pointer}
+.enlace{background:none;border:0;color:var(--acc);font:inherit;font-size:.82rem;cursor:pointer;padding:0 .15rem;text-decoration:underline;text-underline-offset:2px}
+
+/* ---------- Caja de texto redimensionable (para toda la app) ---------- */
+.caja-texto{position:relative;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:6px;background:var(--bg2)}
+.caja-texto:focus-within{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc2)}
+.caja-texto textarea{border:0;border-radius:6px 6px 0 0;background:transparent;resize:none;min-height:4.5rem;outline:none;display:block}
+.caja-texto .barra{display:flex;align-items:stretch;border-top:1px dashed var(--line)}
+.caja-texto .asa{flex:1;height:1.7rem;display:flex;align-items:center;justify-content:center;cursor:ns-resize;touch-action:none;user-select:none;-webkit-user-select:none;border-radius:0 0 0 6px}
+.caja-texto .asa span{width:2.8rem;height:.3rem;border-radius:99px;background:var(--mute);opacity:.5;transition:opacity .15s,background .15s}
+.caja-texto .asa:hover span,.caja-texto.arrastrando .asa span,.caja-texto .asa:focus-visible span{background:var(--acc);opacity:1}
+.caja-texto .ampliar{flex:none;width:2.6rem;background:none;border:0;border-left:1px dashed var(--line);color:var(--ink2);font-size:1rem;cursor:pointer;border-radius:0 0 6px 0}
+.caja-texto .ampliar:hover{color:var(--acc)}
+.caja-texto .cab-pantalla{display:none}
+.caja-texto.pantalla{position:fixed;inset:0;z-index:100;border:0;border-radius:0;box-shadow:none;padding:calc(env(safe-area-inset-top,0px) + .7rem) 1rem calc(env(safe-area-inset-bottom,0px) + .7rem)}
+.caja-texto.pantalla .cab-pantalla{display:flex;align-items:center;gap:.5rem;padding-bottom:.5rem;border-bottom:1px solid var(--line);margin-bottom:.4rem}
+.caja-texto.pantalla .cab-pantalla b{flex:1;font-size:1rem}
+.caja-texto.pantalla textarea{flex:1;height:auto!important;font-size:1.05rem;line-height:1.6}
+.caja-texto.pantalla .barra{display:none}
+
+/* ---------- Etiquetas como fichas ---------- */
+.fichas{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;border:1px solid var(--line);border-radius:6px;padding:.35rem .4rem;background:var(--bg2);margin-top:.2rem}
+.fichas:focus-within{border-color:var(--acc)}
+.ficha{display:inline-flex;align-items:center;font-size:.8rem;background:var(--acc2);color:var(--acc);border-radius:999px;padding:.1rem .15rem .1rem .6rem}
+.ficha button{background:none;border:0;color:inherit;cursor:pointer;font-size:.78rem;padding:0 .35rem;line-height:1.4}
+.fichas input{flex:1;min-width:7rem;border:0;padding:.2rem .1rem;background:transparent;font-size:.9rem;outline:none}
+
+/* ---------- Panel de revisión ---------- */
+.revision{border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:.6rem .75rem .7rem;margin-top:.6rem}
+.rev-cab{display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem}
+.rev-cab b{flex:1;font-size:.95rem}
+.revision h4{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:.8rem 0 .15rem}
+.diff{white-space:pre-wrap;font-size:.92rem;line-height:1.65;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:.55rem .65rem;overflow-wrap:anywhere}
+.diff del{background:var(--mal2);color:var(--mal);text-decoration:line-through;border-radius:3px;padding:0 .08em}
+.diff ins{background:var(--ok2);color:var(--ok);text-decoration:none;font-weight:600;border-radius:3px;padding:0 .08em}
+.fmt{display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:.5rem}
+.prob{display:flex;gap:.55rem;align-items:flex-start;padding:.45rem 0;border-top:1px dashed var(--line);font-size:.86rem;cursor:pointer;margin:0;color:var(--ink)}
+.prob:first-of-type{border-top:0}
+.prob input{flex:none;width:1.1rem;height:1.1rem;margin:.2rem 0 0;padding:0;accent-color:var(--acc)}
+.prob small{display:block;color:var(--mute);font-size:.76rem}
+.prob s{color:var(--mal)}.prob b{color:var(--ok)}
+.tipo-p{font-size:.64rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2);background:var(--line);border-radius:4px;padding:.05rem .35rem;margin-right:.35rem;vertical-align:.1em}
+.avisos{margin:.2rem 0 0;padding-left:1.1rem;font-size:.85rem}
+.avisos li{margin:.25rem 0}
+.propone{font-size:.86rem}
+.propone .fila{gap:.4rem;margin:.2rem 0;align-items:baseline;flex-wrap:wrap}
+.cargando{display:flex;gap:.55rem;align-items:center;color:var(--ink2);font-size:.88rem;padding:.3rem 0}
+.cargando i{width:.6rem;height:.6rem;border-radius:99px;background:var(--acc);animation:latido .55s ease-in-out infinite alternate}
+@keyframes latido{from{transform:scale(.7);opacity:.5}to{transform:scale(1.1);opacity:1}}
+.rev-hecha{font-size:.84rem;color:var(--ok);margin-top:.45rem}
+.rev-hecha blockquote{margin:.35rem 0 0;padding:.4rem .6rem;border-left:3px solid var(--line);color:var(--ink2);white-space:pre-wrap;font-size:.84rem}
+#toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 4.5rem);transform:translateX(-50%) translateY(1rem);background:var(--ink);color:var(--bg);padding:.5rem .9rem;border-radius:8px;font-size:.85rem;opacity:0;transition:.2s;z-index:200;max-width:90vw;pointer-events:none;text-align:center}
+#toast.ver{opacity:1;transform:translateX(-50%)}
+.nota-mock{font-size:.84rem;color:var(--ink2);margin-top:1.6rem;border-top:1px solid var(--line);padding-top:.6rem}
+.nota-mock h4{margin:.2rem 0 .3rem;font-size:.92rem;color:var(--ink)}
+.nota-mock li{margin:.35rem 0}
+.nota-mock code{font-size:.78rem}
+.sup{color:var(--warn);font-weight:600}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="cab"><h1>Notas</h1><button class="fijar" type="button" data-mock>☆ Fijar</button><small>viernes 25/09/2026</small></header>
+  <main>
+    <div class="aviso-mock">Mock 6 · MA-B1-20260925-006 · datos de ejemplo. Abre una tarea o pulsa «+ Nota» y prueba ✨ Revisar con los dictados de ejemplo.</div>
+    <div id="vista"></div>
+
+    <h3>Cualquier caja de texto de la app</h3>
+    <div class="tarjeta">
+      <label for="demo" style="margin-top:0">Cuéntame la noche <span class="mini">(así quedaría en Sueño)</span></label>
+      <div class="caja-texto" data-caja="demo"><textarea id="demo" rows="3">Me acosté a las doce menos cuarto y tardé un cuarto de hora en dormirme. Me desperté sobre las cuatro, estuve media hora dando vueltas y a las siete y media ya estaba levantado.</textarea></div>
+      <div class="mini" style="margin-top:.35rem">Arrastra el asa con el dedo · doble toque: compacta ↔ grande · ⤢ pantalla completa. La altura se recuerda por caja.</div>
+    </div>
+
+    <div class="nota-mock">
+      <h4>Qué se aprueba con este mock</h4>
+      <ol>
+        <li><b>Etiquetas también en las tareas</b> (hoy solo las llevan las ideas). En el diálogo son fichas: ✕ para quitar, y para añadir se escribe o se toca una de las ya usadas. En la lista salen bajo cada tarjeta y al tocar una se filtra.</li>
+        <li><b>Al guardar, sin coste.</b> Si las dejas vacías las pone el mayordomo en la misma llamada <code>nota</code> que ya pone el título, así que no hay consulta de más. Se guarda primero y se etiqueta después, y nunca pisa las que escribiste tú. Las tareas que ya tienes sin etiquetas se etiquetan con «✨ Etiquetarlas».</li>
+        <li><b>✨ Revisar, cuando lo pulsas.</b> Una consulta nueva, <code>nota-revisar</code>, que corrige tildes, ortografía, gramática, puntuación y lo que el dictado oye mal («haber si» por «a ver si»), da formato (texto corrido, o lista si la nota enumera cosas) y propone título, etiquetas y tipo. Enseña los cambios marcados y cada corrección se puede desmarcar. Lo que no tiene arreglo automático sale en «A tener en cuenta». No se escribe nada hasta «Aplicar», y el texto dictado se guarda aparte (<code>nota.original</code>), con «↶ Deshacer» y «ver el original».</li>
+        <li><b>La revisión no va al guardar</b> porque cambiaría tu texto sin que lo veas, que es justo lo que la app evita en todas partes (títulos, conceptos de Finanzas, relato de la noche), y gastaría una consulta por nota. Si más adelante la quieres automática, sería un interruptor en Ajustes, apagado de partida.</li>
+        <li><b>Mejora propuesta · dos tareas en una nota:</b> si la revisión ve dos cosas que hacer, ofrece guardarlas por separado (prueba el ejemplo de la tarea). Hoy eso solo pasa cuando la nota mezcla clases distintas.</li>
+        <li><b>Cajas de texto redimensionables en toda la app.</b> Bajo cada caja hay un asa a lo ancho que se arrastra con el dedo; con doble toque alterna entre compacta y grande, y ⤢ la abre a pantalla completa para textos largos. Crece sola mientras escribes hasta que la ajustas tú (lo manual manda) y la altura se recuerda por caja, en una clave aparte (<code>maydom.textos</code>). Es una sola función en <code>nucleo.js</code> enganchada a todos los <code>&lt;textarea&gt;</code>: formularios de <code>pedir()</code>, Notas, relato de la noche, ficha del plato, Mayordomo…</li>
+      </ol>
+      <p><span class="sup">[SUPUESTO]</span> El tirador nativo de la esquina (<code>resize: vertical</code>, que la app ya tiene) no se puede arrastrar con el dedo en Chrome de Android ni en Safari de iOS, y por eso va el asa. Plan B, si en tu móvil sí funciona: el asa se queda igual, porque es más fácil de acertar que la esquina.</p>
+      <p><span class="sup">[SUPUESTO]</span> El mock imita al mayordomo. Los dos ejemplos traen su respuesta preparada; con otro texto aplica unas pocas reglas (tildes en «-cion», «haber si», «de el»…). El real ve mucho más: concordancias, frases cortadas, repeticiones.</p>
+    </div>
+  </main>
+</div>
+<nav class="inferior" aria-label="Principal"><div class="in">
+  <a data-mock><span>☀</span>Hoy</a>
+  <a data-mock><span>▦</span>Calendario</a>
+  <a data-mock><span>✦</span>Mayordomo</a>
+  <a data-mock><span>⌕</span>Buscador</a>
+  <a data-mock><span>☰</span>Menú</a>
+</div></nav>
+<datalist id="etqs-usadas"></datalist>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+// ================= utilidades (las mismas que la app) =================
+const HOY = '2026-09-25';
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const aFecha = f => new Date(f + 'T12:00:00');
+const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const suma = (f, n) => { const d = aFecha(f); d.setDate(d.getDate() + n); return iso(d); };
+const proximo = dow => { const d = aFecha(HOY); d.setDate(d.getDate() + (((dow - d.getDay() + 7) % 7) || 7)); return iso(d); };
+const domingo = () => { const d = aFecha(HOY); d.setDate(d.getDate() + (7 - d.getDay()) % 7); return iso(d); };
+const fechaCorta = f => f.split('-').reverse().join('/');
+const fechaLarga = f => DIAS[aFecha(f).getDay()] + ' ' + fechaCorta(f);
+const dias = f => Math.round((aFecha(f) - aFecha(HOY)) / 864e5);
+const relativo = f => { const d = dias(f); return d === 0 ? 'hoy' : d === 1 ? 'mañana' : d === -1 ? 'ayer' : d < 0 ? `hace ${-d} días` : `en ${d} días`; };
+const sinAcentos = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '');
+const limpiarEtq = e => sinAcentos(e).toLowerCase().trim().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ');
+const may = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+let nid = 10; const uid = () => 'n' + (++nid);
+function toast(t, ms = 2600) { const el = $('#toast'); el.textContent = t; el.classList.add('ver'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('ver'), ms); }
+
+// ================= caja de texto redimensionable =================
+// Una sola función para toda la app: asa a lo ancho (arrastre táctil), doble toque, flechas y pantalla completa.
+// Crece sola mientras escribes hasta que la ajustas tú; la altura elegida se recuerda por caja.
+const CLAVE_TEXTOS = 'maydom.textos';
+function leerTamanos() { try { return JSON.parse(localStorage.getItem(CLAVE_TEXTOS)) || {}; } catch { return {}; } }
+function guardarTamano(clave, h) { try { const t = leerTamanos(); if (h) t[clave] = Math.round(h); else delete t[clave]; localStorage.setItem(CLAVE_TEXTOS, JSON.stringify(t)); } catch {} }
+function crecer(ta, tope = 0.4) {
+  if (ta.dataset.manual) return;
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight + 2, innerHeight * tope) + 'px';
+}
+function montarCaja(caja) {
+  if (caja.dataset.montada) return;
+  caja.dataset.montada = '1';
+  const ta = caja.querySelector('textarea'), clave = caja.dataset.caja || ta.name || ta.id;
+  const etiqueta = document.querySelector(`label[for="${ta.id}"]`)?.firstChild?.textContent?.trim() || 'Texto';
+  caja.insertAdjacentHTML('afterbegin', `<div class="cab-pantalla"><b>${esc(etiqueta)}</b><button type="button" class="btn p" data-listo>Listo</button></div>`);
+  caja.insertAdjacentHTML('beforeend', `<div class="barra"><div class="asa" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Arrastra para cambiar el alto" title="Arrastra · doble toque: compacta o grande"><span></span></div><button type="button" class="ampliar" aria-label="Escribir a pantalla completa" title="Pantalla completa">⤢</button></div>`);
+  const asa = caja.querySelector('.asa');
+  const MIN = 72;
+  const fijar = h => { h = Math.max(MIN, Math.min(h, innerHeight * 0.8)); ta.style.height = h + 'px'; ta.dataset.manual = '1'; return h; };
+  const guardada = leerTamanos()[clave];
+  if (guardada) fijar(guardada); else crecer(ta);
+  ta.addEventListener('input', () => crecer(ta));
+  let y0 = 0, h0 = 0, movido = false, ultimoToque = 0;
+  asa.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    asa.setPointerCapture(e.pointerId);
+    y0 = e.clientY; h0 = ta.getBoundingClientRect().height; movido = false;
+    caja.classList.add('arrastrando');
+  });
+  asa.addEventListener('pointermove', e => {
+    if (!caja.classList.contains('arrastrando')) return;
+    if (Math.abs(e.clientY - y0) > 3) movido = true;
+    if (movido) fijar(h0 + e.clientY - y0);
+  });
+  const soltar = () => {
+    if (!caja.classList.contains('arrastrando')) return;
+    caja.classList.remove('arrastrando');
+    if (movido) return guardarTamano(clave, ta.getBoundingClientRect().height);
+    // Doble toque: compacta ↔ grande (un toque suelto no hace nada).
+    const ahora = Date.now();
+    if (ahora - ultimoToque < 350) {
+      ultimoToque = 0;
+      if (ta.getBoundingClientRect().height < innerHeight * 0.45) guardarTamano(clave, fijar(innerHeight * 0.6));
+      else { delete ta.dataset.manual; guardarTamano(clave, 0); crecer(ta); }
+    } else ultimoToque = ahora;
+  };
+  asa.addEventListener('pointerup', soltar);
+  asa.addEventListener('pointercancel', soltar);
+  asa.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    e.preventDefault();
+    guardarTamano(clave, fijar(ta.getBoundingClientRect().height + (e.key === 'ArrowDown' ? 32 : -32)));
+  });
+  const pantalla = on => {
+    caja.classList.toggle('pantalla', on);
+    document.documentElement.style.overflow = on ? 'hidden' : '';
+    ta.focus();
+  };
+  caja.querySelector('.ampliar').addEventListener('click', () => pantalla(true));
+  caja.querySelector('[data-listo]').addEventListener('click', () => { pantalla(false); crecer(ta); });
+  caja.salirPantalla = () => { if (!caja.classList.contains('pantalla')) return false; pantalla(false); crecer(ta); return true; };
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { const c = document.querySelector('.caja-texto.pantalla'); if (c) { e.preventDefault(); c.salirPantalla(); } } }, true);
+
+// ================= datos de ejemplo =================
+const S = {
+  v: 'tareas', etq: '',
+  notas: [
+    { id: 't1', clase: 'tarea', titulo: 'Pagar la cuota de la comunidad', texto: 'Pagar la cuota de la comunidad hoy.', tope: '2026-09-25', etiquetas: ['casa', 'finanzas'], fecha: '2026-09-20' },
+    { id: 't2', clase: 'tarea', titulo: 'Renovar el DNI', texto: 'Tengo que renovar el DNI antes del 15 de octubre.', tope: '2026-10-15', etiquetas: [], fecha: '2026-09-22' },
+    { id: 't3', clase: 'tarea', titulo: 'Revisar la presión de las ruedas', texto: 'Revisar la presión de las ruedas del coche antes de fin de mes.', tope: '2026-10-31', etiquetas: [], fecha: '2026-09-24' },
+    { id: 'i1', clase: 'idea', tipo: 'preferencia', titulo: 'Leer en papel antes de dormir', texto: 'Quiero leer en papel la última media hora antes de dormir, sin pantallas.', etiquetas: ['sueno'], fecha: '2026-09-23' },
+    { id: 'i2', clase: 'idea', tipo: 'preferencia', titulo: 'Probar yoga los domingos', texto: 'Probar una clase de yoga suave los domingos por la mañana.', etiquetas: ['ejercicio'], fecha: '2026-09-21' },
+  ],
+  compra: [{ id: 'c1', nombre: 'Pilas AA', cantidad: '4', etiqueta: 'drogueria' }, { id: 'c2', nombre: 'Leche', cantidad: '2 l', etiqueta: 'alimentacion' }],
+};
+const NOMBRE_ETQ_COMPRA = { alimentacion: '🥕 Alimentación', drogueria: '🧴 Droguería', farmacia: '💊 Farmacia', otras: '🛒 Otras' };
+const NOMBRE_CLASE = { tarea: '☑ Tarea', compra: '🛒 Compra', idea: '💡 Idea' };
+const TIPOS = [['nota', 'Nota'], ['preferencia', 'Preferencia (guía al mayordomo)'], ['tendencia', 'Tendencia (algo que noto)']];
+
+// ================= reglas (lo que hoy hace interpretar-nota.js, simplificado) =================
+const DIAS_SA = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+function claseDe(t) {
+  const s = sinAcentos(t.toLowerCase());
+  if (/\b(comprar|compra|falta|faltan|reponer)\b/.test(s)) return 'compra';
+  if (/\b(tengo que|hay que|llamar|pagar|renovar|pedir cita|antes del?|recoger|enviar|mandar)\b/.test(s)) return 'tarea';
+  return 'idea';
+}
+function topeDe(t) {
+  const s = sinAcentos(t.toLowerCase());
+  if (/\bpasado manana\b/.test(s)) return { tope: suma(HOY, 2), leido: 'pasado mañana' };
+  if (/\bmanana\b/.test(s)) return { tope: suma(HOY, 1), leido: 'mañana' };
+  if (/\bhoy\b/.test(s)) return { tope: HOY, leido: 'hoy' };
+  const m = s.match(/\b(?:(antes del|el|este|para el)\s+)?(lunes|martes|miercoles|jueves|viernes|sabado|domingo)\b/);
+  if (m) return { tope: proximo(DIAS_SA.indexOf(m[2])), leido: m[0] };
+  return { tope: '' };
+}
+function tituloTarea(t) {
+  const s = t.trim().replace(/^(tengo que|hay que|tenemos que|debo)\s+/i, '')
+    .split(/\s+(?:antes del?|para el|el (?:lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)|ma[nñ]ana|hoy|esta semana|haber si|a ver si|y tambi[eé]n|tambi[eé]n)\b|[,.;:\n]/i)[0];
+  return may(s.trim()).slice(0, 60);
+}
+const tituloIdea = t => may(t.trim().split(/[.;\n]/)[0].split(/\s+/).slice(0, 7).join(' '));
+const REGLAS_ETQ = [
+  [/\b(coche|itv|ruedas|taller|remolque)\b/, 'coche'], [/\bseguro/, 'seguros'],
+  [/\b(gestoria|titular|dni|hacienda|tramite|certificado|renta|notaria)\b/, 'papeleo'],
+  [/\b(banco|cuenta|factura\w*|recibo\w*|domicili\w*|cuota|pagar)\b/, 'finanzas'],
+  [/\b(duermo|dormir|sueno|noche|insomnio)\b/, 'sueno'], [/\b(cafe|ceno|cena|comer|comida|dieta)\b/, 'alimentacion'],
+  [/\b(yoga|correr|gimnasio|caminar|andar|entreno)\b/, 'ejercicio'], [/\b(casa|comunidad|fontanero|electricista)\b/, 'casa'],
+  [/\b(medico|farmacia|analisis|dentista)\b/, 'salud'],
+];
+const etiquetasAuto = t => { const s = sinAcentos(t.toLowerCase()); return REGLAS_ETQ.filter(([re]) => re.test(s)).map(([, e]) => e).slice(0, 3); };
+const etiquetasUsadas = () => [...new Set(S.notas.flatMap(n => n.etiquetas || []))].sort();
+
+// ================= el mayordomo simulado: operación nota-revisar =================
+// Respuesta: el texto como trozos [tipo, texto, id]. '=' se queda, '-' sale, '+' entra; el id agrupa
+// cada corrección para poder desmarcarla. 'f' es el cambio de formato, que va con el formato elegido.
+const EJ = {
+  tarea: {
+    original: 'tengo que renovar el seguro del coche antes del jueves haber si me hacen descuento por tener la ITV pasada y preguntar si cubre la luna y el remolque tambien llamar a la gestoria por lo de el cambio de titular',
+    formatos: {
+      corrido: [['-', 'tengo', 'p'], ['+', 'Tengo', 'p'], ['=', ' que renovar el seguro del coche antes del jueves'], ['+', ',', 'p'], ['=', ' '], ['-', 'haber', 'h'], ['+', 'a ver', 'h'], ['=', ' si me hacen descuento por tener la ITV pasada'], ['+', ',', 'p'], ['=', ' y preguntar si cubre la luna y el remolque'], ['+', '.', 'p'], ['=', ' '], ['-', 'tambien', 't'], ['+', 'También', 't'], ['=', ' llamar a la '], ['-', 'gestoria', 'g'], ['+', 'gestoría', 'g'], ['=', ' por lo '], ['-', 'de el', 'd'], ['+', 'del', 'd'], ['=', ' cambio de titular'], ['+', '.', 'p']],
+      lista: [['+', 'Antes del jueves:\n- ', 'f'], ['-', 'tengo que r', 'f'], ['+', 'R', 'f'], ['=', 'enovar el seguro del coche'], ['-', ' antes del jueves', 'f'], ['+', ',', 'p'], ['=', ' '], ['-', 'haber', 'h'], ['+', 'a ver', 'h'], ['=', ' si me hacen descuento por tener la ITV pasada'], ['+', ',', 'p'], ['=', ' y preguntar si cubre la luna y el remolque'], ['+', '.', 'p'], ['-', ' tambien l', 'f'], ['+', '\n- L', 'f'], ['=', 'lamar a la '], ['-', 'gestoria', 'g'], ['+', 'gestoría', 'g'], ['=', ' por lo '], ['-', 'de el', 'd'], ['+', 'del', 'd'], ['=', ' cambio de titular'], ['+', '.', 'p']],
+    },
+    fmt: 'lista', fmtNota: 'Propone lista porque la nota junta dos cosas que hacer.',
+    problemas: {
+      p: { tipo: 'Puntuación', nota: 'El dictado no pone comas ni puntos.' },
+      h: { tipo: 'Dictado', nota: '«a ver si» (de ver), no «haber».' },
+      t: { tipo: 'Tildes' }, g: { tipo: 'Tildes' },
+      d: { tipo: 'Gramática', nota: '«de» + «el» se contrae en «del».' },
+    },
+    avisos: ['«antes del jueves» es el jueves 01/10/2026; ya está puesto como fecha tope.', 'Son dos tareas con la misma fecha. <button type="button" class="enlace" data-separar>Guardarlas por separado</button>'],
+    etiquetas: ['coche', 'seguros', 'papeleo'], titulo: 'Renovar el seguro del coche',
+  },
+  idea: {
+    original: 'me e dado cuenta que cuando ceno tarde duermo peor sobretodo si tomo cafe despues de las 5',
+    formatos: {
+      corrido: [['-', 'me e', 'e'], ['+', 'Me he', 'e'], ['=', ' dado cuenta '], ['+', 'de ', 'q'], ['=', 'que'], ['+', ',', 'p'], ['=', ' cuando ceno tarde'], ['+', ',', 'p'], ['=', ' duermo peor'], ['+', ',', 'p'], ['=', ' '], ['-', 'sobretodo', 's'], ['+', 'sobre todo', 's'], ['=', ' si tomo '], ['-', 'cafe', 'c'], ['+', 'café', 'c'], ['=', ' '], ['-', 'despues', 'c'], ['+', 'después', 'c'], ['=', ' de las '], ['-', '5', 'n'], ['+', 'cinco', 'n'], ['+', '.', 'p']],
+    },
+    problemas: {
+      e: { tipo: 'Ortografía', nota: '«he», del verbo haber, lleva hache.' },
+      q: { tipo: 'Gramática', nota: '«darse cuenta de algo»: falta el «de».' },
+      p: { tipo: 'Puntuación', nota: 'Comas para separar la condición.' },
+      s: { tipo: 'Ortografía', nota: '«sobretodo», junto, es la prenda.' },
+      c: { tipo: 'Tildes' },
+      n: { tipo: 'Estilo', nota: 'Opcional: en un texto, la hora en letra.', on: false },
+    },
+    avisos: ['«las 5» se entiende como las 17:00.', 'Describe algo que te pasa: la propone como tendencia.'],
+    etiquetas: ['sueno', 'alimentacion'], titulo: 'Cenar tarde empeora el sueño', tipo: 'tendencia',
+  },
+};
+// Con cualquier otro texto, unas pocas reglas para que el mock responda algo.
+const TILDES = { tambien: 'también', despues: 'después', cafe: 'café', gestoria: 'gestoría', telefono: 'teléfono', dia: 'día', dias: 'días', medico: 'médico', miercoles: 'miércoles', sabado: 'sábado', facil: 'fácil', dificil: 'difícil', ademas: 'además', aqui: 'aquí', alli: 'allí', asi: 'así', proximo: 'próximo', proxima: 'próxima', ultimo: 'último', ultima: 'última', numero: 'número', rapido: 'rápido', util: 'útil' };
+function revisionGenerica(texto, clase) {
+  const reglas = [
+    [/\bhaber si\b/gi, () => 'a ver si', 'Dictado', '«a ver si» (de ver), no «haber».'],
+    [/\bde el\b/gi, () => 'del', 'Gramática', '«de» + «el» se contrae.'],
+    [/\ba el\b/gi, () => 'al', 'Gramática', '«a» + «el» se contrae.'],
+    [/\bsobretodo\b/gi, () => 'sobre todo', 'Ortografía', '«sobretodo», junto, es la prenda.'],
+    [/\b(?:xq|porq)\b/gi, () => 'porque', 'Abreviatura', ''],
+    [/(?<!\p{L})\p{L}*cion(?!\p{L})/giu, m => m.slice(0, -4) + 'ción', 'Tildes', ''],
+    [new RegExp('\\b(' + Object.keys(TILDES).join('|') + ')\\b', 'gi'), m => TILDES[m.toLowerCase()], 'Tildes', ''],
+  ];
+  const hall = [];
+  for (const [re, f, tipo, nota] of reglas) for (const m of texto.matchAll(re)) {
+    const despues = /^\p{Lu}/u.test(m[0]) ? may(f(m[0])) : f(m[0]);
+    hall.push({ i: m.index, fin: m.index + m[0].length, antes: m[0], despues, tipo, nota });
+  }
+  hall.sort((a, b) => a.i - b.i);
+  const segs = [], problemas = {};
+  let pos = 0, n = 0;
+  const minuscula = /^\p{Ll}/u.test(texto);
+  if (minuscula && !(hall[0] && hall[0].i === 0)) { segs.push(['-', texto[0], 'p'], ['+', texto[0].toUpperCase(), 'p']); pos = 1; problemas.p = { tipo: 'Puntuación', nota: 'Mayúscula inicial y punto final.' }; }
+  for (const h of hall) {
+    if (h.i < pos) continue;
+    if (h.i > pos) segs.push(['=', texto.slice(pos, h.i)]);
+    const id = 'r' + (++n);
+    segs.push(['-', h.antes, id], ['+', h.i === 0 && minuscula ? may(h.despues) : h.despues, id]);
+    problemas[id] = { tipo: h.tipo, nota: h.nota };
+    pos = h.fin;
+  }
+  if (pos < texto.length) segs.push(['=', texto.slice(pos)]);
+  if (!/[.!?…:]$/.test(texto)) { segs.push(['+', '.', 'p']); problemas.p = problemas.p || { tipo: 'Puntuación', nota: 'Punto final.' }; }
+  const t = topeDe(texto), avisos = [];
+  if (clase === 'tarea' && t.tope) avisos.push(`«${esc(t.leido)}» es el ${fechaLarga(t.tope)}; ya está puesto como fecha tope.`);
+  if (!Object.keys(problemas).length) avisos.push('No encuentra nada que corregir.');
+  avisos.push('<span class="mini">En el mock solo actúan unas reglas de ejemplo; el mayordomo real ve bastante más.</span>');
+  return { formatos: { corrido: segs }, problemas, avisos, etiquetas: etiquetasAuto(texto), titulo: clase === 'tarea' ? tituloTarea(texto) : tituloIdea(texto) };
+}
+const activo = (id, acc) => !id || id === 'f' || acc[id];
+const resultado = (segs, acc) => segs.map(([k, t, id]) => k === '=' ? t : k === '-' ? (activo(id, acc) ? '' : t) : (activo(id, acc) ? t : '')).join('');
+const diffHTML = (segs, acc) => segs.map(([k, t, id]) => k === '=' ? esc(t) : k === '-' ? (activo(id, acc) ? `<del>${esc(t)}</del>` : esc(t)) : (activo(id, acc) ? `<ins>${esc(t)}</ins>` : '')).join('');
+
+// ================= la sección =================
+function chipsEtq(n) {
+  if (n.etiquetando) return '<div class="etqs"><span class="etiquetando">✨ poniendo etiquetas…</span></div>';
+  return (n.etiquetas || []).length ? `<div class="etqs">${n.etiquetas.map(e => `<button type="button" class="etq ${n.recien ? 'nueva' : ''}" data-filtro="${esc(e)}" aria-label="Filtrar por ${esc(e)}">${esc(e)}</button>`).join('')}</div>` : '';
+}
+function tarjetaTarea(n) {
+  const d = dias(n.tope), venc = !n.hecha && d < 0;
+  return `<div class="tarjeta fila tarea ${n.hecha ? 'hecha' : ''}" data-abrir="${n.id}">
+    <button type="button" class="chk" data-hecha="${n.id}" aria-label="${n.hecha ? 'Marcar pendiente' : 'Marcar hecha'}">${n.hecha ? '✓' : ''}</button>
+    <div class="t"><b>${esc(n.titulo)}</b><div class="mini">tope ${fechaLarga(n.tope)}${n.original ? ' · ✨ revisada' : ''}</div>${chipsEtq(n)}</div>
+    ${n.hecha ? '' : `<span class="tope ${venc ? 'vencida' : d === 0 ? 'hoy' : ''}">${relativo(n.tope)}</span>`}</div>`;
+}
+function filtro(usadas) {
+  if (!usadas.length) return '';
+  return `<div class="chips"><button type="button" class="pill ${S.etq ? '' : 'sel'}" data-filtro="">todas</button>${usadas.map(e => `<button type="button" class="pill ${e === S.etq ? 'sel' : ''}" data-filtro="${esc(e)}">#${esc(e)}</button>`).join('')}</div>`;
+}
+function cuerpoTareas() {
+  const pend = S.notas.filter(n => n.clase === 'tarea' && !n.hecha);
+  const vis = pend.filter(n => !S.etq || (n.etiquetas || []).includes(S.etq)).sort((a, b) => a.tope.localeCompare(b.tope));
+  const dom = domingo(), sinEtq = pend.filter(n => !(n.etiquetas || []).length && !n.etiquetando);
+  const grupos = [['Vencidas', n => n.tope < HOY, 'mal'], ['Hoy', n => n.tope === HOY], ['Esta semana', n => n.tope > HOY && n.tope <= dom], ['Más adelante', n => n.tope > dom]];
+  const hechas = S.notas.filter(n => n.clase === 'tarea' && n.hecha);
+  return `<div class="acciones"><button type="button" class="btn p" data-nueva="tarea">+ Tarea</button><button type="button" class="btn" data-nueva="">+ Nota</button><span class="mini">por fecha tope</span></div>
+    ${filtro([...new Set(pend.flatMap(n => n.etiquetas || []))].sort())}
+    ${sinEtq.length && !S.etq ? `<div class="tarjeta fila lote"><div class="t mini">${sinEtq.length === 1 ? '1 tarea sin etiquetas' : sinEtq.length + ' tareas sin etiquetas'}</div><button type="button" class="btn" data-lote>✨ Etiquetarlas</button></div>` : ''}
+    ${grupos.map(([nom, f, cls]) => { const l = vis.filter(f); return l.length ? `<h3 class="${cls || ''}">${nom} <span class="mini">${l.length}</span></h3>${l.map(tarjetaTarea).join('')}` : ''; }).join('') || '<p class="mini">Ninguna tarea con esa etiqueta.</p>'}
+    ${hechas.length ? `<details class="plegable"><summary>Hechas <span class="mini">${hechas.length}</span></summary><div class="cuerpo">${hechas.map(tarjetaTarea).join('')}</div></details>` : ''}`;
+}
+function cuerpoIdeas() {
+  const ideas = S.notas.filter(n => n.clase === 'idea');
+  const vis = ideas.filter(n => !S.etq || (n.etiquetas || []).includes(S.etq)).sort((a, b) => b.fecha.localeCompare(a.fecha));
+  return `<div class="acciones"><button type="button" class="btn p" data-nueva="idea">+ Idea</button><button type="button" class="btn" data-nueva="">+ Nota</button></div>
+    ${filtro([...new Set(ideas.flatMap(n => n.etiquetas || []))].sort())}
+    ${vis.map(n => `<div class="tarjeta nota t-${n.tipo}" data-abrir="${n.id}"><b>${esc(n.titulo)}</b>
+      <div class="mini">${fechaCorta(n.fecha)} · ${n.tipo}${n.original ? ' · ✨ revisada' : ''}</div>
+      <div class="cuerpo">${esc(n.texto)}</div>${chipsEtq(n)}</div>`).join('') || '<p class="mini">Ninguna idea con esa etiqueta.</p>'}`;
+}
+function cuerpoCompras() {
+  const grupos = [...new Set(S.compra.map(c => c.etiqueta))];
+  return `<div class="acciones"><button type="button" class="btn p" data-nueva="compra">+ Compra</button><button type="button" class="btn" data-nueva="">+ Nota</button></div>
+    ${grupos.map(e => `<h3>${NOMBRE_ETQ_COMPRA[e] || '🏷 ' + esc(e)}</h3>${S.compra.filter(c => c.etiqueta === e).map(c => `<div class="tarjeta fila"><button type="button" class="chk" data-mock aria-label="Comprado"></button><div class="t"><b>${esc(c.nombre)}</b> <span class="mini">${esc(c.cantidad || '')}</span></div></div>`).join('')}`).join('')}
+    <p class="mini">Sin cambios en este mock: cada línea de la compra ya lleva su etiqueta.</p>`;
+}
+function render() {
+  const cuenta = { tareas: S.notas.filter(n => n.clase === 'tarea' && !n.hecha).length, compras: S.compra.length, ideas: S.notas.filter(n => n.clase === 'idea').length };
+  $('#vista').innerHTML = `<div class="pestanas">${[['tareas', 'Tareas'], ['compras', 'Compras'], ['ideas', 'Ideas']].map(([v, l]) => `<button type="button" class="${v === S.v ? 'sel' : ''}" data-v="${v}">${l}${cuenta[v] ? `<i class="n">${cuenta[v]}</i>` : ''}</button>`).join('')}</div>
+    ${S.v === 'tareas' ? cuerpoTareas() : S.v === 'compras' ? cuerpoCompras() : cuerpoIdeas()}`;
+  $('#etqs-usadas').innerHTML = etiquetasUsadas().map(e => `<option value="${esc(e)}">`).join('');
+}
+function etiquetarDespues(notas) {
+  notas.forEach(n => { n.etiquetando = true; });
+  render();
+  setTimeout(() => {
+    notas.forEach(n => { n.etiquetando = false; n.etiquetas = etiquetasAuto(n.texto + ' ' + n.titulo); n.recien = true; });
+    render();
+    setTimeout(() => { notas.forEach(n => { n.recien = false; }); }, 2000);
+  }, 1100);
+}
+$('#vista').addEventListener('click', e => {
+  const b = e.target.closest('[data-v],[data-nueva],[data-hecha],[data-filtro],[data-lote],[data-abrir]');
+  if (!b) return;
+  const d = b.dataset;
+  if (d.v) { S.v = d.v; S.etq = ''; return render(); }
+  if (d.nueva != null) return abrirNota({ clase: d.nueva });
+  if (d.hecha) { const n = S.notas.find(x => x.id === d.hecha); n.hecha = !n.hecha; render(); return toast(n.hecha ? 'Hecha' : 'Pendiente otra vez'); }
+  if (d.filtro != null) { S.etq = S.etq === d.filtro ? '' : d.filtro; return render(); }
+  if (d.lote != null) {
+    const sin = S.notas.filter(n => n.clase === 'tarea' && !n.hecha && !(n.etiquetas || []).length);
+    etiquetarDespues(sin);
+    return toast(`El mayordomo etiqueta ${sin.length === 1 ? 'una tarea' : sin.length + ' tareas'} (una consulta por tarea)`);
+  }
+  if (d.abrir) abrirNota({ previa: S.notas.find(x => x.id === d.abrir) });
+});
+document.addEventListener('click', e => { if (e.target.closest('[data-mock]')) toast('En este mock solo está Notas'); });
+
+// ================= el diálogo =================
+function abrirNota({ clase = '', previa = null } = {}) {
+  const st = { clase: previa?.clase || clase || 'idea', manual: !!(previa || clase), topeTocado: !!previa, tags: [...(previa?.etiquetas || [])], original: previa?.original || null, rev: null, revHecha: previa?.original ? { guardada: true } : null, antes: null, verOriginal: false, tituloIA: false };
+  const dlg = document.createElement('dialog');
+  dlg.className = 'modal';
+  const rapidas = [['Hoy', HOY], ['Mañana', suma(HOY, 1)], ['Viernes', proximo(5)], ['Domingo', domingo()], ['En 15 días', suma(HOY, 15)]];
+  dlg.innerHTML = `<form autocomplete="off" novalidate>
+    <div class="cabecera-modal"><h2 data-h2></h2><button type="button" class="cerrar" data-cancelar aria-label="Cerrar sin guardar">✕</button></div>
+    <label for="n_texto">Dicta o escribe</label>
+    <div class="caja-texto" data-caja="nota-texto"><textarea id="n_texto" name="texto" rows="3" placeholder="«Llamar al fontanero el jueves» · «Comprar leche y pilas» · una idea"></textarea></div>
+    <div class="bajo-texto"><button type="button" class="micro" data-micro aria-label="Dictar">🎙</button><button type="button" class="btn" data-revisar>✨ Revisar</button><span class="mini">corrige, da formato y etiqueta · 1 consulta</span></div>
+    <div class="ejemplos">Solo en el mock: <button type="button" class="pill" data-ej="tarea">tarea dictada con fallos</button><button type="button" class="pill" data-ej="idea">idea con fallos</button></div>
+    <div data-rev></div>
+    <label>Es una</label>
+    <div class="segmento" role="radiogroup">${Object.entries(NOMBRE_CLASE).map(([c, l]) => `<button type="button" role="radio" data-clase="${c}">${l}</button>`).join('')}</div>
+    <div class="detectado" data-detectado></div>
+    <div data-para="tarea idea"><label for="n_titulo">Título</label><input id="n_titulo" placeholder="vacío = lo pone el mayordomo"><small class="mini" data-titulo-ia></small></div>
+    <div data-para="tarea"><label for="n_tope">Fecha tope</label><input id="n_tope" type="date">
+      <div class="rapidas">${rapidas.map(([l, f]) => `<button type="button" class="pill" data-tope="${f}">${l}</button>`).join('')}</div>
+      <small class="mini" data-leido></small></div>
+    <div data-para="tarea idea"><label for="n_etq">Etiquetas</label><div class="fichas" data-fichas></div>
+      <div class="rapidas" data-usadas></div></div>
+    <div data-para="idea"><label for="n_tipo">Tipo</label><select id="n_tipo">${TIPOS.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></div>
+    <div data-para="compra"><p class="mini">Las compras llevan su etiqueta en cada línea, como ahora; en este mock no cambian.</p></div>
+    <div class="acciones fin">${previa ? '<button type="button" class="btn peligro" data-borrar>Borrar</button>' : ''}<button type="button" class="btn" data-cancelar>Cancelar</button><button type="submit" class="btn p">Guardar</button></div>
+  </form>`;
+  document.body.appendChild(dlg);
+  const form = $('form', dlg), ta = $('#n_texto', dlg), tit = $('#n_titulo', dlg), tope = $('#n_tope', dlg), tipo = $('#n_tipo', dlg);
+  const det = $('[data-detectado]', dlg), leido = $('[data-leido]', dlg);
+  const cerrar = () => { document.documentElement.style.overflow = ''; dlg.close(); dlg.remove(); };
+
+  function ponerClase(c) {
+    st.clase = c;
+    dlg.querySelectorAll('[data-clase]').forEach(b => { b.classList.toggle('sel', b.dataset.clase === c); b.setAttribute('aria-checked', b.dataset.clase === c); });
+    dlg.querySelectorAll('[data-para]').forEach(d => { d.hidden = !d.dataset.para.split(' ').includes(c); });
+    $('[data-h2]', dlg).textContent = previa ? (c === 'tarea' ? 'Editar tarea' : 'Editar nota') : (st.manual || ta.value.trim()) ? { tarea: 'Nueva tarea', compra: 'Añadir a la compra', idea: 'Nueva idea' }[c] : 'Nueva nota';
+    if (c === 'tarea' && !st.topeTocado && ta.value.trim()) leerTope();
+  }
+  function leerTope() {
+    const t = topeDe(ta.value);
+    if (t.tope) { tope.value = t.tope; leido.textContent = `Leído del dictado: «${t.leido}» → ${fechaLarga(t.tope)} (${relativo(t.tope)})`; }
+    else { tope.value = ''; leido.textContent = 'No he oído ninguna fecha: elige una.'; }
+  }
+  function reglas() {
+    const texto = ta.value.trim();
+    if (!texto) return;
+    if (!st.manual) { ponerClase(claseDe(texto)); det.textContent = `Parece ${{ tarea: 'una tarea', compra: 'una compra', idea: 'una idea' }[st.clase]}; cámbialo si no.`; }
+    else if (st.clase === 'tarea' && !st.topeTocado) leerTope();
+    if (!st.tituloIA) tit.placeholder = (st.clase === 'tarea' ? tituloTarea(texto) : '') || 'vacío = lo pone el mayordomo';
+  }
+
+  // ---- etiquetas como fichas ----
+  function pintarFichas(foco = false) {
+    $('[data-fichas]', dlg).innerHTML = st.tags.map(e => `<span class="ficha">${esc(e)}<button type="button" data-quitar-etq="${esc(e)}" aria-label="Quitar ${esc(e)}">✕</button></span>`).join('')
+      + `<input id="n_etq" list="etqs-usadas" enterkeyhint="done" placeholder="${st.tags.length ? '+ etiqueta' : 'vacío = las pone el mayordomo al guardar'}" aria-label="Añadir etiqueta">`;
+    const usadas = etiquetasUsadas().filter(e => !st.tags.includes(e)).slice(0, 8);
+    $('[data-usadas]', dlg).innerHTML = usadas.length ? `<span class="mini">usadas:</span>${usadas.map(e => `<button type="button" class="pill" data-sug-etq="${esc(e)}">+ ${esc(e)}</button>`).join('')}` : '';
+    if (foco) $('#n_etq', dlg).focus();
+  }
+  function anadirEtq(v, foco = true) {
+    for (const trozo of String(v).split(',')) { const e = limpiarEtq(trozo); if (e && !st.tags.includes(e)) st.tags.push(e); }
+    pintarFichas(foco);
+  }
+
+  // ---- revisión ----
+  function htmlRev() {
+    if (st.revHecha && !st.rev) {
+      const ver = `<button type="button" class="enlace" data-ver-original>${st.verOriginal ? 'ocultar' : 'ver'} el original</button>`;
+      const cita = st.verOriginal && st.original ? `<blockquote>${esc(st.original)}</blockquote>` : '';
+      return st.revHecha.guardada
+        ? `<div class="rev-hecha">✨ Texto revisado por el mayordomo · ${ver} · <button type="button" class="enlace" data-volver-original>volver a él</button>${cita}</div>`
+        : `<div class="rev-hecha">✓ Revisada: ${st.revHecha.n} ${st.revHecha.n === 1 ? 'cambio aplicado' : 'cambios aplicados'} · <button type="button" class="enlace" data-deshacer>↶ Deshacer</button> · ${ver}${cita}</div>`;
+    }
+    const r = st.rev;
+    if (!r) return '';
+    if (r.cargando) return `<div class="revision"><div class="rev-cab"><b>✨ Revisión</b></div><div class="cargando"><i></i>El mayordomo está leyendo el texto…</div></div>`;
+    const segs = r.formatos[r.fmt];
+    const ids = [...new Set(segs.filter(s => s[2] && s[2] !== 'f').map(s => s[2]))];
+    const filas = ids.map(id => {
+      const p = r.problemas[id] || { tipo: 'Cambio' };
+      const antes = segs.filter(s => s[2] === id && s[0] === '-').map(s => s[1]), despues = segs.filter(s => s[2] === id && s[0] === '+').map(s => s[1]);
+      const que = id === 'p' ? `${despues.length} ${despues.length === 1 ? 'signo o mayúscula' : 'signos y mayúsculas'}` : `<s>${esc(antes.join(', '))}</s> → <b>${esc(despues.join(', '))}</b>`;
+      return `<label class="prob"><input type="checkbox" data-prob="${id}" ${r.acc[id] ? 'checked' : ''}><span><span class="tipo-p">${p.tipo}</span>${que}${p.nota ? `<small>${p.nota}</small>` : ''}</span></label>`;
+    });
+    const etqs = Object.keys(r.etqOn);
+    const fmts = Object.keys(r.formatos);
+    return `<div class="revision">
+      <div class="rev-cab"><b>✨ Revisión</b><button type="button" class="cerrar" data-rev-cerrar aria-label="Descartar la revisión">✕</button></div>
+      <div class="segmento dos"><button type="button" data-vista="cambios" class="${r.vista === 'cambios' ? 'sel' : ''}">Cambios</button><button type="button" data-vista="resultado" class="${r.vista === 'resultado' ? 'sel' : ''}">Resultado</button></div>
+      <div class="diff">${r.vista === 'cambios' ? diffHTML(segs, r.acc) : esc(resultado(segs, r.acc))}</div>
+      ${fmts.length > 1 ? `<div class="fmt"><span class="mini">Formato:</span>${fmts.map(f => `<button type="button" class="pill ${f === r.fmt ? 'sel' : ''}" data-fmt="${f}">${f === 'lista' ? 'Lista' : 'Texto corrido'}</button>`).join('')}</div>${r.fmtNota ? `<div class="mini">${r.fmtNota}</div>` : ''}` : ''}
+      <h4>Correcciones · ${ids.length}</h4>
+      ${filas.join('') || '<div class="mini">Nada que corregir.</div>'}
+      ${r.avisos.length ? `<h4>A tener en cuenta</h4><ul class="avisos">${r.avisos.map(a => `<li>${a}</li>`).join('')}</ul>` : ''}
+      <h4>Propone</h4>
+      <div class="propone">
+        ${r.titulo ? `<div class="fila"><span class="mini">Título</span> «${esc(r.titulo)}»${tit.value.trim() && !st.tituloIA ? ' <span class="mini">(no pisa el tuyo)</span>' : ''}</div>` : ''}
+        ${etqs.length ? `<div class="fila"><span class="mini">Etiquetas</span>${etqs.map(e => `<button type="button" class="pill ${r.etqOn[e] ? 'sel' : ''}" data-rev-etq="${esc(e)}">${r.etqOn[e] ? '✓' : '+'} ${esc(e)}</button>`).join('')}</div>` : ''}
+        ${r.tipo && st.clase === 'idea' ? `<div class="fila"><span class="mini">Tipo</span> ${r.tipo}</div>` : ''}
+      </div>
+      <div class="acciones fin"><button type="button" class="btn" data-rev-cerrar>Descartar</button><button type="button" class="btn p" data-aplicar>Aplicar</button></div>
+    </div>`;
+  }
+  const pintarRev = () => { $('[data-rev]', dlg).innerHTML = htmlRev(); };
+  function revisar() {
+    const texto = ta.value.trim();
+    if (!texto) { ta.focus(); return toast('Escribe o dicta algo primero'); }
+    st.rev = { cargando: true }; st.revHecha = null; st.verOriginal = false;
+    pintarRev();
+    setTimeout(() => {
+      if (!dlg.open || !st.rev?.cargando || ta.value.trim() !== texto) return;
+      const base = Object.values(EJ).find(x => x.original === texto);
+      const r = base ? structuredClone(base) : revisionGenerica(texto, st.clase);
+      r.original = texto; r.vista = 'cambios'; r.fmt = r.fmt || 'corrido';
+      r.acc = Object.fromEntries(Object.entries(r.problemas).map(([id, p]) => [id, p.on !== false]));
+      r.etqOn = Object.fromEntries(r.etiquetas.filter(e => !st.tags.includes(e)).map(e => [e, true]));
+      st.rev = r;
+      pintarRev();
+    }, 1100);
+  }
+  function aplicarRev() {
+    const r = st.rev, segs = r.formatos[r.fmt];
+    st.antes = { texto: ta.value, titulo: tit.value, tags: [...st.tags], tipo: tipo.value, tituloIA: st.tituloIA, original: st.original };
+    ta.value = resultado(segs, r.acc);
+    crecer(ta);
+    if (!st.original) st.original = r.original;
+    if (r.titulo && (!tit.value.trim() || st.tituloIA)) { tit.value = r.titulo; st.tituloIA = true; $('[data-titulo-ia]', dlg).textContent = 'Propuesto por el mayordomo; cámbialo si quieres.'; }
+    for (const [e, on] of Object.entries(r.etqOn)) if (on && !st.tags.includes(e)) st.tags.push(e);
+    if (r.tipo && st.clase === 'idea') tipo.value = r.tipo;
+    const ids = [...new Set(segs.filter(s => s[2] && s[2] !== 'f').map(s => s[2]))];
+    st.revHecha = { n: ids.filter(id => r.acc[id]).length + (r.fmt === 'lista' ? 1 : 0) };
+    st.rev = null;
+    pintarRev(); pintarFichas(); reglas();
+    toast('Aplicado; aún no está guardado');
+  }
+  function deshacer() {
+    const a = st.antes;
+    ta.value = a.texto; tit.value = a.titulo; st.tags = a.tags; tipo.value = a.tipo; st.tituloIA = a.tituloIA; st.original = a.original;
+    $('[data-titulo-ia]', dlg).textContent = '';
+    st.revHecha = null; st.verOriginal = false;
+    crecer(ta); pintarRev(); pintarFichas(); reglas();
+  }
+  function separar() {
+    const t = topeDe(EJ.tarea.original).tope, original = EJ.tarea.original;
+    S.notas.push(
+      { id: uid(), clase: 'tarea', fecha: HOY, tope: t, original, titulo: 'Renovar el seguro del coche', texto: 'Renovar el seguro del coche, a ver si me hacen descuento por tener la ITV pasada, y preguntar si cubre la luna y el remolque.', etiquetas: ['coche', 'seguros'] },
+      { id: uid(), clase: 'tarea', fecha: HOY, tope: t, original, titulo: 'Llamar a la gestoría por el cambio de titular', texto: 'Llamar a la gestoría por lo del cambio de titular.', etiquetas: ['papeleo', 'coche'] });
+    if (previa) S.notas = S.notas.filter(x => x !== previa);
+    cerrar(); S.v = 'tareas'; S.etq = ''; render();
+    toast('Guardadas dos tareas para el ' + fechaLarga(t));
+  }
+
+  // ---- eventos ----
+  dlg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const d = b.dataset;
+    if ('cancelar' in d) return cerrar();
+    if (d.clase) { st.manual = true; ponerClase(d.clase); det.textContent = ''; return; }
+    if (d.tope) { tope.value = d.tope; st.topeTocado = true; leido.textContent = `${fechaLarga(d.tope)} (${relativo(d.tope)})`; return; }
+    if (d.ej) {
+      ta.value = EJ[d.ej].original; delete ta.dataset.manual; crecer(ta);
+      st.rev = null; st.revHecha = null; st.original = null;
+      if (!previa) { st.manual = false; st.topeTocado = false; }
+      pintarRev(); reglas();
+      return toast('Ahora pulsa ✨ Revisar');
+    }
+    if ('micro' in d) return toast('En el mock no se dicta: usa los ejemplos');
+    if ('revisar' in d) return revisar();
+    if ('revCerrar' in d) { st.rev = null; return pintarRev(); }
+    if (d.vista) { st.rev.vista = d.vista; return pintarRev(); }
+    if (d.fmt) { st.rev.fmt = d.fmt; return pintarRev(); }
+    if (d.revEtq) { st.rev.etqOn[d.revEtq] = !st.rev.etqOn[d.revEtq]; return pintarRev(); }
+    if ('aplicar' in d) return aplicarRev();
+    if ('deshacer' in d) return deshacer();
+    if ('verOriginal' in d) { st.verOriginal = !st.verOriginal; return pintarRev(); }
+    if ('volverOriginal' in d) { ta.value = st.original; st.original = null; st.revHecha = null; crecer(ta); pintarRev(); return toast('Vuelves al texto dictado'); }
+    if ('separar' in d) return separar();
+    if (d.quitarEtq) { st.tags = st.tags.filter(x => x !== d.quitarEtq); return pintarFichas(); }
+    if (d.sugEtq) return anadirEtq(d.sugEtq, false);
+    if ('borrar' in d) { S.notas = S.notas.filter(x => x !== previa); cerrar(); render(); toast('Borrada'); }
+  });
+  dlg.addEventListener('change', e => {
+    if (e.target.dataset.prob) { st.rev.acc[e.target.dataset.prob] = e.target.checked; pintarRev(); }
+    if (e.target === tope) { st.topeTocado = true; leido.textContent = tope.value ? `${fechaLarga(tope.value)} (${relativo(tope.value)})` : ''; }
+  });
+  dlg.addEventListener('keydown', e => {
+    if (e.target.id === 'n_etq' && (e.key === 'Enter' || e.key === ',')) { e.preventDefault(); if (e.target.value.trim()) anadirEtq(e.target.value); }
+  });
+  let espera = null;
+  dlg.addEventListener('input', e => {
+    if (e.target.id === 'n_etq' && e.target.value.includes(',')) return anadirEtq(e.target.value);
+    if (e.target === tit) { st.tituloIA = false; $('[data-titulo-ia]', dlg).textContent = ''; }
+    if (e.target !== ta) return;
+    if (st.rev && !st.rev.cargando) { st.rev = null; pintarRev(); }
+    clearTimeout(espera); espera = setTimeout(reglas, 300);
+  });
+  dlg.addEventListener('focusout', e => { if (e.target.id === 'n_etq' && e.target.value.trim()) anadirEtq(e.target.value, false); });
+  dlg.addEventListener('cancel', e => { e.preventDefault(); const c = $('.caja-texto.pantalla', dlg); if (c) c.salirPantalla(); else cerrar(); });
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const pendiente = $('#n_etq', dlg).value; if (pendiente.trim()) anadirEtq(pendiente, false);
+    const texto = ta.value.trim(), titulo = tit.value.trim();
+    if (st.clase === 'compra') {
+      const lineas = texto.replace(/^\s*(comprar|compra)\s+/i, '').split(/,|\by\b|\n/).map(s => s.trim()).filter(Boolean);
+      if (!lineas.length) { ta.focus(); return toast('Escribe o dicta qué comprar'); }
+      lineas.forEach(l => S.compra.push({ id: uid(), nombre: may(l), cantidad: '', etiqueta: 'otras' }));
+      cerrar(); S.v = 'compras'; render();
+      return toast(`${lineas.length} ${lineas.length === 1 ? 'línea nueva' : 'líneas nuevas'} en la compra`);
+    }
+    if (!texto && !titulo) { ta.focus(); return toast('Escribe o dicta algo'); }
+    if (st.clase === 'tarea' && !tope.value) { tope.focus(); return toast('Una tarea necesita fecha tope'); }
+    const nota = previa || { id: uid(), fecha: HOY };
+    Object.assign(nota, {
+      clase: st.clase, texto: texto || titulo, etiquetas: [...st.tags],
+      titulo: titulo || (st.clase === 'tarea' ? tituloTarea(texto) : tituloIdea(texto)),
+      tope: st.clase === 'tarea' ? tope.value : undefined, tipo: st.clase === 'idea' ? tipo.value : undefined,
+      original: st.original || undefined,
+    });
+    if (!previa) S.notas.push(nota);
+    cerrar();
+    S.v = st.clase === 'tarea' ? 'tareas' : 'ideas'; S.etq = '';
+    if (!nota.etiquetas.length) { etiquetarDespues([nota]); toast(titulo ? 'Guardada; el mayordomo le pone etiquetas' : 'Guardada; el mayordomo le pone título y etiquetas'); }
+    else { render(); toast('Guardada'); }
+  });
+
+  if (previa) {
+    ta.value = previa.texto || ''; tit.value = previa.titulo || '';
+    if (previa.tope) { tope.value = previa.tope; leido.textContent = `${fechaLarga(previa.tope)} (${relativo(previa.tope)})`; }
+    if (previa.tipo) tipo.value = previa.tipo;
+  }
+  ponerClase(st.clase);
+  if (!st.manual) det.textContent = 'Dicta y el mayordomo decide si es tarea, compra o idea; puedes cambiarlo.';
+  pintarFichas(); pintarRev();
+  dlg.showModal();
+  montarCaja($('.caja-texto', dlg));
+  ta.focus();
+}
+
+render();
+montarCaja($('.caja-texto[data-caja="demo"]'));
+</script>
+</body>
+</html>

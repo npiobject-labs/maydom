@@ -1,0 +1,35 @@
+{
+  "fecha": "2026-09-26T13:56:00+02:00",
+  "titulo": "Contar el ejercicio: hora de inicio y duración de la sesión a la vista",
+  "objetivo": "Guardar la hora a la que se empieza el ejercicio y que la duración corregida de la sesión se vea en el resumen.",
+  "prompts": [
+    {
+      "texto": "Dos correcciones por un lado quiero que incluyas la hora a la que se comienza a hacer el ejercicio y la segunda es que en la pantalla adjunta pone que el tiempo es de 30 minutos y lo he corregido en los detalles he pasado de 30 a 45 y no se ha actualizado en la pantalla de la primera pantalla en la general",
+      "nota": "dictado, con una captura de Seguimiento: «Por tiempo 30 min» en la semana y «45 min» en la sesión"
+    }
+  ],
+  "cambios": [
+    "Campo «Hora de inicio» en el diálogo; lo rellenan el mayordomo (hora en ejercicio-relato) y las reglas (horaDe). Sale en el historial y ordena las sesiones del día.",
+    "La tarjeta «Últimos 7 días» separa «Duración de las sesiones» de «En ejercicios por tiempo»; la sesión empieza por «N min de sesión».",
+    "Prompt con hora comprobado con el modelo real desde un workflow temporal, ya retirado.",
+    "Prueba de humo ampliada (48 comprobaciones), con el caso de corregir la duración; build MA-B1-20260926-003."
+  ],
+  "sha": null,
+  "sha_completo": null,
+  "run": null,
+  "mock": null,
+  "build": "MA-B1-20260926-003",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/ejercicio",
+  "fly": null,
+  "pendiente": [
+    "Fusionar la PR y confirmar pages.yml en verde.",
+    "Probar en el móvil."
+  ],
+  "enlaces": [
+    {
+      "texto": "PR 26",
+      "url": "https://github.com/npiobject-labs/maydom/pull/26"
+    }
+  ],
+  "notas": "Continúa la entrada 20260926-1346. El «tiempo de 30 minutos» era la suma de los ejercicios por tiempo (la caminata); lo corregido fue la duración de la sesión, que la tarjeta de la semana no enseñaba."
+}

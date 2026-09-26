@@ -90,7 +90,7 @@ export function volumenTexto(v) {
   if (!v || !v.ejercicios) return '';
   const p = [`${v.ejercicios} ${v.ejercicios === 1 ? 'ejercicio' : 'ejercicios'}`, `${v.series} ${v.series === 1 ? 'serie' : 'series'}`];
   if (v.reps) p.push(`${v.reps} repeticiones`);
-  if (v.seg) p.push(`${segTexto(v.seg)} por tiempo`);
+  if (v.seg) p.push(`${segTexto(v.seg)} en ejercicios por tiempo`);
   if (v.descanso) p.push(`${segTexto(v.descanso)} de descanso`);
   if (v.kg) p.push(`${v.kg.toLocaleString('es-ES')} kg movidos`);
   return p.join(' · ');
@@ -165,6 +165,19 @@ export function interpretarLocal(texto, catalogo = []) {
     items.push({ nombre, series, kg, descanso });
   }
   return items;
+}
+
+// La hora a la que se empezó, si el relato la dice: «a las diez de la mañana», «sobre las 7 y media de la
+// tarde», «a las 18:30». Sin «de la tarde» o «de la noche» se toma tal cual: «a las 7» son las 07:00.
+export function horaDe(texto) {
+  const t = String(texto || '').toLowerCase().replace(LETRAS, w => { const k = sinTildes(w); return k === 'una' ? '1' : NUMEROS[k] != null ? String(NUMEROS[k]) : w; });
+  const m = /\b(?:a|sobre|hacia|desde)\s+las?\s+(\d{1,2})(?!\d|\s*(?:series?|repeticiones|reps?|minutos?|segundos?|veces|kilos?|kg)\b)(?:[:.](\d{2}))?(?:\s*y\s+(media|cuarto))?(?:\s*de\s+la\s+(mañana|madrugada|tarde|noche))?/.exec(t);
+  if (!m) return null;
+  let h = Number(m[1]);
+  const min = m[2] ? Number(m[2]) : m[3] === 'media' ? 30 : m[3] === 'cuarto' ? 15 : 0;
+  if (m[4] === 'noche' && h === 12) h = 0;
+  else if ((m[4] === 'tarde' || m[4] === 'noche') && h < 12) h += 12;
+  return h <= 23 && min <= 59 ? `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}` : null;
 }
 
 // ---------- lo que devuelve el mayordomo ----------

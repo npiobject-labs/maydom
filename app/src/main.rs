@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use axum::{
+    extract::Query,
     http::{header, HeaderMap, HeaderValue, StatusCode},
     response::{IntoResponse, Response},
     routing::get,
@@ -53,6 +54,23 @@ Principios: (1) el sueño es la prioridad: objetivo 7 h, vale un tramo de 4,5-5 
 (5) ten en cuenta coste, tiempo y el calendario antes de proponer ocio o actividades. \
 Responde en español, breve y concreto (máximo 120 palabras salvo que pidan más), sin listas de más de 3 puntos, sin diagnósticos médicos: el criterio de suplementos es general y remite al médico.";
 
+// Informes con roles (ADR-010): cada rol y la síntesis son llamadas de este modo. No lleva la persona
+// del mayordomo (que responde en 120 palabras) ni su contexto: la tarea de la llamada lo dice todo.
+const SISTEMA_INFORME: &str = "Formas parte de un equipo que analiza, desde enfoques distintos, las ideas y notas personales de una sola persona. \
+Sigue al pie de la letra la estructura que pide la tarea de esta llamada. No inventes datos que el material no dé. \
+Responde en español, en markdown, con tono directo, sin preámbulos ni cortesías y sin hablar de ti ni del proceso.";
+
+// Modelos que Ajustes enseña arriba del selector, solo si están en el catálogo del gateway. Los nombres
+// cambian cada pocos meses: la variable de repositorio LLM_RECOMENDADOS (ids separados por comas) los
+// sustituye sin tocar código.
+const RECOMENDADOS: [(&str, &str); 5] = [
+    ("google/gemini-2.5-pro", "Buen equilibrio para informes largos"),
+    ("anthropic/claude-sonnet-4.5", "El que mejor redacta; más caro"),
+    ("openai/gpt-5", "Muy bueno analizando; algo más lento"),
+    ("google/gemini-2.5-flash", "Barato y decente para probar roles"),
+    ("deepseek/deepseek-chat-v3.1", "Muy barato"),
+];
+
 #[derive(Deserialize)]
 struct Mensaje {
     rol: String,
@@ -77,6 +95,29 @@ struct Peticion {
     // Nombre corto de la operación de negocio, para X-Operacion del gateway (chat, menu, foto...).
     #[serde(default)]
     operacion: String,
+    // Id de un modelo del catálogo del gateway (Ajustes → Modelo); vacío = LLM_MODELO o el del gateway.
+    #[serde(default)]
+    modelo: String,
+    // "informe": un rol o la síntesis de un informe (ADR-010). Sistema propio y respuestas largas.
+    #[serde(default)]
+    modo: String,
+}
+
+// Un id de modelo de OpenRouter es "proveedor/nombre[:variante]". Lo que no tenga esa forma no se reenvía.
+fn modelo_valido(m: &str) -> bool {
+    !m.is_empty() && m.len() <= 100 && m.chars().all(|c| c.is_ascii_alphanumeric() || "/._:-".contains(c))
+}
+
+// El coste se pregunta por operación: solo las de esta app y con los caracteres que maydom manda.
+fn operacion_valida(op: &str) -> bool {
+    op.starts_with("maydom-") && op.len() <= 60 && op.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+}
+
+fn recomendados() -> Vec<(String, String)> {
+    match variable("LLM_RECOMENDADOS") {
+        Some(v) => v.split(',').map(str::trim).filter(|s| !s.is_empty()).map(|s| (s.to_string(), "Recomendado".to_string())).collect(),
+        None => RECOMENDADOS.iter().map(|(id, motivo)| (id.to_string(), motivo.to_string())).collect(),
+    }
 }
 
 fn poner_cors(r: &mut Response) {
@@ -160,14 +201,19 @@ async fn mayordomo(cabeceras: HeaderMap, Json(p): Json<Peticion>) -> Response {
     let base = variable("LLM_BASE_URL").unwrap_or_else(|| BASE_DEFECTO.to_string());
     let url = format!("{}/chat/completions", base.trim_end_matches('/'));
 
-    let mut sistema = SISTEMA.to_string();
+    let informe = p.modo == "informe";
+    let modelo = p.modelo.trim();
+    if !modelo.is_empty() && !modelo_valido(modelo) {
+        return error(StatusCode::BAD_REQUEST, "modelo_invalido", "El modelo pedido no tiene forma de id del catálogo (proveedor/nombre)");
+    }
+    let mut sistema = if informe { SISTEMA_INFORME } else { SISTEMA }.to_string();
     if !p.contexto.trim().is_empty() {
         sistema.push_str("\n\nEstado actual de la persona:\n");
         sistema.push_str(&recortar(&p.contexto, 8000));
     }
     if !p.tarea.trim().is_empty() {
         sistema.push_str("\n\nTarea concreta de esta llamada:\n");
-        sistema.push_str(&recortar(&p.tarea, 4000));
+        sistema.push_str(&recortar(&p.tarea, if informe { 8000 } else { 4000 }));
     }
     let json_pedido = p.formato == "json";
     if json_pedido {
@@ -177,7 +223,8 @@ async fn mayordomo(cabeceras: HeaderMap, Json(p): Json<Peticion>) -> Response {
     let n = p.mensajes.len();
     for (i, m) in p.mensajes.iter().enumerate().skip(n.saturating_sub(12)) {
         let role = if m.rol == "usuario" || m.rol == "user" { "user" } else { "assistant" };
-        let texto = recortar(&m.contenido, 4000);
+        // Un informe manda de una vez todas las ideas (y, en la síntesis, lo de cada rol).
+        let texto = recortar(&m.contenido, if informe { 90_000 } else { 4000 });
         let ultimo = i + 1 == n;
         if ultimo && role == "user" && p.imagen.starts_with("data:image/") && p.imagen.len() < 6_000_000 {
             mensajes.push(json!({ "role": role, "content": [
@@ -194,11 +241,13 @@ async fn mayordomo(cabeceras: HeaderMap, Json(p): Json<Peticion>) -> Response {
 
     let mut cuerpo = json!({
         "messages": mensajes,
-        "max_tokens": if json_pedido { 2000 } else { 600 },
-        "temperature": if json_pedido { 0.3 } else { 0.6 },
+        "max_tokens": if informe { 2500 } else if json_pedido { 2000 } else { 600 },
+        "temperature": if informe { 0.4 } else if json_pedido { 0.3 } else { 0.6 },
         "user": "maydom",
     });
-    if let Some(m) = variable("LLM_MODELO") {
+    if !modelo.is_empty() {
+        cuerpo["model"] = Value::String(modelo.to_string());
+    } else if let Some(m) = variable("LLM_MODELO") {
         cuerpo["model"] = Value::String(m);
     }
     if json_pedido {
@@ -254,8 +303,10 @@ async fn mayordomo(cabeceras: HeaderMap, Json(p): Json<Peticion>) -> Response {
             if json_pedido {
                 texto = limpiar_json(&texto);
             }
-            let modelo = datos.get("model").and_then(Value::as_str).unwrap_or("").to_string();
-            return con_cors(StatusCode::OK, json!({ "respuesta": texto, "modelo": modelo, "uso_id": uso_id, "aviso": aviso, "usage": datos.get("usage").cloned().unwrap_or(Value::Null) }));
+            let servido = datos.get("model").and_then(Value::as_str).unwrap_or("").to_string();
+            // Llega con éxito pero a medias si el modelo topó con max_tokens: la app lo avisa.
+            let cortada = datos.pointer("/choices/0/finish_reason").and_then(Value::as_str) == Some("length");
+            return con_cors(StatusCode::OK, json!({ "respuesta": texto, "modelo": servido, "cortada": cortada, "uso_id": uso_id, "aviso": aviso, "usage": datos.get("usage").cloned().unwrap_or(Value::Null) }));
         }
 
         // Sobre de error del gateway: {"ok":false,"error":{"message","code","type"}}.
@@ -289,6 +340,104 @@ async fn mayordomo(cabeceras: HeaderMap, Json(p): Json<Peticion>) -> Response {
     ultimo.unwrap_or_else(|| error(StatusCode::BAD_GATEWAY, "gateway_inalcanzable", "Sin respuesta del gateway"))
 }
 
+// GET al gateway con la clave de aplicación, que no sale del servidor. Consultar el catálogo o el uso no
+// gasta crédito. Los errores salen con el mismo sobre y el código del gateway prefijado.
+async fn consultar_gateway(ruta: &str) -> Result<Value, Response> {
+    let clave = variable("LLM_API_KEY").ok_or_else(|| error(StatusCode::SERVICE_UNAVAILABLE, "falta_llm_api_key", "El backend no tiene clave del gateway (secreto LLM_API_KEY)"))?;
+    let base = variable("LLM_BASE_URL").unwrap_or_else(|| BASE_DEFECTO.to_string());
+    let respuesta = reqwest::Client::new()
+        .get(format!("{}{ruta}", base.trim_end_matches('/')))
+        .bearer_auth(clave)
+        .timeout(Duration::from_secs(30))
+        .send()
+        .await
+        .map_err(|e| error(StatusCode::BAD_GATEWAY, "gateway_inalcanzable", format!("El gateway no responde: {e}")))?;
+    let estado = respuesta.status();
+    let datos: Value = respuesta.json().await.unwrap_or(Value::Null);
+    if !estado.is_success() {
+        let codigo = datos.pointer("/error/code").and_then(Value::as_str).unwrap_or("rechaza");
+        let mensaje = datos.pointer("/error/message").and_then(Value::as_str).unwrap_or("sin detalle");
+        return Err(error(StatusCode::from_u16(estado.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY), &format!("gateway_{codigo}"), format!("El gateway devolvió {}: {mensaje}", estado.as_u16())));
+    }
+    Ok(datos)
+}
+
+// Catálogo de modelos de texto del gateway para el selector de Ajustes, por nombre, con los recomendados
+// marcados y el que se usa si no se elige ninguno. Exige X-Clave: usa la clave del gateway.
+async fn modelos(cabeceras: HeaderMap) -> Response {
+    if !autorizado(&cabeceras) {
+        return error(StatusCode::UNAUTHORIZED, "sin_clave", "Clave de acceso incorrecta");
+    }
+    let (catalogo, estado_gw) = tokio::join!(consultar_gateway("/models"), consultar_gateway("/estado"));
+    let catalogo = match catalogo {
+        Ok(c) => c,
+        Err(r) => return r,
+    };
+    let defecto = variable("LLM_MODELO").or_else(|| estado_gw.ok()?.get("modelo_defecto")?.as_str().map(str::to_string));
+    let rec = recomendados();
+    let mut lista: Vec<Value> = catalogo
+        .get("data")
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(|m| modelo_de_catalogo(m, &rec)).collect())
+        .unwrap_or_default();
+    lista.sort_by_key(|m| m["nombre"].as_str().unwrap_or("").to_lowercase());
+    con_cors(StatusCode::OK, json!({ "defecto": defecto, "modelos": lista }))
+}
+
+// Un modelo del catálogo tal como lo pinta la app, o None si no sirve: sin texto de entrada, o con
+// precio negativo (los enrutadores automáticos de OpenRouter, que no tienen precio fijo).
+fn modelo_de_catalogo(m: &Value, rec: &[(String, String)]) -> Option<Value> {
+    let id = m.get("id")?.as_str()?;
+    let modalidades: Vec<&str> = m.get("modalidades").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).collect()).unwrap_or_default();
+    if !modalidades.is_empty() && !modalidades.contains(&"text") {
+        return None;
+    }
+    let precio = |k: &str| m.get(k).and_then(Value::as_f64).unwrap_or(0.0);
+    if precio("entrada") < 0.0 || precio("salida") < 0.0 {
+        return None;
+    }
+    let nombre = m.get("nombre").and_then(Value::as_str).filter(|n| !n.is_empty()).unwrap_or(id);
+    Some(json!({
+        "id": id,
+        "nombre": nombre,
+        "contexto": m.get("contexto").and_then(Value::as_u64).unwrap_or(0),
+        "entrada": precio("entrada"),
+        "salida": precio("salida"),
+        "json": m.get("json").and_then(Value::as_bool).unwrap_or(false),
+        "imagen": modalidades.contains(&"image"),
+        "recomendado": rec.iter().find(|(r, _)| r == id).map(|(_, motivo)| motivo.clone()),
+    }))
+}
+
+#[derive(Deserialize)]
+struct ConsultaUso {
+    #[serde(default)]
+    operacion: String,
+}
+
+// Lo que costó una operación (un informe entero, con sus reintentos) según lo anotado en el gateway.
+async fn uso(cabeceras: HeaderMap, Query(q): Query<ConsultaUso>) -> Response {
+    if !autorizado(&cabeceras) {
+        return error(StatusCode::UNAUTHORIZED, "sin_clave", "Clave de acceso incorrecta");
+    }
+    let op = q.operacion.trim();
+    if !operacion_valida(op) {
+        return error(StatusCode::BAD_REQUEST, "operacion_invalida", "La operación tiene que empezar por maydom- y llevar solo letras, cifras y guiones");
+    }
+    match consultar_gateway(&format!("/uso/resumen?operacion={op}")).await {
+        Ok(v) => con_cors(
+            StatusCode::OK,
+            json!({
+                "operacion": op,
+                "llamadas": v.pointer("/totales/llamadas").and_then(Value::as_i64).unwrap_or(0),
+                "fallos": v.pointer("/totales/fallos").and_then(Value::as_i64).unwrap_or(0),
+                "coste": v.pointer("/totales/coste").and_then(Value::as_f64),
+            }),
+        ),
+        Err(r) => r,
+    }
+}
+
 #[tokio::main]
 async fn main() {
     let app = Router::new()
@@ -297,6 +446,8 @@ async fn main() {
         .route("/holamundo", get(holamundo))
         .route("/api/estado", get(estado).options(preflight))
         .route("/api/mayordomo", axum::routing::post(mayordomo).options(preflight))
+        .route("/api/modelos", get(modelos).options(preflight))
+        .route("/api/uso", get(uso).options(preflight))
         // Una foto reducida en el móvil ronda los 200 KB en base64; 8 MB deja margen.
         .layer(axum::extract::DefaultBodyLimit::max(8 * 1024 * 1024));
 
@@ -313,4 +464,37 @@ async fn main() {
         })
         .await
         .expect("fallo del servidor HTTP");
+}
+
+#[cfg(test)]
+mod pruebas {
+    use super::*;
+
+    #[test]
+    fn modelo_con_forma_de_id() {
+        assert!(modelo_valido("google/gemini-2.5-flash"));
+        assert!(modelo_valido("meta-llama/llama-3.3-70b-instruct:free"));
+        assert!(!modelo_valido(""));
+        assert!(!modelo_valido("google/gemini 2.5"));
+        assert!(!modelo_valido("a\"b"));
+        assert!(!modelo_valido(&"x".repeat(101)));
+    }
+
+    #[test]
+    fn solo_operaciones_de_maydom() {
+        assert!(operacion_valida("maydom-informe-abc123-2"));
+        assert!(!operacion_valida("informe-abc"));
+        assert!(!operacion_valida("maydom-x&y=1"));
+    }
+
+    #[test]
+    fn el_catalogo_quita_lo_que_no_es_texto_y_los_enrutadores() {
+        let rec = vec![("a/b".to_string(), "Recomendado".to_string())];
+        let m = modelo_de_catalogo(&json!({"id":"a/b","nombre":"","contexto":1000,"entrada":0.1,"salida":0.4,"json":true,"modalidades":["text","image"]}), &rec).unwrap();
+        assert_eq!(m["nombre"], "a/b");
+        assert_eq!(m["recomendado"], "Recomendado");
+        assert_eq!(m["imagen"], true);
+        assert!(modelo_de_catalogo(&json!({"id":"x/audio","modalidades":["audio"]}), &rec).is_none());
+        assert!(modelo_de_catalogo(&json!({"id":"openrouter/auto","entrada":-1000000.0,"salida":-1000000.0}), &rec).is_none());
+    }
 }

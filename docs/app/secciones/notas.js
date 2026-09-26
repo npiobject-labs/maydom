@@ -2,18 +2,20 @@
 // La clase la decide el mayordomo (operación `nota`, la misma llamada que pone el título) y, sin
 // LLM o mientras llega, las reglas de interpretar-nota.js; lo que se elige a mano manda.
 // Las compras no se guardan como notas: son líneas de la lista de Compra, que es una sola.
-import { estado, guardar, h, lista, crudo, delegar, uid, hoyISO, diasEntre, fechaCorta, fechaLarga, confirmar, toast, aviso, esc, navegar, rutaActual, tomarOrigen, crecer, montarCajas, salirPantalla } from '../nucleo.js';
+import { estado, guardar, h, lista, crudo, delegar, pedir, uid, hoyISO, diasEntre, fechaCorta, fechaLarga, confirmar, toast, aviso, esc, navegar, rutaActual, tomarOrigen, crecer, montarCajas, salirPantalla } from '../nucleo.js';
 import { pedirJSON } from '../llm.js';
 import { botonDictado } from '../voz.js';
 import { CLASES, claseDe, topeDe, lineasDe, tituloTarea, partesDe, etiquetaCompra, sinAcentos, ETIQUETAS_COMPRA } from '../interpretar-nota.js';
 import { revision, resultado, cambios, detalleCambio } from '../revisar-texto.js';
 import { anadirCompras, etiquetaDe, nombreEtiqueta, etiquetasCompra, editarLinea, marcarComprado, categoriaBusqueda } from './compra.js';
+import { abrirAnalisis, crearInforme, regenerar, reintentar, generando, copiarInforme, descargarInforme, compartirInforme, nombreModelo, dolares, fechaHora } from '../informe.js';
+import { markdown } from '../markdown.js';
 
 const ETIQUETAS = ['ejercicio', 'sueno', 'meditacion', 'alimentacion', 'suplementos', 'proyecto', 'ocio', 'finanzas', 'calendario', 'mayordomo', 'idea', 'casa', 'papeleo', 'salud'];
 const TIPOS = [{ v: 'nota', l: 'Nota' }, { v: 'preferencia', l: 'Preferencia (guía al mayordomo)' }, { v: 'tendencia', l: 'Tendencia (algo que noto)' }];
 const VALIDOS = TIPOS.map(t => t.v);
 const NOMBRE_CLASE = { tarea: '☑ Tarea', compra: '🛒 Compra', idea: '💡 Idea' };
-const PESTANAS = [{ v: 'tareas', l: 'Tareas', clase: 'tarea' }, { v: 'compras', l: 'Compras', clase: 'compra' }, { v: 'ideas', l: 'Ideas', clase: 'idea' }];
+const PESTANAS = [{ v: 'tareas', l: 'Tareas', clase: 'tarea' }, { v: 'compras', l: 'Compras', clase: 'compra' }, { v: 'ideas', l: 'Ideas', clase: 'idea' }, { v: 'informes', l: 'Informes' }];
 const PESTANA_DE = { tarea: 'tareas', compra: 'compras', idea: 'ideas' };
 
 export const esIdea = n => (n.clase || 'idea') === 'idea';
@@ -555,13 +557,18 @@ function cuerpoCompras(params) {
     ${hechos.length ? h`<details class="plegable"><summary>Comprado <span class="mini">${hechos.length}</span></summary><div class="cuerpo">${lista(hechos.map(c => h`<div class="mini">✓ ${c.nombre} ${c.cantidad || ''}</div>`))}</div></details>` : ''}
     <p class="mini">Es la misma lista que <a href="#/compra">🧺 Compra</a>, que la agrupa por tienda y repone el stock al marcar comprado.</p>`;
 }
+// Las ideas que se ven con el buscador y la etiqueta puestos: son las que se ofrecen para analizar.
+function ideasVisibles(params) {
+  const filtro = (params.q || '').toLowerCase(), etq = params.etq || '';
+  return estado.notas.filter(n => esIdea(n) && (!filtro || (n.texto + ' ' + (n.titulo || '')).toLowerCase().includes(filtro)) && (!etq || (n.etiquetas || []).includes(etq))).sort((a, b) => b.fecha.localeCompare(a.fecha) || b.id.localeCompare(a.id));
+}
 function cuerpoIdeas(params) {
   const filtro = (params.q || '').toLowerCase(), etq = params.etq || '';
   const ideas = estado.notas.filter(esIdea);
-  const notas = ideas.filter(n => (!filtro || (n.texto + ' ' + (n.titulo || '')).toLowerCase().includes(filtro)) && (!etq || (n.etiquetas || []).includes(etq))).sort((a, b) => b.fecha.localeCompare(a.fecha) || b.id.localeCompare(a.id));
+  const notas = ideasVisibles(params);
   const usadas = [...new Set(ideas.flatMap(n => n.etiquetas || []))];
   const sinAnalizar = ideas.filter(n => !n.analizada && !n.tituloManual);
-  return h`<div class="acciones"><input type="search" placeholder="Buscar en las ideas" value="${filtro}" data-i="filtrar"><button class="btn p" data-a="nuevaIdea">+ Idea</button><button class="btn" data-a="nueva">+ Nota</button></div>
+  return h`<div class="acciones"><input type="search" placeholder="Buscar en las ideas" value="${filtro}" data-i="filtrar"><button class="btn p" data-a="nuevaIdea">+ Idea</button><button class="btn" data-a="nueva">+ Nota</button>${notas.length ? crudo('<button class="btn" data-a="analizar">🔎 Analizar</button>') : ''}</div>
     ${usadas.length ? h`<div class="chips">${lista([h`<button class="pill ${etq ? '' : 'sel'}" data-a="etq" data-e="">todas</button>`, ...usadas.map(e => h`<button class="pill ${e === etq ? 'sel' : ''}" data-a="etq" data-e="${e}">${e}</button>`)])}</div>` : ''}
     ${sinAnalizar.length > 1 ? h`<div class="tarjeta fila"><div class="t mini">${sinAnalizar.length} ideas sin título propio</div><button class="btn" data-a="lote">Titularlas</button></div>` : ''}
     ${notas.length ? lista(notas.map(n => h`<div class="tarjeta nota t-${n.tipo}" data-a="editar" data-id="${n.id}">
@@ -569,15 +576,62 @@ function cuerpoIdeas(params) {
       <div class="mini">${fechaCorta(n.fecha)} · ${n.tipo}${n.tipoSugerido ? ' (sugerido)' : ''}${n.original ? ' · ✨ revisada' : ''}</div>
       <div class="cuerpo">${n.texto}</div>${(n.etiquetas || []).length ? h`<div class="etqs">${lista(n.etiquetas.map(e => h`<button class="etq" data-a="etq" data-e="${e}" aria-label="Filtrar por ${e}">${e}</button>`))}</div>` : ''}</div>`)) : aviso('Sin ideas. Cualquier cosa vale: una idea, un plato que te sentó bien, un ejercicio que no repetirías.')}`;
 }
+// Informes con roles (ADR-010): lista y lectura. El progreso se repinta solo, porque cada paso guarda.
+const ICONO_ESTADO = { espera: '⏳', trabajando: '⏳', hecho: '✓', fallido: '✗' };
+const PILDORA = { generando: ['w', 'generando'], sintesis: ['w', 'sintetizando'], listo: ['ok', 'listo'], incompleto: ['w', 'con fallos'], fallido: ['mal', 'falló'] };
+const pildora = inf => { const [c, t] = PILDORA[inf.estado] || ['g', inf.estado]; return h`<span class="pill ${c}">${t}</span>`; };
+function cuerpoInformes(params) {
+  const inf = params.id && estado.informes.find(x => x.id === params.id);
+  if (!inf) return h`<div class="acciones"><button class="btn p" data-a="irIdeas">🔎 Analizar ideas</button></div>
+    ${estado.informes.length ? lista(estado.informes.map(i => h`<div class="tarjeta" data-a="verInforme" data-id="${i.id}"><b>${i.titulo}</b>
+      <div class="mini">${fechaHora(i.creado)} · ${i.roles.map(r => r.icono).join(' ')} ${i.roles.length} ${i.roles.length === 1 ? 'rol' : 'roles'} · ${i.fuentes.length} ${i.fuentes.length === 1 ? 'idea' : 'ideas'}${i.coste != null ? ' · ' + dolares(i.coste) : ''} ${pildora(i)}</div></div>`))
+      : aviso('Aún no hay informes. En Ideas, «🔎 Analizar» junta las que elijas y varios roles (crítico, económico, técnico…) las analizan; una síntesis cruza lo que dicen.')}`;
+  const enMarcha = ['generando', 'sintesis'].includes(inf.estado), fallidos = inf.roles.filter(r => r.estado === 'fallido');
+  const salidas = h`<div class="acciones"><button class="btn" data-a="copiarInf" data-id="${inf.id}">📋 Copiar</button><button class="btn" data-a="descargarInf" data-id="${inf.id}">⬇ .md</button><button class="btn" data-a="imprimirInf" data-id="${inf.id}">🖨 PDF</button>${navigator.share ? crudo(`<button class="btn" data-a="compartirInf" data-id="${esc(inf.id)}">Compartir</button>`) : ''}</div>`;
+  return h`<div class="acciones"><button class="btn" data-a="pestana" data-v="informes">← Informes</button></div>
+    <h2 class="titulo-informe">${inf.titulo}</h2>
+    <div class="mini">🔎 Informe · 🧠 ${nombreModelo(inf.modelo)}${inf.coste != null ? ' · ' + dolares(inf.coste) : ''} · ${fechaHora(inf.creado)} ${pildora(inf)}${inf.editado ? ' · editado a mano' : ''}</div>
+    <div class="chips">${lista(inf.roles.map(r => h`<span class="pill ${r.estado === 'fallido' ? 'mal' : 'g'}" title="${r.enfoque}">${r.icono} ${r.nombre}</span>`))}</div>
+    ${enMarcha ? h`<div class="tarjeta progreso"><b>Generando…</b><ul>${lista(inf.roles.map(r => h`<li class="${r.estado}">${ICONO_ESTADO[r.estado]} ${r.icono} ${r.nombre}${r.estado === 'fallido' ? ' — ' + r.error : ''}</li>`))}
+      <li class="${inf.estado === 'sintesis' ? 'trabajando' : 'espera'}">⏳ Síntesis</li></ul>
+      <div class="barra"><i style="width:${Math.round(100 * inf.roles.filter(r => ['hecho', 'fallido'].includes(r.estado)).length / (inf.roles.length + 1))}%"></i></div>
+      <div class="mini">Sigue aunque cambies de sección; si cierras la app a medias, lo pendiente se puede reintentar.</div></div>` : ''}
+    ${!enMarcha && (fallidos.length || inf.error) ? h`<div class="tarjeta aviso-informe">⚠️ ${fallidos.length ? `${fallidos.map(r => r.nombre).join(', ')} no respondi${fallidos.length === 1 ? 'ó' : 'eron'} (${fallidos[0].error}).` : inf.error}
+      <div class="acciones"><button class="btn p" data-a="reintentarInf" data-id="${inf.id}">Reintentar ${fallidos.length === 1 ? fallidos[0].nombre : fallidos.length ? 'los que fallaron' : 'la síntesis'}</button></div></div>` : ''}
+    ${!enMarcha && inf.texto ? h`${salidas}<div class="tarjeta md md-informe">${crudo(markdown(inf.texto))}</div>${salidas}` : ''}
+    ${enMarcha ? '' : h`<div class="acciones"><button class="btn" data-a="editarInf" data-id="${inf.id}">✏️ Editar</button><button class="btn" data-a="regenerarInf" data-id="${inf.id}">↻ Regenerar</button><button class="btn peligro" data-a="borrarInf" data-id="${inf.id}">Borrar</button></div>`}`;
+}
 function render(cont, params) {
   const v = PESTANAS.some(p => p.v === params.v) ? params.v : 'tareas';
   const pend = tareasPendientes(), vencidas = pend.filter(n => n.tope && n.tope < hoyISO()).length;
-  const cuenta = { tareas: pend.length, compras: estado.compra.filter(c => !c.comprado).length, ideas: estado.notas.filter(esIdea).length };
+  const cuenta = { tareas: pend.length, compras: estado.compra.filter(c => !c.comprado).length, ideas: estado.notas.filter(esIdea).length, informes: estado.informes.length };
   cont.innerHTML = h`<div class="pestanas">${lista(PESTANAS.map(p => h`<button class="${p.v === v ? 'sel' : ''}" data-a="pestana" data-v="${p.v}">${p.l}${cuenta[p.v] ? crudo(`<i class="n ${p.v === 'tareas' && vencidas ? 'mal' : ''}">${cuenta[p.v]}</i>`) : ''}</button>`))}</div>
-    ${v === 'tareas' ? cuerpoTareas(params) : v === 'compras' ? cuerpoCompras(params) : cuerpoIdeas(params)}`;
+    ${v === 'tareas' ? cuerpoTareas(params) : v === 'compras' ? cuerpoCompras(params) : v === 'informes' ? cuerpoInformes(params) : cuerpoIdeas(params)}`;
   const repintar = () => render(cont, params);
   delegar(cont, {
     pestana: el => navegar('notas', { v: el.dataset.v }),
+    analizar: async () => { const v = await abrirAnalisis({ ideas: ideasVisibles(params) }); if (v) navegar('notas', { v: 'informes', id: crearInforme(v) }); },
+    irIdeas: () => navegar('notas', { v: 'ideas' }),
+    verInforme: el => navegar('notas', { v: 'informes', id: el.dataset.id }),
+    copiarInf: el => copiarInforme(informe(el)),
+    descargarInf: el => descargarInforme(informe(el)),
+    compartirInf: el => compartirInforme(informe(el)),
+    imprimirInf: () => window.print(),
+    reintentarInf: el => reintentar(informe(el)),
+    regenerarInf: async el => {
+      const inf = informe(el); if (generando(inf)) return;
+      if (inf.editado && !(await confirmar('Lo editado a mano se pierde al regenerar. ¿Seguir?', 'Seguir'))) return;
+      const v = await abrirAnalisis({ previo: inf }); if (v) regenerar(inf, v);
+    },
+    editarInf: async el => {
+      const inf = informe(el);
+      const v = await pedir('Editar el informe', [{ n: 'texto', l: 'Markdown', t: 'textarea', filas: 16 }], { texto: inf.texto });
+      if (v && v.texto !== inf.texto) { inf.texto = v.texto; inf.editado = true; guardar(); toast('Informe guardado'); }
+    },
+    borrarInf: async el => {
+      const inf = informe(el); if (generando(inf)) return toast('Espera a que termine');
+      if (await confirmar(`¿Borrar el informe «${inf.titulo}»? Las ideas no se tocan.`, 'Borrar')) { estado.informes = estado.informes.filter(x => x !== inf); guardar(); navegar('notas', { v: 'informes' }); }
+    },
     nueva: () => abrirNota(),
     nuevaTarea: () => abrirNota({ clase: 'tarea' }),
     nuevaCompra: () => abrirNota({ clase: 'compra' }),
@@ -614,4 +668,5 @@ function render(cont, params) {
     },
   });
 }
+const informe = el => estado.informes.find(x => x.id === el.dataset.id);
 export default { id: 'notas', titulo: 'Notas', grupo: 'Agenda', icono: '✎', render };

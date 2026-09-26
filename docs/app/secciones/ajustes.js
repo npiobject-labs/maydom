@@ -1,7 +1,8 @@
-import { estado, guardar, reemplazarEstado, h, lista, crudo, delegar, pedir, confirmar, toast, urlBackend, pedirPermisoAvisos, hoyISO, CLAVE } from '../nucleo.js';
+import { estado, guardar, reemplazarEstado, h, lista, crudo, delegar, pedir, confirmar, toast, urlBackend, pedirPermisoAvisos, hoyISO, CLAVE, rutaActual } from '../nucleo.js';
 import { estadoLLM } from '../llm.js';
 import { esc } from '../nucleo.js';
 import * as S from '../datos/semillas.js';
+import { botonModelo, elegirModelo, cargarCatalogo, catalogoListo, nombreModelo, todosLosRoles, abrirRol } from '../informe.js';
 import { BUILD, buscarVersion, versionNueva, actualizar, instalar, instalada, puedeInstalar } from '../pwa.js';
 
 // Copia las semillas al estado si el catálogo correspondiente está vacío (o siempre, con forzar).
@@ -40,6 +41,15 @@ function render(cont) {
       ${a.llm ? crudo(`<div class="mini">LLM: <b>${a.llm.llm ? 'disponible' : 'no configurado en el backend'}</b>${a.llm.modelo ? ' · modelo ' + esc(a.llm.modelo) : ''}${a.llm.clave_requerida ? ' · exige clave de acceso' : ''}</div>`) : ''}
       <div class="acciones"><button class="btn" data-a="backend">Cambiar URL</button><button class="btn p" data-a="clave">Clave de acceso</button><button class="btn" data-a="probar">Probar /salud</button><button class="btn" data-a="estado">Estado del LLM</button></div>
       <div id="salida-backend" class="mini"></div></div>
+    <h3>Modelo e informes</h3>
+    <div class="tarjeta"><div class="mini">Modelo para el mayordomo y los informes</div>
+      ${botonModelo(a.modelo, a.modelo ? 'Elegido en Ajustes' : 'Por defecto', 'modelo')}
+      <div class="mini">Rellenar campos (notas, noche, ejercicio, extractos…) y leer fotos sigue con el modelo barato del servidor: esto cambia lo que redacta —el chat, los consejos y los informes—. En la hoja de Analizar se puede cambiar para un informe concreto.</div>
+      <div class="mini" id="salida-modelo"></div></div>
+    <h3>Roles de análisis</h3>
+    <div class="tarjeta lista-roles">${lista(todosLosRoles().map(r => h`<button type="button" class="fila" data-a="rol" data-id="${r.id}"><span class="ico">${r.icono}</span><span class="t"><b>${r.nombre}</b><small>${r.propio ? 'PROPIO · ' : ''}${r.enfoque}</small></span><i>›</i></button>`))}
+      <div class="acciones"><button class="btn" data-a="nuevoRol">＋ Nuevo rol</button></div>
+      <div class="mini">Los propios se guardan en este navegador y viajan en la copia JSON. Los de serie no se editan, pero se pueden duplicar para ajustarlos. Se usan en Notas → Ideas → 🔎 Analizar.</div></div>
     <h3>Aspecto</h3>
     <div class="tarjeta"><div class="acciones">${lista(['auto', 'light', 'dark'].map(t => h`<button class="btn ${a.tema === t ? 'p' : ''}" data-a="tema" data-t="${t}">${{ auto: 'Sistema', light: 'Claro', dark: 'Oscuro' }[t]}</button>`))}</div></div>
     <p class="mini"><a href="bitacora.html">bitácora</a> · <a href="mocks/">mocks</a> · <a href="holamundo.html">comprobación del backend</a></p>`;
@@ -76,6 +86,19 @@ function render(cont) {
       catch (e) { out.textContent = 'Error: ' + e.message; }
     },
     tema: el => { a.tema = el.dataset.t; guardar(); aplicarTema(); },
+    modelo: async () => {
+      const id = await elegirModelo({ titulo: 'Modelo para el mayordomo y los informes', aviso: 'El que usan el chat, los consejos y los informes si no eliges otro al analizar. Se guarda en este dispositivo.', actual: a.modelo || '' });
+      if (id == null) return;
+      a.modelo = id; guardar(); toast('Modelo: ' + nombreModelo(id));
+    },
+    rol: el => { const r = todosLosRoles().find(x => x.id === el.dataset.id); if (r) abrirRol(r); },
+    nuevoRol: () => abrirRol(null),
+  });
+  // El catálogo trae nombre y precio del modelo; se pide una vez y se repinta al llegar. Sin clave de
+  // acceso (y sin saber que el backend no la exige) sería un 401 seguro: se pide al abrir el selector.
+  if (!catalogoListo() && (a.clave || a.llm?.clave_requerida === false)) cargarCatalogo().then(c => {
+    if (rutaActual().id !== 'ajustes' || document.querySelector('dialog[open]')) return;
+    if (c.error) { const out = cont.querySelector('#salida-modelo'); if (out) out.textContent = 'Sin catálogo de modelos: ' + c.error; } else render(cont);
   });
 }
 export function aplicarTema() { const t = estado.ajustes.tema; if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t; }

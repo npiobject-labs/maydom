@@ -16,8 +16,9 @@ const vacio = () => ({
   sueno: [], alimentos: [], platos: [], menus: [], comidas: [],
   suplementos: [], tomas: [], compra: [], proyectos: [], horas: [], sesionTrabajo: null,
   ocio: [], movimientos: [], recurrentes: [], importaciones: [], tiendas: [], consejos: [], chat: [], memoria: [],
-  accesos: [], usos: {},
-  ajustes: { backend: '', clave: '', avisos: false, tema: 'auto', semillasCargadas: false, llm: null },
+  accesos: [], usos: {}, roles: [], informes: [],
+  // modelo: el de Ajustes para lo que redacta el mayordomo ('' = el del servidor); rolesInforme: la última elección de roles.
+  ajustes: { backend: '', clave: '', avisos: false, tema: 'auto', semillasCargadas: false, llm: null, modelo: '', rolesInforme: null },
 });
 
 function cargar() {

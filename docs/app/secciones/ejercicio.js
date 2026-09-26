@@ -1,7 +1,9 @@
-import { estado, guardar, h, lista, crudo, delegar, uid, hoyISO, fechaCorta, pedir, confirmar, toast, aviso, navegar, duracionTexto } from '../nucleo.js';
+import { estado, guardar, h, lista, crudo, delegar, uid, hoyISO, sumarDias, fechaCorta, pedir, confirmar, toast, aviso, navegar, duracionTexto, finCaja } from '../nucleo.js';
 import { TIPOS_EJERCICIO, pildoras as PILDORAS } from '../datos/semillas.js';
 import { crearEvento, primerHueco } from '../agenda.js';
 import { pedirJSON, conLLM, lista as listaLLM } from '../llm.js';
+import { hayVoz } from '../voz.js';
+import { leerDetalle, leerSeries, componerDetalle, volumen, volumenTexto, segTexto, interpretarLocal, desdeLLM, vincular } from '../interpretar-ejercicio.js';
 
 const ejercicio = id => estado.ejercicios.find(e => e.id === id);
 const camposEj = [
@@ -37,6 +39,110 @@ export function pildoraAleatoria() {
   const lista = preferidos.length ? preferidos : pool;
   return lista[Math.floor(Math.random() * lista.length)] || null;
 }
+
+// ---------- contar el ejercicio hablando ----------
+// Mismo patrón que «Contar la noche»: el relato arriba, el botón que lo traduce justo debajo y los
+// ejercicios en una caja que se repasa, uno por línea («Flexiones: 4 × 12 · descanso 60 s»). El relato
+// se guarda siempre: es la fuente, y los ejercicios, su interpretación.
+const camposContar = [
+  { n: 'relato', l: 'Cuéntame el ejercicio', t: 'textarea', filas: 5, ph: 'He hecho 4 series de 12 flexiones descansando un minuto, luego 3 series de 45 segundos de plancha con 30 segundos de descanso…' },
+  { n: 'fecha', l: 'Fecha', t: 'date', req: true },
+  { n: 'detalle', l: 'Ejercicios, uno por línea', t: 'textarea', filas: 4, ph: 'Flexiones: 4 × 12 · descanso 60 s\nPlancha: 3 × 45 s · descanso 30 s\nDominadas: 8, 6, 5 · 10 kg · descanso 90 s' },
+  { n: 'duracion', l: 'Duración de la sesión (min, opcional)', t: 'number', min: 0 },
+  { n: 'nota', l: 'Cómo fue (opcional)', ph: 'flojo de piernas, mucho calor…' },
+];
+const DATOS_CONTADA = ['fecha', 'detalle', 'duracion', 'nota'];
+const contada = s => s?.origen === 'relato';
+const nombreSesion = items => items.length ? items.slice(0, 3).map(i => i.nombre).join(', ') + (items.length > 3 ? '…' : '') : 'Sesión contada';
+
+// Pasa el relato al mayordomo. Nunca inventa: lo que el texto no diga vuelve vacío y no se escribe.
+export async function interpretarConLLM(relato, fechaRef) {
+  const nombres = estado.ejercicios.map(e => e.nombre).slice(0, 80).join('; ');
+  const j = await pedirJSON({
+    operacion: 'ejercicio-relato', contexto: false,
+    tarea: `Alguien cuenta el ejercicio que ha hecho. Hoy es ${fechaRef}. Devuelve solo este JSON:
+{"fecha":"AAAA-MM-DD","duracion":<minutos de toda la sesión>,"ejercicios":[{"nombre":"","series":[<repeticiones de cada serie>],"segundos":[<segundos de cada serie>],"kg":<peso>,"descanso":<segundos entre series>}],"nota":"<una línea>"}
+Reglas: un objeto por ejercicio, en el orden en que se cuentan. "series" lleva las repeticiones de cada serie, un número por serie ("4 series de 12" es [12,12,12,12]; "8, 6 y 5" es [8,6,5]). Si el ejercicio es isométrico o va por tiempo (plancha, sentadilla isométrica, correr 20 minutos), "series" va vacío y "segundos" lleva lo que duró cada serie ("3 de 45 segundos" es [45,45,45]). "kg" es el peso con que lo hizo. "descanso" son los segundos entre series; si dice un descanso para todo, ponlo en cada ejercicio. "fecha" es hoy salvo que diga otro día. "nota" recoge en una línea sensaciones, cansancio o molestias, sin repetir las series.
+${nombres ? `Si un ejercicio es uno de estos, usa su nombre tal cual: ${nombres}.\n` : ''}Lo que no diga el texto va a null o a lista vacía; no inventes series, repeticiones, pesos ni descansos. Texto:\n\n${String(relato).slice(0, 4000)}`,
+  });
+  const out = { items: desdeLLM(j?.ejercicios) };
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(j?.fecha || ''))) out.fecha = j.fecha;
+  const d = Math.round(Number(j?.duracion)); if (d > 0 && d <= 600) out.duracion = d;
+  if (j?.nota) out.nota = String(j.nota).trim().slice(0, 300);
+  return out;
+}
+
+// Abre el ejercicio contado: relato arriba y la lista de ejercicios debajo, con su volumen a la vista.
+// Al terminar el dictado se interpreta solo; «✨ Interpretar» lo repite tras corregir el texto.
+export function registrarEjercicio(s = {}) {
+  const editando = !!s.id;
+  let ultimoInterpretado = '';
+  const repintar = form => form.elements.detalle?.dispatchEvent(new Event('input'));
+  const traducir = async (relato, { escribir, form }, avisar = true) => {
+    const t = String(relato || '').trim();
+    if (!t || t === ultimoInterpretado) return;
+    ultimoInterpretado = t;
+    // Las reglas van primero: sin LLM o si la llamada falla, algo de lo contado queda en la lista.
+    const local = interpretarLocal(t, estado.ejercicios.map(e => e.nombre));
+    if (local.length) { escribir({ detalle: componerDetalle(local) }); repintar(form); }
+    try {
+      const j = await interpretarConLLM(t, hoyISO());
+      escribir({ fecha: j.fecha, duracion: j.duracion, nota: j.nota, detalle: j.items.length ? componerDetalle(j.items) : null });
+      repintar(form);
+    } catch (e) { if (avisar) toast('No se pudo interpretar: ' + e.message + '. Lo contado se guarda igual; repasa la lista.', 8000); }
+  };
+  return pedir(editando ? 'Editar ejercicio' : 'El ejercicio', camposContar, { fecha: hoyISO(), ...s, detalle: componerDetalle(s.items || []) }, {
+    dictar: 'relato',
+    alDictar: (texto, api) => { toast('Interpretando lo que has contado…', 3000); return traducir(texto, api); },
+    acciones: [{ l: '✨ Interpretar', cargando: 'Interpretando…', fn: async api => { ultimoInterpretado = ''; await traducir(api.valores.relato, api); } }],
+    accionesTras: 'relato',
+    // El volumen se recalcula con cada cambio de la lista, venga del mayordomo o de lo escrito a mano.
+    alAbrir: ({ form }) => {
+      const ta = form.elements.detalle, p = document.createElement('p');
+      p.className = 'mini volumen'; p.setAttribute('aria-live', 'polite');
+      finCaja(ta).insertAdjacentElement('afterend', p);
+      const pinta = () => {
+        const its = leerDetalle(ta.value), sin = its.filter(i => !i.series.length).map(i => i.nombre);
+        p.textContent = its.length ? 'Volumen: ' + volumenTexto(volumen(its)) + (sin.length ? ` · sin series: ${sin.join(', ')}` : '') : 'Aún no hay ejercicios: cuéntalos arriba o escribe uno por línea.';
+      };
+      ta.addEventListener('input', pinta); pinta();
+    },
+    aceptar: 'Guardar',
+    texto: 'Dicta o escribe lo que has hecho y la lista se rellena sola: series, repeticiones o segundos, peso y descanso. Repásala antes de guardar; cualquier línea se corrige a mano.',
+    ...(editando ? { extra: 'Borrar' } : {}),
+  }).then(async v => {
+    if (!v) return null;
+    if (v.__extra) { if (await confirmar('¿Borrar esta sesión?')) { estado.sesionesEjercicio = estado.sesionesEjercicio.filter(x => x.id !== s.id); guardar(); } return null; }
+    const items = vincular(leerDetalle(v.detalle), estado.ejercicios).map(it => ({ ...it, hecho: true }));
+    const datos = { fecha: v.fecha, nombre: nombreSesion(items), relato: (v.relato || '').trim(), items, duracion: v.duracion || null, nota: (v.nota || '').trim() };
+    if (!items.length && !datos.relato) { toast('No hay nada que guardar'); return null; }
+    if (editando) {
+      const r = estado.sesionesEjercicio.find(x => x.id === s.id);
+      const antes = { ...r, detalle: componerDetalle(r.items) };
+      // Lo que se toca a mano queda marcado, como en el relato de la noche.
+      r.manuales = [...new Set([...(r.manuales || []), ...DATOS_CONTADA.filter(k => String(v[k] ?? '').trim() !== String(antes[k] ?? '').trim())])];
+      Object.assign(r, datos); guardar(); return r;
+    }
+    const nueva = { id: uid(), origen: 'relato', manuales: [], ...datos };
+    estado.sesionesEjercicio.push(nueva); guardar();
+    return nueva;
+  });
+}
+// Lo hecho en una sesión, para medir volumen: la contada trae sus series; la de una tabla, las del
+// catálogo de cada ejercicio marcado como hecho.
+export function itemsDeSesion(s) {
+  if (contada(s)) return s.items;
+  return s.items.filter(i => i.hecho).map(i => ejercicio(i.ejercicioId)).filter(Boolean).map(e => ({ nombre: e.nombre, series: leerSeries(`${e.series} × ${e.reps}`) }));
+}
+
+// El volumen de varias sesiones, en filas como la última noche de Sueño.
+function filasVolumen(ses) {
+  const v = volumen(ses.flatMap(itemsDeSesion)), fila = (l, x) => h`<div class="fila kv"><span>${l}</span><b>${x}</b></div>`;
+  return [fila('Sesiones', ses.length), fila('Ejercicios · series', `${v.ejercicios} · ${v.series}`),
+    v.reps ? fila('Repeticiones', v.reps) : '', v.seg ? fila('Por tiempo', segTexto(v.seg)) : '',
+    v.descanso ? fila('Descanso entre series', segTexto(v.descanso)) : '', v.kg ? fila('Kg movidos', v.kg.toLocaleString('es-ES')) : ''].join('');
+}
+
 export function registrarPildora(ej, hecha = true) { estado.pildoras.push({ id: uid(), fecha: hoyISO(), hora: new Date().toTimeString().slice(0, 5), ejercicioId: ej?.id, nombre: ej?.nombre, hecha }); guardar(); }
 
 function render(cont, params) {
@@ -45,9 +151,13 @@ function render(cont, params) {
   const tipo = params.tipo || '';
   const ejs = estado.ejercicios.filter(e => !tipo || e.tipo === tipo).sort((a, b) => (pref.includes(b.tipo) - pref.includes(a.tipo)) || a.nombre.localeCompare(b.nombre));
   const sesiones = estado.sesionesEjercicio.slice().sort((a, b) => b.fecha.localeCompare(a.fecha)).slice(0, 10);
-  const hechas = estado.sesionesEjercicio.reduce((n, s) => n + s.items.filter(i => i.hecho).length, 0), total = estado.sesionesEjercicio.reduce((n, s) => n + s.items.length, 0);
+  // El porcentaje de series hechas solo tiene sentido en las sesiones de una tabla: una contada es todo lo hecho.
+  const planificadas = estado.sesionesEjercicio.filter(s => !contada(s));
+  const hechas = planificadas.reduce((n, s) => n + s.items.filter(i => i.hecho).length, 0), total = planificadas.reduce((n, s) => n + s.items.length, 0);
+  const semana = estado.sesionesEjercicio.filter(s => s.fecha >= sumarDias(hoyISO(), -6));
   const pildorasHoy = estado.pildoras.filter(p => p.fecha === hoyISO() && p.hecha).length;
   cont.innerHTML = h`
+    <div class="acciones"><button class="btn p" data-a="contar">${hayVoz() ? '🎤 ' : ''}Contar el ejercicio</button></div>
     <div class="chips">${lista(['tablas', 'catalogo', 'historial'].map(v => h`<button class="pill ${v === vista ? 'sel' : ''}" data-a="vista" data-v="${v}">${{ tablas: 'Tablas', catalogo: 'Catálogo', historial: 'Seguimiento' }[v]}</button>`))}</div>
     ${vista === 'tablas' ? crudo(`
       ${estado.tablas.map(t => h`<div class="tarjeta"><div class="fila"><div class="t"><b>${t.nombre}</b><div class="mini">${t.items.length} ejercicios · ${duracionTexto(t.duracion)} · ${[...new Set(t.items.map(i => ejercicio(i.ejercicioId)?.tipo).filter(Boolean))].join(', ')}</div></div>
@@ -62,13 +172,17 @@ function render(cont, params) {
         <div class="mini">${e.descripcion}</div></div>`).join('') || aviso('Sin ejercicios de este tipo.').__crudo}
       <div class="acciones"><button class="btn p" data-a="nuevoEj">+ Ejercicio</button><button class="btn" data-a="buscarEj">YouTube (${pref.join(', ') || 'básicos'})</button><button class="btn" data-a="buscarLLM">Buscar con LLM</button></div>`)
     : crudo(`
-      <div class="tarjeta"><div class="grande">${total ? Math.round(hechas / total * 100) : 0} %</div><div class="mini">de las series planificadas se hicieron · ${estado.sesionesEjercicio.length} sesiones · ${estado.pildoras.filter(p => p.hecha).length} píldoras</div></div>
-      ${sesiones.map(s => h`<div class="tarjeta" data-a="verSesion" data-id="${s.id}"><div class="fila"><div class="t"><b>${fechaCorta(s.fecha)} · ${s.nombre}</b><div class="mini">${s.items.filter(i => i.hecho).length}/${s.items.length} hechos${s.nota ? ' · ' + s.nota : ''}</div></div><span class="pill ${s.items.every(i => i.hecho) ? 'ok' : 'w'}">${s.items.every(i => i.hecho) ? 'completa' : 'parcial'}</span></div></div>`).join('') || aviso('Todavía no hay sesiones registradas.').__crudo}`)}`;
+      <div class="tarjeta"><b>Últimos 7 días</b>${semana.length ? filasVolumen(semana) : '<div class="mini">Sin sesiones. Toca «Contar el ejercicio» y díctalo como salga: «4 series de 12 flexiones descansando un minuto, 3 de 45 segundos de plancha…».</div>'}</div>
+      ${total ? h`<div class="tarjeta"><div class="grande">${Math.round(hechas / total * 100)} %</div><div class="mini">de los ejercicios planificados en tablas se hicieron · ${planificadas.length} sesiones de tabla · ${estado.pildoras.filter(p => p.hecha).length} píldoras</div></div>` : ''}
+      ${sesiones.map(s => contada(s)
+        ? h`<div class="tarjeta" data-a="verSesion" data-id="${s.id}"><div class="fila"><div class="t"><b>${fechaCorta(s.fecha)} · ${s.nombre}</b>${s.relato ? crudo(' <span class="mini">🎤</span>') : ''}<div class="mini">${volumenTexto(volumen(s.items)) || 'sin series anotadas'}${s.duracion ? ' · ' + duracionTexto(s.duracion) : ''}${s.nota ? ' · ' + s.nota : ''}</div></div><span class="pill ok">contada</span></div></div>`
+        : h`<div class="tarjeta" data-a="verSesion" data-id="${s.id}"><div class="fila"><div class="t"><b>${fechaCorta(s.fecha)} · ${s.nombre}</b><div class="mini">${s.items.filter(i => i.hecho).length}/${s.items.length} hechos${s.nota ? ' · ' + s.nota : ''}</div></div><span class="pill ${s.items.every(i => i.hecho) ? 'ok' : 'w'}">${s.items.every(i => i.hecho) ? 'completa' : 'parcial'}</span></div></div>`).join('') || aviso('Todavía no hay sesiones registradas.').__crudo}`)}`;
   delegar(cont, {
     vista: el => navegar('ejercicio', { v: el.dataset.v }),
     tipo: el => navegar('ejercicio', { v: 'catalogo', tipo: el.dataset.t }),
     empezar: el => sesion(cont, el.dataset.id),
-    verSesion: el => { const s = estado.sesionesEjercicio.find(x => x.id === el.dataset.id); if (s) sesion(cont, s.tablaId, s); },
+    verSesion: el => { const s = estado.sesionesEjercicio.find(x => x.id === el.dataset.id); if (contada(s)) registrarEjercicio(s); else if (s) sesion(cont, s.tablaId, s); },
+    contar: async () => { const s = await registrarEjercicio(); if (s) { toast(`${fechaCorta(s.fecha)}: ${volumenTexto(volumen(s.items)) || 'guardado'}`, 5000); navegar('ejercicio', { v: 'historial' }); } },
     planificar: async el => {
       const t = estado.tablas.find(x => x.id === el.dataset.id);
       const v = await pedir('Planificar ' + t.nombre, [{ n: 'fecha', l: 'Fecha', t: 'date', v: hoyISO(), req: true }, { n: 'hora', l: 'Hora', t: 'time', v: primerHueco(hoyISO(), t.duracion || 25, '09:00') || '11:00' }]);

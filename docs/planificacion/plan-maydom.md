@@ -45,6 +45,7 @@ Tres pestañas, **Tareas · Compras · Ideas** (ADR-008, mock 005), y **un solo 
 - **Catálogo** de ejercicios básicos con tipo (calistenia, kettlebell, movilidad, cardio), explicación y enlace de búsqueda en YouTube. Ampliable a mano y por el mayordomo según preferencias ("quiero calistenia" → propone ejercicios de ese tipo).
 - **Tablas** (sesiones): conjunto de series a una hora; se incrustan en el calendario.
 - **Seguimiento pequeño**: al terminar, check de qué series se hicieron y cuáles no. Engrosa el historial ("conocimiento de mi persona en ejercicios").
+- **El ejercicio se cuenta hablando**, como la noche en Sueño: «Contar el ejercicio» abre un cuadro de texto arriba donde se dicta lo hecho, y el mayordomo (`ejercicio-relato`) lo traduce a una lista de ejercicios, uno por línea, con series, repeticiones de cada serie o segundos si es isométrico o por tiempo, peso y descanso entre series («Dominadas: 8, 6, 5 · 10 kg · descanso 1 min 30 s»). Debajo se ve el volumen (ejercicios, series, repeticiones, tiempo, descanso y kg movidos), que se recalcula al corregir la lista. Se guarda en `sesionesEjercicio[]` con `origen: 'relato'`, el relato original y los ejercicios enlazados al catálogo cuando coinciden. Sin LLM, un lector por reglas saca del texto «N series de R», «4x12», los segundos, los kilos y el descanso. El Seguimiento resume el volumen de los últimos 7 días, sumando también lo hecho en las tablas.
 - **Píldoras de movimiento**: durante el trabajo, cada 45/60/75 min (preferencia) un ejercicio corto. Aviso + check.
 
 ### Sueño
@@ -101,7 +102,7 @@ Input de qué busco + tiendas donde buscarlo (catálogo con categoría: alimenta
 | Memoria del mayordomo | Bóveda **Obsidian** en `docs/planificacion/memoria/` (Markdown con frontmatter y wikilinks), en el repo | El repo es la única fuente de verdad; los agentes la leen en cada sesión; la app exporta decisiones en ese formato |
 | Semillas | Catálogos iniciales en `docs/app/datos/` (ejercicios, meditaciones, técnicas de sueño, tiendas, categorías) | Editables desde Ajustes; nunca datos reales del usuario |
 
-Esquema de datos (clave `maydom.v1` en `localStorage`): `preferencias`, `eventos[]`, `notas[]` (con `clase` tarea o idea; las tareas llevan `tope`, `hecha` y `hechaEl`), `ejercicios[]`, `tablas[]`, `sesionesEjercicio[]`, `sueno[]`, `alimentos[]`, `menus[]`, `comidas[]`, `suplementos[]`, `tomas[]`, `compra[]`, `proyectos[]`, `horas[]`, `ocio[]`, `movimientos[]`, `recurrentes[]`, `importaciones[]`, `tiendas[]`, `consejos[]`, `memoria[]`, `ajustes`.
+Esquema de datos (clave `maydom.v1` en `localStorage`): `preferencias`, `eventos[]`, `notas[]` (con `clase` tarea o idea; las tareas llevan `tope`, `hecha` y `hechaEl`), `ejercicios[]`, `tablas[]`, `sesionesEjercicio[]` (de una tabla, con `hecho` por ejercicio; o contadas, con `origen: 'relato'`, `relato` e `items` con `series: [{r}|{s}]`, `kg` y `descanso`), `sueno[]`, `alimentos[]`, `menus[]`, `comidas[]`, `suplementos[]`, `tomas[]`, `compra[]`, `proyectos[]`, `horas[]`, `ocio[]`, `movimientos[]`, `recurrentes[]`, `importaciones[]`, `tiendas[]`, `consejos[]`, `memoria[]`, `ajustes`.
 
 ### 4.1 El LLM: gateway propio, no OpenRouter directo
 
@@ -113,14 +114,14 @@ El mayordomo no habla con OpenRouter: habla con el **servicio `npiobject-labs/op
 | Clave de **aplicación** de maydom | Secreto `LLM_API_KEY` del repo → Fly | Solo el backend de maydom |
 | Clave de **acceso** a la app | Secreto `MAYDOM_CLAVE` → Fly, y el usuario la escribe una vez en Ajustes | El navegador del usuario |
 
-El backend de maydom manda `Authorization: Bearer <clave de aplicación>` y `X-Operacion: maydom-<sección>` (chat, menu, foto-stock, ejercicios, suplementos, ocio, sueno, sueno-relato, finanzas, buscador), así que `GET /v1/uso/resumen?agrupar=operacion` en el gateway dice cuánto cuesta cada función. Sigue la guía de integración del gateway: reintentos solo ante 502/504 (dos, con espera creciente), timeout del cliente por encima del suyo, y los errores traducidos al español con su código (`sin_configurar`, `presupuesto_agotado`, `cuota_superada`, `bucle`). `GET /api/estado` dice si hay LLM y qué modelo, sin gastar crédito.
+El backend de maydom manda `Authorization: Bearer <clave de aplicación>` y `X-Operacion: maydom-<sección>` (chat, menu, foto-stock, ejercicios, ejercicio-relato, suplementos, ocio, sueno, sueno-relato, finanzas, buscador), así que `GET /v1/uso/resumen?agrupar=operacion` en el gateway dice cuánto cuesta cada función. Sigue la guía de integración del gateway: reintentos solo ante 502/504 (dos, con espera creciente), timeout del cliente por encima del suyo, y los errores traducidos al español con su código (`sin_configurar`, `presupuesto_agotado`, `cuota_superada`, `bucle`). `GET /api/estado` dice si hay LLM y qué modelo, sin gastar crédito.
 
 **Qué hace cada sección con el LLM** (todo opcional: sin clave, la app funciona con el motor de reglas):
 
 | Sección | Función | Operación |
 |---|---|---|
 | Alimentación | Menú de 7 días según preferencias · **foto del frigorífico → stock** | `menu`, `foto-stock` |
-| Ejercicio | Buscar ejercicios nuevos del tipo que apetece | `ejercicios` |
+| Ejercicio | Buscar ejercicios nuevos del tipo que apetece · **el relato hablado del ejercicio → series, repeticiones, segundos, peso y descanso** | `ejercicios`, `ejercicio-relato` |
 | Suplementos | Revisar horas de toma e interacciones (criterio general) | `suplementos` |
 | Ocio | Propuestas en Madrid con coste, duración y enlace | `ocio` |
 | Sueño | Analizar las últimas 14 noches → 3 acciones · **el relato hablado de la noche → horas, calidad y nota** | `sueno`, `sueno-relato` |
@@ -184,6 +185,7 @@ Se revisa si aparece un segundo usuario, si hace falta sincronizar varios dispos
 | F16 | **Accesos directos en Hoy** (ADR-007): ☆ Fijar en cada sección y en cada ventana, rejilla de 4 columnas con tres tamaños, cinco formas y nueve colores, modo colocar con arrastre y huecos, sugerencias por uso | Hecha 24-sep (build 20260924-002; mock 003 el mismo día) |
 | F17 | **Notas por tipo** (ADR-008): pestañas Tareas, Compras e Ideas con un solo diálogo que clasifica; tareas con fecha tope en Hoy y en el Calendario; compras en líneas con etiqueta dentro de la lista de Compra | Hecha 24-sep (build 20260924-005; mock 005 el mismo día) |
 | F18 | **Etiquetas y revisión de notas** (ADR-009): etiquetas en tareas e ideas al guardar, ✨ Revisar a petición con los cambios que se pueden desmarcar, y cajas de texto con asa táctil y pantalla completa en toda la app | Hecha 25-sep (build 20260925-007; mock 006 el mismo día) |
+| F19 | **Contar el ejercicio**: relato hablado → lista de ejercicios con series, repeticiones o segundos, peso y descanso; volumen a la vista al repasarla y resumen de los últimos 7 días en Seguimiento | Hecha 26-sep (build 20260926-001) |
 ## 7. Deuda de desarrollo
 
 Lo que las notas piden y no se puede cerrar sin servicios externos, datos reales o decisiones del usuario:

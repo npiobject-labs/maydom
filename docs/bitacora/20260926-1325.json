@@ -1,0 +1,36 @@
+{
+  "fecha": "2026-09-26T13:25:00+02:00",
+  "titulo": "Contar el ejercicio hablando",
+  "objetivo": "Registrar el ejercicio como la noche en Sueño: dictar lo hecho y que el mayordomo lo traduzca a ejercicios, series, repeticiones, segundos y descanso, con el volumen cuantificado y guardado.",
+  "prompts": [
+    {
+      "texto": "De la misma forma que en sueño tenemos una opción de contar la noche quiero que en ejercicio tengamos una opción de contar el ejercicio un botón donde aparezca te lleve aún una caja de texto ahí contaría que ejercicios he hecho y en la parte de abajo de la caja y tendremos un botón de guía lo mismo que ponen para el sueño y traduzca ese texto en eh los ejercicios que he hecho cuantas series de cada ejercicio cuántas repeticiones por serie cuánto tiempo si es un isométrico también eh el tiempo de descanso entre cada serie de forma que al final tengas unos datos cuantificados de el volumen de ejercicio que se ha hecho y que se grabe en la base de datos del proyecto",
+      "nota": "nota dictada «Contador de ejercicios en la app», con una captura de la sección Sueño como referencia"
+    }
+  ],
+  "cambios": [
+    "Botón «🎤 Contar el ejercicio» en todas las vistas de Ejercicio: relato arriba, «✨ Interpretar» justo debajo y la lista de ejercicios a repasar, uno por línea (series, repeticiones o segundos, peso y descanso).",
+    "Operación nueva ejercicio-relato en el gateway; plan B por reglas en el módulo nuevo app/interpretar-ejercicio.js.",
+    "Volumen a la vista en el diálogo (ejercicios, series, repeticiones, tiempo, descanso y kg movidos) y tarjeta «Últimos 7 días» en Seguimiento.",
+    "Las sesiones contadas se guardan en sesionesEjercicio con el relato original; se editan tocándolas en el historial.",
+    "pedir() admite el gancho alAbrir; prueba de humo tools/prueba-ejercicio-relato.mjs."
+  ],
+  "sha": null,
+  "sha_completo": null,
+  "run": null,
+  "mock": null,
+  "build": "MA-B1-20260926-001",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/ejercicio",
+  "fly": null,
+  "pendiente": [
+    "Fusionar la PR y confirmar pages.yml en verde.",
+    "Probar ejercicio-relato con el gateway real (probado con el mayordomo simulado)."
+  ],
+  "enlaces": [
+    {
+      "texto": "Plan: sección Ejercicio",
+      "url": "https://github.com/npiobject-labs/maydom/blob/main/docs/planificacion/plan-maydom.md"
+    }
+  ],
+  "notas": "Sin mock previo: replica el patrón ya aceptado de «Contar la noche». «Botón de guía» se ha entendido como el botón que interpreta el texto (✨ Interpretar), igual que en Sueño. La captura de Sueño que acompañaba al prompt traía un relato personal de una noche y no se copia."
+}

@@ -265,3 +265,4 @@ button.etq{cursor:pointer}button.etq:hover{border-color:var(--acc);color:var(--a
 .cargando i{width:.6rem;height:.6rem;border-radius:99px;background:var(--acc);animation:latido 1s ease-in-out infinite}
 .rev-hecha{font-size:.84rem;color:var(--ok);margin-top:.45rem}
 .rev-hecha blockquote{margin:.35rem 0 0;padding:.4rem .6rem;border-left:3px solid var(--line);color:var(--ink2);white-space:pre-wrap;font-size:.84rem}
+.modal .volumen{margin:.15rem 0 .7rem;color:var(--acc);font-weight:600}

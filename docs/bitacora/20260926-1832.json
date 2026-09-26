@@ -1,0 +1,24 @@
+{
+  "fecha": "2026-09-26T18:32:00+02:00",
+  "titulo": "Cierre: modelo e informes con roles, probados en el móvil",
+  "objetivo": "Confirmar que la elección de modelo y los informes con roles funcionan en el móvil y cerrar la sesión.",
+  "prompts": [ { "texto": "Funciona cierras cierras sesión", "nota": "dictado" } ],
+  "cambios": [
+    "Probado por el usuario en el móvil: Ajustes con modelo y roles, y analizar con roles desde el diálogo de una idea.",
+    "Preferencias del 26-sep ampliadas: elegir modelo y roles como en prueba, y analizar desde la propia idea."
+  ],
+  "sha": "27c09c1",
+  "sha_completo": "27c09c1036e0249157569637f213dbccb8406078",
+  "run": 36255446255,
+  "mock": null,
+  "build": "MA-B1-20260926-005",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/notas?v=ideas",
+  "fly": "https://maydom-npiobject-labs.fly.dev/salud",
+  "pendiente": [],
+  "enlaces": [
+    { "texto": "PR 29 · Modelo e informes con roles", "url": "https://github.com/npiobject-labs/maydom/pull/29" },
+    { "texto": "PR 31 · Analizar desde la idea", "url": "https://github.com/npiobject-labs/maydom/pull/31" },
+    { "texto": "Run de Fly", "url": "https://github.com/npiobject-labs/maydom/actions/runs/36253171025" },
+    { "texto": "Run de Pages", "url": "https://github.com/npiobject-labs/maydom/actions/runs/36255446255" }
+  ]
+}

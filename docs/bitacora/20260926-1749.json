@@ -1,0 +1,40 @@
+{
+  "fecha": "2026-09-26T17:49:00+02:00",
+  "titulo": "Modelo e informes con roles: fusionado y verificado",
+  "objetivo": "Fusionar el PR de la elección de modelo y los informes con varios roles, y verificar el despliegue contra el gateway real.",
+  "prompts": [
+    {
+      "texto": "Fusiona el PR y verifica"
+    }
+  ],
+  "cambios": [
+    "Fusionado el PR 29 (modelo en Ajustes, roles de análisis e informes con varios roles, ADR-010).",
+    "pages.yml en verde, sirviendo informe.js y markdown.js.",
+    "deploy.yml en verde contra el gateway real: catálogo de 452 modelos, los cinco recomendados presentes, llamada en modo informe con 200 y coste leído en /api/uso."
+  ],
+  "sha": "9884ab5",
+  "sha_completo": "9884ab506ff522981dca99a8207854627d09bfa4",
+  "run": 36253170995,
+  "mock": null,
+  "build": "MA-B1-20260926-004",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/notas?v=ideas",
+  "fly": "https://maydom-npiobject-labs.fly.dev/salud",
+  "pendiente": [
+    "Probar en el móvil un informe real con varios roles."
+  ],
+  "enlaces": [
+    {
+      "texto": "PR 29 · Modelo e informes con roles",
+      "url": "https://github.com/npiobject-labs/maydom/pull/29"
+    },
+    {
+      "texto": "Run de Pages",
+      "url": "https://github.com/npiobject-labs/maydom/actions/runs/36253170995"
+    },
+    {
+      "texto": "Run de Fly",
+      "url": "https://github.com/npiobject-labs/maydom/actions/runs/36253171025"
+    }
+  ],
+  "notas": "Sustituye a lo pendiente de la entrada 20260926-1653, que se escribió antes de fusionar."
+}

@@ -232,6 +232,7 @@ textarea.a-pantalla{position:fixed;left:0;right:0;bottom:0;top:calc(env(safe-are
 .bajo-texto .btn.dictar{margin-top:0}
 .bajo-texto [data-voz]:empty{display:none}
 .bajo-texto>span[data-para]:not([hidden]){display:contents}
+.bajo-texto[hidden]{display:none}
 .fichas{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;border:1px solid var(--line);border-radius:6px;padding:.3rem .4rem;background:var(--bg2);margin-top:.2rem}
 .fichas:focus-within{border-color:var(--acc)}
 .ficha{display:inline-flex;align-items:center;font-size:.8rem;background:var(--acc2);color:var(--acc);border-radius:999px;padding:.1rem .15rem .1rem .6rem}

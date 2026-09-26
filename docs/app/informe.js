@@ -114,13 +114,14 @@ export async function abrirRol(r, copia = null) {
 }
 
 // ---------- Hoja de Analizar (D54, D60, D62) ----------
-// `ideas`: las candidatas (las visibles en Ideas); `previo`: un informe para regenerarlo con lo mismo.
-export function abrirAnalisis({ ideas = [], previo = null } = {}) {
+// `ideas`: las candidatas (las visibles en Ideas); `marcadas`: ids que salen marcados (por defecto, las
+// candidatas hasta el tope); `previo`: un informe para regenerarlo con lo mismo.
+export function abrirAnalisis({ ideas = [], marcadas: preMarcadas = null, previo = null } = {}) {
   const conocidos = new Set(todosLosRoles().map(r => r.id));
   const guardados = previo ? previo.roles.map(r => r.id) : (estado.ajustes.rolesInforme || ['critico', 'analitico']);
   const rolesSel = new Set(guardados.filter(id => conocidos.has(id)));
   const candidatas = previo ? previo.fuentes : ideas;
-  const marcadas = new Set(candidatas.slice(0, MAX_FUENTES).map(n => n.id));
+  const marcadas = new Set(preMarcadas || candidatas.slice(0, MAX_FUENTES).map(n => n.id));
   let modelo = previo ? previo.modelo : null; // null = el de Ajustes
   const modeloDe = () => modelo ?? (estado.ajustes.modelo || '');
   const dlg = document.createElement('dialog'); dlg.className = 'modal ancho';
@@ -216,6 +217,8 @@ export function regenerar(inf, { roles, modelo, instruccion }) {
 }
 const enCurso = new Set();
 export const generando = inf => enCurso.has(inf.id);
+// Los informes en los que entra una idea, el más reciente primero (estado.informes ya va en ese orden).
+export const informesDe = id => estado.informes.filter(i => i.fuentes.some(f => f.id === id));
 function generar(inf) {
   inf.generacion = (inf.generacion || 0) + 1;
   Object.assign(inf, { estado: 'generando', sintesis: '', texto: '', error: '', coste: null, servido: '' });

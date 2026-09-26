@@ -1,0 +1,42 @@
+{
+  "fecha": "2026-09-26T14:08:00+02:00",
+  "titulo": "Cierre: contar el ejercicio publicado y probado",
+  "objetivo": "Confirmar que «Contar el ejercicio» funciona en el móvil y cerrar la sesión.",
+  "prompts": [
+    {
+      "texto": "Funciona cierra la sesión",
+      "nota": "dictado"
+    }
+  ],
+  "cambios": [
+    "Probado por el usuario en el móvil: contar el ejercicio, con la hora de inicio y la duración de la sesión a la vista, funciona.",
+    "Preferencias del 26-sep ampliadas con la hora de inicio y la duración de la sesión separada del tiempo de los ejercicios por tiempo."
+  ],
+  "sha": "b62d972",
+  "sha_completo": "b62d9726b31e1f189f516dc5eb17673fd8ad87e8",
+  "run": 36240396650,
+  "mock": null,
+  "build": "MA-B1-20260926-003",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/ejercicio",
+  "fly": null,
+  "pendiente": [],
+  "enlaces": [
+    {
+      "texto": "PR 25 · Contar el ejercicio",
+      "url": "https://github.com/npiobject-labs/maydom/pull/25"
+    },
+    {
+      "texto": "PR 26 · Solo guardaba el primer ejercicio",
+      "url": "https://github.com/npiobject-labs/maydom/pull/26"
+    },
+    {
+      "texto": "PR 27 · Hora de inicio y duración",
+      "url": "https://github.com/npiobject-labs/maydom/pull/27"
+    },
+    {
+      "texto": "Run de Pages",
+      "url": "https://github.com/npiobject-labs/maydom/actions/runs/36240396650"
+    }
+  ],
+  "notas": "Continúa las entradas 20260926-1325, 20260926-1346 y 20260926-1356, que se escribieron antes de fusionar y por eso dejaban sha y run a null."
+}

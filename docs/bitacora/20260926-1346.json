@@ -1,0 +1,44 @@
+{
+  "fecha": "2026-09-26T13:46:00+02:00",
+  "titulo": "Contar el ejercicio: el mayordomo se quedaba en el primer ejercicio",
+  "objetivo": "Que un relato con varios ejercicios guarde todos, con sus series y repeticiones, y no solo el primero.",
+  "prompts": [
+    {
+      "texto": "Eh si fusionados y pruebo",
+      "nota": "dictado; autoriza fusionar la PR 25"
+    },
+    {
+      "texto": "Es solamente ha grabado la caminata tendría que haber añadido las dominadas y el rold y el rodillo abdominal son tres ejercicios pero pueden ser cuatro pueden ser seis es variable el número de ejercicios así como las series y el número de repeticiones te adjunto imagen para que lo veas",
+      "nota": "dictado, con una captura del diálogo: el relato traía caminata, dominadas y rodillo abdominal y la lista solo «Caminata»"
+    }
+  ],
+  "cambios": [
+    "Fusionada la PR 25 (eb4e6f7); run de pages.yml 36239029153 en verde.",
+    "Diagnóstico con el modelo real (gemini-2.5-flash-lite) desde un workflow temporal en la rama: con el prompt anterior devolvía un único ejercicio.",
+    "Prompt nuevo de ejercicio-relato: frases cortas, ejemplo de varios ejercicios, rondas de circuito y el relato como mensaje; acierta cinco relatos de prueba con el modelo real.",
+    "Reglas sin LLM reescritas («una serie de X con N repeticiones», «a continuación», horas del día fuera, «N veces») y combinar(): las reglas completan lo que el mayordomo se salte.",
+    "Prueba de humo ampliada con el caso real (42 comprobaciones); build MA-B1-20260926-002."
+  ],
+  "sha": null,
+  "sha_completo": null,
+  "run": null,
+  "mock": null,
+  "build": "MA-B1-20260926-002",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/ejercicio",
+  "fly": null,
+  "pendiente": [
+    "Fusionar la PR y confirmar pages.yml en verde.",
+    "Probar en el móvil con el mismo relato."
+  ],
+  "enlaces": [
+    {
+      "texto": "PR 25",
+      "url": "https://github.com/npiobject-labs/maydom/pull/25"
+    },
+    {
+      "texto": "Run de Pages de la PR 25",
+      "url": "https://github.com/npiobject-labs/maydom/actions/runs/36239029153"
+    }
+  ],
+  "notas": "Continúa la entrada 20260926-1325. El relato de la prueba es de ejercicio, sin datos personales, y se usó tal cual en el diagnóstico."
+}

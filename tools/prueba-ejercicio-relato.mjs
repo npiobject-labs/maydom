@@ -73,7 +73,7 @@ comprobar(sitio.volumen > sitio.detalle, 'el volumen se enseña debajo de la lis
 comprobar(/aún no hay ejercicios/i.test(await pag.locator('dialog.modal .volumen').innerText()), 'sin ejercicios, el volumen lo dice');
 
 console.log('\n--- 2. El agente traduce el relato a series, repeticiones, segundos y descansos ---');
-respuesta = { fecha: '2026-09-26', duracion: 35, ejercicios: [
+respuesta = { fecha: '2026-09-26', hora: '18:30', duracion: 35, ejercicios: [
   { nombre: 'Flexiones', series: [12, 12, 12, 12], segundos: [], kg: null, descanso: 60 },
   { nombre: 'Plancha', series: [], segundos: [45, 45, 45], kg: null, descanso: 30 },
   { nombre: 'Dominadas', series: [8, 6, 5], segundos: [], kg: 10, descanso: 90 },
@@ -88,9 +88,10 @@ comprobar(detalle.includes('Flexiones: 4 × 12 · descanso 1 min'), 'series × r
 comprobar(detalle.includes('Plancha: 3 × 45 s · descanso 30 s'), 'el isométrico lleva segundos por serie');
 comprobar(detalle.includes('Dominadas: 8, 6, 5 · 10 kg · descanso 1 min 30 s'), 'series distintas, peso y descanso');
 comprobar(await campo('duracion') === '35' && /hombros/.test(await campo('nota')), 'duración y nota');
+comprobar(await campo('hora') === '18:30', `la hora de inicio — ${await campo('hora')}`);
 const vol = await pag.locator('dialog.modal .volumen').innerText();
 console.log('  ', vol);
-comprobar(/3 ejercicios · 10 series · 67 repeticiones · 2 min 15 s por tiempo · 7 min de descanso · 190 kg movidos/.test(vol), 'el volumen se calcula a la vista');
+comprobar(/3 ejercicios · 10 series · 67 repeticiones · 2 min 15 s en ejercicios por tiempo · 7 min de descanso · 190 kg movidos/.test(vol), 'el volumen se calcula a la vista');
 comprobar(pedido.operacion === 'ejercicio-relato', `la llamada lleva su propia operación — ${pedido.operacion}`);
 comprobar(pedido.contexto === '', 'no manda el contexto entero de la app');
 comprobar(pedido.tarea.includes('Flexiones; Plancha; Dominadas'), 'le pasa los nombres del catálogo para que coincidan');
@@ -113,12 +114,14 @@ comprobar(s.relato === RELATO, 'con el relato original, palabra por palabra');
 comprobar(s.items.length === 3 && s.items[0].series.length === 5 && s.items[0].series.every(x => x.r === 12) && s.items[0].descanso === 60, 'flexiones: 5 series de 12 con 60 s de descanso');
 comprobar(s.items[1].series.every(x => x.s === 45) && s.items[2].kg === 10, 'plancha en segundos, dominadas con peso');
 comprobar(s.items[0].ejercicioId === 'e1' && s.items[2].ejercicioId === 'e3', 'cada ejercicio queda enlazado con el del catálogo');
-comprobar(s.duracion === 35 && s.fecha === '2026-09-26', 'duración y fecha');
+comprobar(s.duracion === 35 && s.fecha === '2026-09-26' && s.hora === '18:30', 'duración, fecha y hora de inicio');
 comprobar(/historial/.test(await pag.evaluate(() => location.hash)), 'al guardar lleva al seguimiento');
 const main = await pag.locator('main').innerText();
 console.log('  ', main.split('\n').slice(0, 8).join(' | '));
 comprobar(/Últimos 7 días/.test(main) && /Repeticiones\s+79/.test(main) && /Kg movidos\s+190/.test(main), 'el seguimiento resume el volumen de la semana');
 comprobar(/contada/.test(main) && /79 repeticiones/.test(main), 'la sesión sale en el historial con su volumen');
+comprobar(/26\/09\/2026 · 18:30 · Flexiones/.test(main) && /35 min de sesión/.test(main), 'con la hora de inicio y la duración de la sesión');
+comprobar(/Duración de las sesiones\s+35 min/.test(main) && /En ejercicios por tiempo\s+2 min 15 s/.test(main), 'la semana separa la duración de las sesiones del tiempo de los ejercicios por tiempo');
 
 console.log('\n--- 5. Editar: vuelve el relato y lo tocado a mano se marca ---');
 await pag.locator('main .tarjeta[data-a="verSesion"]').first().click();
@@ -126,10 +129,14 @@ await pag.waitForSelector('dialog.modal');
 comprobar((await campo('relato')) === RELATO, 'el relato vuelve a salir arriba');
 comprobar((await campo('detalle')).startsWith('Flexiones: 5 × 12'), 'y la lista, compuesta desde lo guardado');
 await pag.locator('dialog.modal [name="nota"]').fill('Bien de fuerzas');
+await pag.locator('dialog.modal [name="duracion"]').fill('45');
 await pag.locator('dialog.modal button[type="submit"]').click();
 await pag.waitForTimeout(400);
 ss = await sesiones();
-comprobar(ss.length === 1 && ss[0].nota === 'Bien de fuerzas' && ss[0].manuales.includes('nota') && !ss[0].manuales.includes('detalle'), `solo la nota queda marcada como manual — ${JSON.stringify(ss[0].manuales)}`);
+comprobar(ss.length === 1 && ss[0].nota === 'Bien de fuerzas' && ss[0].duracion === 45, 'guarda la nota y la duración corregidas');
+comprobar(JSON.stringify(ss[0].manuales.slice().sort()) === '["duracion","nota"]', `solo la nota y la duración quedan marcadas como manuales — ${JSON.stringify(ss[0].manuales)}`);
+const tras = await pag.locator('main').innerText();
+comprobar(/Duración de las sesiones\s+45 min/.test(tras) && /45 min de sesión/.test(tras), 'la duración corregida (35 → 45) se ve en la semana y en la sesión, como pidió el usuario el 26-sep');
 
 console.log('\n--- 6. Si el LLM falla, las reglas sacan la lista igualmente ---');
 fallar = 'gateway simulado caído';
@@ -158,7 +165,8 @@ await pag.waitForTimeout(600);
 const d6b = await campo('detalle');
 console.log('  detalle:', JSON.stringify(d6b));
 comprobar(d6b === 'Caminata: 1 × 30 min\nDominadas: 1 × 20\nRodillo abdominal: 1 × 15', 'salen los tres ejercicios, con su tiempo y sus repeticiones');
-comprobar(/3 ejercicios · 3 series · 35 repeticiones · 30 min por tiempo/.test(await pag.locator('dialog.modal .volumen').innerText()), 'y el volumen los cuenta a los tres');
+comprobar(await campo('hora') === '10:00', `«a las diez de la mañana» da la hora de inicio aunque el mayordomo no la diga — ${await campo('hora')}`);
+comprobar(/3 ejercicios · 3 series · 35 repeticiones · 30 min en ejercicios por tiempo/.test(await pag.locator('dialog.modal .volumen').innerText()), 'y el volumen los cuenta a los tres');
 await pag.locator('dialog.modal [data-cancelar]').first().click();
 
 console.log('\n--- 7. El lector sin LLM, por su cuenta ---');

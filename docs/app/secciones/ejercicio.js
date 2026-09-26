@@ -3,7 +3,7 @@ import { TIPOS_EJERCICIO, pildoras as PILDORAS } from '../datos/semillas.js';
 import { crearEvento, primerHueco } from '../agenda.js';
 import { pedirJSON, conLLM, lista as listaLLM } from '../llm.js';
 import { hayVoz } from '../voz.js';
-import { leerDetalle, leerSeries, componerDetalle, volumen, volumenTexto, segTexto, interpretarLocal, desdeLLM, combinar, vincular } from '../interpretar-ejercicio.js';
+import { leerDetalle, leerSeries, componerDetalle, volumen, volumenTexto, segTexto, interpretarLocal, horaDe, desdeLLM, combinar, vincular } from '../interpretar-ejercicio.js';
 
 const ejercicio = id => estado.ejercicios.find(e => e.id === id);
 const camposEj = [
@@ -47,11 +47,12 @@ export function pildoraAleatoria() {
 const camposContar = [
   { n: 'relato', l: 'Cuéntame el ejercicio', t: 'textarea', filas: 5, ph: 'He hecho 4 series de 12 flexiones descansando un minuto, luego 3 series de 45 segundos de plancha con 30 segundos de descanso…' },
   { n: 'fecha', l: 'Fecha', t: 'date', req: true },
+  { n: 'hora', l: 'Hora de inicio', t: 'time' },
   { n: 'detalle', l: 'Ejercicios, uno por línea', t: 'textarea', filas: 4, ph: 'Flexiones: 4 × 12 · descanso 60 s\nPlancha: 3 × 45 s · descanso 30 s\nDominadas: 8, 6, 5 · 10 kg · descanso 90 s' },
   { n: 'duracion', l: 'Duración de la sesión (min, opcional)', t: 'number', min: 0 },
   { n: 'nota', l: 'Cómo fue (opcional)', ph: 'flojo de piernas, mucho calor…' },
 ];
-const DATOS_CONTADA = ['fecha', 'detalle', 'duracion', 'nota'];
+const DATOS_CONTADA = ['fecha', 'hora', 'detalle', 'duracion', 'nota'];
 const contada = s => s?.origen === 'relato';
 const nombreSesion = items => items.length ? items.slice(0, 3).map(i => i.nombre).join(', ') + (items.length > 3 ? '…' : '') : 'Sesión contada';
 
@@ -64,19 +65,20 @@ export async function interpretarConLLM(relato, fechaRef) {
   const j = await pedirJSON({
     operacion: 'ejercicio-relato', contexto: false,
     tarea: `Conviertes en datos lo que alguien cuenta de su entrenamiento. Hoy es ${fechaRef}.
-Devuelve este JSON: {"fecha":"AAAA-MM-DD","duracion":<minutos de toda la sesión, solo si lo dice>,"ejercicios":[{"nombre":"","repeticiones":[<una cifra por serie>],"segundos":[<una cifra por serie>],"kg":<peso o null>,"descanso":<segundos entre series o null>}],"nota":"<sensaciones en una línea, o vacío>"}
+Devuelve este JSON: {"fecha":"AAAA-MM-DD","hora":"HH:MM","duracion":<minutos de toda la sesión, solo si lo dice>,"ejercicios":[{"nombre":"","repeticiones":[<una cifra por serie>],"segundos":[<una cifra por serie>],"kg":<peso o null>,"descanso":<segundos entre series o null>}],"nota":"<sensaciones en una línea, o vacío>"}
 - Un objeto por CADA ejercicio o actividad que se nombre, en el orden en que se cuentan. Puede haber uno o diez: recorre el texto entero.
 - Por repeticiones: "repeticiones" lleva una cifra por serie y "segundos" va vacío. "4 series de 12" es [12,12,12,12]; "una serie de 20" es [20]; "8, 6 y 5" es [8,6,5].
 - Isométricos y actividades por tiempo (plancha, caminar, correr, bici, estiramientos): "segundos" lleva una cifra por serie y "repeticiones" va vacío. "caminata de 30 minutos" es [1800]; "3 de 45 segundos" es [45,45,45].
 - En un circuito de «tres rondas» o «tres vueltas», cada ejercicio de la ronda lleva tres series.
-- La hora del día («a las diez») no es ni repetición ni duración. Un descanso dicho para todo va en cada ejercicio.
+- "hora" es cuando empezó, en 24 h, solo si lo dice: «a las diez de la mañana» es "10:00", «a las 7 de la tarde» es "19:00". No es ni repetición ni duración. Un descanso dicho para todo va en cada ejercicio.
 - Lo que no diga el texto va a null o a lista vacía; no inventes.
 ${nombres ? `- Si un ejercicio es exactamente uno de estos, usa ese nombre; si solo se parece, deja el nombre que dice el texto: ${nombres}.\n` : ''}Ejemplo. Texto: «A las nueve salí a correr unos 20 minutos, después hice dos series de 10 sentadillas descansando un minuto, a continuación una serie de flexiones con 15 repeticiones y terminé con tres planchas de 40 segundos. Acabé bien.»
-JSON: {"fecha":"${fechaRef}","duracion":null,"ejercicios":[{"nombre":"Correr","repeticiones":[],"segundos":[1200],"kg":null,"descanso":null},{"nombre":"Sentadillas","repeticiones":[10,10],"segundos":[],"kg":null,"descanso":60},{"nombre":"Flexiones","repeticiones":[15],"segundos":[],"kg":null,"descanso":null},{"nombre":"Plancha","repeticiones":[],"segundos":[40,40,40],"kg":null,"descanso":null}],"nota":"Acabó bien."}`,
+JSON: {"fecha":"${fechaRef}","hora":"09:00","duracion":null,"ejercicios":[{"nombre":"Correr","repeticiones":[],"segundos":[1200],"kg":null,"descanso":null},{"nombre":"Sentadillas","repeticiones":[10,10],"segundos":[],"kg":null,"descanso":60},{"nombre":"Flexiones","repeticiones":[15],"segundos":[],"kg":null,"descanso":null},{"nombre":"Plancha","repeticiones":[],"segundos":[40,40,40],"kg":null,"descanso":null}],"nota":"Acabó bien."}`,
     mensaje: String(relato).slice(0, 4000),
   });
   const out = { items: desdeLLM(j?.ejercicios) };
   if (/^\d{4}-\d{2}-\d{2}$/.test(String(j?.fecha || ''))) out.fecha = j.fecha;
+  const hm = /^([01]?\d|2[0-3])[:.]([0-5]\d)$/.exec(String(j?.hora || '').trim()); if (hm) out.hora = `${hm[1].padStart(2, '0')}:${hm[2]}`;
   const d = Math.round(Number(j?.duracion)); if (d > 0 && d <= 600) out.duracion = d;
   if (j?.nota) out.nota = String(j.nota).trim().slice(0, 300);
   return out;
@@ -94,12 +96,12 @@ export function registrarEjercicio(s = {}) {
     ultimoInterpretado = t;
     // Las reglas van primero: sin LLM o si la llamada falla, algo de lo contado queda en la lista.
     const local = interpretarLocal(t, estado.ejercicios.map(e => e.nombre));
-    if (local.length) { escribir({ detalle: componerDetalle(local) }); repintar(form); }
+    escribir({ hora: horaDe(t), detalle: local.length ? componerDetalle(local) : null }); repintar(form);
     try {
       const j = await interpretarConLLM(t, hoyISO());
       // Lo que el mayordomo se salte y las reglas sí hayan visto se completa con ellas.
       const items = combinar(j.items, local);
-      escribir({ fecha: j.fecha, duracion: j.duracion, nota: j.nota, detalle: items.length ? componerDetalle(items) : null });
+      escribir({ fecha: j.fecha, hora: j.hora, duracion: j.duracion, nota: j.nota, detalle: items.length ? componerDetalle(items) : null });
       repintar(form);
     } catch (e) { if (avisar) toast('No se pudo interpretar: ' + e.message + '. Lo contado se guarda igual; repasa la lista.', 8000); }
   };
@@ -126,7 +128,7 @@ export function registrarEjercicio(s = {}) {
     if (!v) return null;
     if (v.__extra) { if (await confirmar('¿Borrar esta sesión?')) { estado.sesionesEjercicio = estado.sesionesEjercicio.filter(x => x.id !== s.id); guardar(); } return null; }
     const items = vincular(leerDetalle(v.detalle), estado.ejercicios).map(it => ({ ...it, hecho: true }));
-    const datos = { fecha: v.fecha, nombre: nombreSesion(items), relato: (v.relato || '').trim(), items, duracion: v.duracion || null, nota: (v.nota || '').trim() };
+    const datos = { fecha: v.fecha, hora: v.hora || null, nombre: nombreSesion(items), relato: (v.relato || '').trim(), items, duracion: v.duracion || null, nota: (v.nota || '').trim() };
     if (!items.length && !datos.relato) { toast('No hay nada que guardar'); return null; }
     if (editando) {
       const r = estado.sesionesEjercicio.find(x => x.id === s.id);
@@ -147,11 +149,15 @@ export function itemsDeSesion(s) {
   return s.items.filter(i => i.hecho).map(i => ejercicio(i.ejercicioId)).filter(Boolean).map(e => ({ nombre: e.nombre, series: leerSeries(`${e.series} × ${e.reps}`) }));
 }
 
-// El volumen de varias sesiones, en filas como la última noche de Sueño.
+// El volumen de varias sesiones, en filas como la última noche de Sueño. La duración de la sesión y el
+// tiempo de los ejercicios que van por tiempo (una caminata, una plancha) son cosas distintas y van en
+// filas distintas: con una sola fila «Por tiempo», corregir la duración parecía no cambiar nada (26-sep).
 function filasVolumen(ses) {
   const v = volumen(ses.flatMap(itemsDeSesion)), fila = (l, x) => h`<div class="fila kv"><span>${l}</span><b>${x}</b></div>`;
-  return [fila('Sesiones', ses.length), fila('Ejercicios · series', `${v.ejercicios} · ${v.series}`),
-    v.reps ? fila('Repeticiones', v.reps) : '', v.seg ? fila('Por tiempo', segTexto(v.seg)) : '',
+  const conDur = ses.filter(s => Number(s.duracion) > 0), dur = conDur.reduce((n, s) => n + Number(s.duracion), 0);
+  return [fila('Sesiones', ses.length), conDur.length ? fila('Duración de las sesiones', duracionTexto(dur) + (conDur.length < ses.length ? ` · ${ses.length - conDur.length} sin anotar` : '')) : '',
+    fila('Ejercicios · series', `${v.ejercicios} · ${v.series}`),
+    v.reps ? fila('Repeticiones', v.reps) : '', v.seg ? fila('En ejercicios por tiempo', segTexto(v.seg)) : '',
     v.descanso ? fila('Descanso entre series', segTexto(v.descanso)) : '', v.kg ? fila('Kg movidos', v.kg.toLocaleString('es-ES')) : ''].join('');
 }
 
@@ -162,7 +168,7 @@ function render(cont, params) {
   const pref = estado.preferencias.tiposEjercicio || [];
   const tipo = params.tipo || '';
   const ejs = estado.ejercicios.filter(e => !tipo || e.tipo === tipo).sort((a, b) => (pref.includes(b.tipo) - pref.includes(a.tipo)) || a.nombre.localeCompare(b.nombre));
-  const sesiones = estado.sesionesEjercicio.slice().sort((a, b) => b.fecha.localeCompare(a.fecha)).slice(0, 10);
+  const sesiones = estado.sesionesEjercicio.slice().sort((a, b) => (b.fecha + (b.hora || '')).localeCompare(a.fecha + (a.hora || ''))).slice(0, 10);
   // El porcentaje de series hechas solo tiene sentido en las sesiones de una tabla: una contada es todo lo hecho.
   const planificadas = estado.sesionesEjercicio.filter(s => !contada(s));
   const hechas = planificadas.reduce((n, s) => n + s.items.filter(i => i.hecho).length, 0), total = planificadas.reduce((n, s) => n + s.items.length, 0);
@@ -187,7 +193,7 @@ function render(cont, params) {
       <div class="tarjeta"><b>Últimos 7 días</b>${semana.length ? filasVolumen(semana) : '<div class="mini">Sin sesiones. Toca «Contar el ejercicio» y díctalo como salga: «4 series de 12 flexiones descansando un minuto, 3 de 45 segundos de plancha…».</div>'}</div>
       ${total ? h`<div class="tarjeta"><div class="grande">${Math.round(hechas / total * 100)} %</div><div class="mini">de los ejercicios planificados en tablas se hicieron · ${planificadas.length} sesiones de tabla · ${estado.pildoras.filter(p => p.hecha).length} píldoras</div></div>` : ''}
       ${sesiones.map(s => contada(s)
-        ? h`<div class="tarjeta" data-a="verSesion" data-id="${s.id}"><div class="fila"><div class="t"><b>${fechaCorta(s.fecha)} · ${s.nombre}</b>${s.relato ? crudo(' <span class="mini">🎤</span>') : ''}<div class="mini">${volumenTexto(volumen(s.items)) || 'sin series anotadas'}${s.duracion ? ' · ' + duracionTexto(s.duracion) : ''}${s.nota ? ' · ' + s.nota : ''}</div></div><span class="pill ok">contada</span></div></div>`
+        ? h`<div class="tarjeta" data-a="verSesion" data-id="${s.id}"><div class="fila"><div class="t"><b>${fechaCorta(s.fecha)}${s.hora ? ' · ' + s.hora : ''} · ${s.nombre}</b>${s.relato ? crudo(' <span class="mini">🎤</span>') : ''}<div class="mini">${s.duracion ? duracionTexto(s.duracion) + ' de sesión · ' : ''}${volumenTexto(volumen(s.items)) || 'sin series anotadas'}${s.nota ? ' · ' + s.nota : ''}</div></div><span class="pill ok">contada</span></div></div>`
         : h`<div class="tarjeta" data-a="verSesion" data-id="${s.id}"><div class="fila"><div class="t"><b>${fechaCorta(s.fecha)} · ${s.nombre}</b><div class="mini">${s.items.filter(i => i.hecho).length}/${s.items.length} hechos${s.nota ? ' · ' + s.nota : ''}</div></div><span class="pill ${s.items.every(i => i.hecho) ? 'ok' : 'w'}">${s.items.every(i => i.hecho) ? 'completa' : 'parcial'}</span></div></div>`).join('') || aviso('Todavía no hay sesiones registradas.').__crudo}`)}`;
   delegar(cont, {
     vista: el => navegar('ejercicio', { v: el.dataset.v }),

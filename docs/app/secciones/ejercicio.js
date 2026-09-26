@@ -3,7 +3,7 @@ import { TIPOS_EJERCICIO, pildoras as PILDORAS } from '../datos/semillas.js';
 import { crearEvento, primerHueco } from '../agenda.js';
 import { pedirJSON, conLLM, lista as listaLLM } from '../llm.js';
 import { hayVoz } from '../voz.js';
-import { leerDetalle, leerSeries, componerDetalle, volumen, volumenTexto, segTexto, interpretarLocal, desdeLLM, vincular } from '../interpretar-ejercicio.js';
+import { leerDetalle, leerSeries, componerDetalle, volumen, volumenTexto, segTexto, interpretarLocal, desdeLLM, combinar, vincular } from '../interpretar-ejercicio.js';
 
 const ejercicio = id => estado.ejercicios.find(e => e.id === id);
 const camposEj = [
@@ -56,14 +56,24 @@ const contada = s => s?.origen === 'relato';
 const nombreSesion = items => items.length ? items.slice(0, 3).map(i => i.nombre).join(', ') + (items.length > 3 ? '…' : '') : 'Sesión contada';
 
 // Pasa el relato al mayordomo. Nunca inventa: lo que el texto no diga vuelve vacío y no se escribe.
+// El modelo del gateway es pequeño: con instrucciones largas y sin ejemplo se quedaba en el primer
+// ejercicio (26-sep, «caminata… una serie de dominadas con 20 repeticiones… rodillo abdominal»). Por eso
+// las reglas van en frases cortas, con un ejemplo de varios ejercicios, y el relato va como mensaje.
 export async function interpretarConLLM(relato, fechaRef) {
   const nombres = estado.ejercicios.map(e => e.nombre).slice(0, 80).join('; ');
   const j = await pedirJSON({
     operacion: 'ejercicio-relato', contexto: false,
-    tarea: `Alguien cuenta el ejercicio que ha hecho. Hoy es ${fechaRef}. Devuelve solo este JSON:
-{"fecha":"AAAA-MM-DD","duracion":<minutos de toda la sesión>,"ejercicios":[{"nombre":"","series":[<repeticiones de cada serie>],"segundos":[<segundos de cada serie>],"kg":<peso>,"descanso":<segundos entre series>}],"nota":"<una línea>"}
-Reglas: un objeto por ejercicio, en el orden en que se cuentan. "series" lleva las repeticiones de cada serie, un número por serie ("4 series de 12" es [12,12,12,12]; "8, 6 y 5" es [8,6,5]). Si el ejercicio es isométrico o va por tiempo (plancha, sentadilla isométrica, correr 20 minutos), "series" va vacío y "segundos" lleva lo que duró cada serie ("3 de 45 segundos" es [45,45,45]). "kg" es el peso con que lo hizo. "descanso" son los segundos entre series; si dice un descanso para todo, ponlo en cada ejercicio. "fecha" es hoy salvo que diga otro día. "nota" recoge en una línea sensaciones, cansancio o molestias, sin repetir las series.
-${nombres ? `Si un ejercicio es uno de estos, usa su nombre tal cual: ${nombres}.\n` : ''}Lo que no diga el texto va a null o a lista vacía; no inventes series, repeticiones, pesos ni descansos. Texto:\n\n${String(relato).slice(0, 4000)}`,
+    tarea: `Conviertes en datos lo que alguien cuenta de su entrenamiento. Hoy es ${fechaRef}.
+Devuelve este JSON: {"fecha":"AAAA-MM-DD","duracion":<minutos de toda la sesión, solo si lo dice>,"ejercicios":[{"nombre":"","repeticiones":[<una cifra por serie>],"segundos":[<una cifra por serie>],"kg":<peso o null>,"descanso":<segundos entre series o null>}],"nota":"<sensaciones en una línea, o vacío>"}
+- Un objeto por CADA ejercicio o actividad que se nombre, en el orden en que se cuentan. Puede haber uno o diez: recorre el texto entero.
+- Por repeticiones: "repeticiones" lleva una cifra por serie y "segundos" va vacío. "4 series de 12" es [12,12,12,12]; "una serie de 20" es [20]; "8, 6 y 5" es [8,6,5].
+- Isométricos y actividades por tiempo (plancha, caminar, correr, bici, estiramientos): "segundos" lleva una cifra por serie y "repeticiones" va vacío. "caminata de 30 minutos" es [1800]; "3 de 45 segundos" es [45,45,45].
+- En un circuito de «tres rondas» o «tres vueltas», cada ejercicio de la ronda lleva tres series.
+- La hora del día («a las diez») no es ni repetición ni duración. Un descanso dicho para todo va en cada ejercicio.
+- Lo que no diga el texto va a null o a lista vacía; no inventes.
+${nombres ? `- Si un ejercicio es exactamente uno de estos, usa ese nombre; si solo se parece, deja el nombre que dice el texto: ${nombres}.\n` : ''}Ejemplo. Texto: «A las nueve salí a correr unos 20 minutos, después hice dos series de 10 sentadillas descansando un minuto, a continuación una serie de flexiones con 15 repeticiones y terminé con tres planchas de 40 segundos. Acabé bien.»
+JSON: {"fecha":"${fechaRef}","duracion":null,"ejercicios":[{"nombre":"Correr","repeticiones":[],"segundos":[1200],"kg":null,"descanso":null},{"nombre":"Sentadillas","repeticiones":[10,10],"segundos":[],"kg":null,"descanso":60},{"nombre":"Flexiones","repeticiones":[15],"segundos":[],"kg":null,"descanso":null},{"nombre":"Plancha","repeticiones":[],"segundos":[40,40,40],"kg":null,"descanso":null}],"nota":"Acabó bien."}`,
+    mensaje: String(relato).slice(0, 4000),
   });
   const out = { items: desdeLLM(j?.ejercicios) };
   if (/^\d{4}-\d{2}-\d{2}$/.test(String(j?.fecha || ''))) out.fecha = j.fecha;
@@ -87,7 +97,9 @@ export function registrarEjercicio(s = {}) {
     if (local.length) { escribir({ detalle: componerDetalle(local) }); repintar(form); }
     try {
       const j = await interpretarConLLM(t, hoyISO());
-      escribir({ fecha: j.fecha, duracion: j.duracion, nota: j.nota, detalle: j.items.length ? componerDetalle(j.items) : null });
+      // Lo que el mayordomo se salte y las reglas sí hayan visto se completa con ellas.
+      const items = combinar(j.items, local);
+      escribir({ fecha: j.fecha, duracion: j.duracion, nota: j.nota, detalle: items.length ? componerDetalle(items) : null });
       repintar(form);
     } catch (e) { if (avisar) toast('No se pudo interpretar: ' + e.message + '. Lo contado se guarda igual; repasa la lista.', 8000); }
   };

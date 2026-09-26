@@ -94,6 +94,8 @@ comprobar(/3 ejercicios · 10 series · 67 repeticiones · 2 min 15 s por tiempo
 comprobar(pedido.operacion === 'ejercicio-relato', `la llamada lleva su propia operación — ${pedido.operacion}`);
 comprobar(pedido.contexto === '', 'no manda el contexto entero de la app');
 comprobar(pedido.tarea.includes('Flexiones; Plancha; Dominadas'), 'le pasa los nombres del catálogo para que coincidan');
+comprobar(pedido.mensajes?.[0]?.contenido === RELATO && !pedido.tarea.includes(RELATO), 'el relato va como mensaje, no metido en las instrucciones');
+comprobar(/Ejemplo/.test(pedido.tarea), 'las instrucciones llevan un ejemplo de varios ejercicios');
 
 console.log('\n--- 3. Corregir la lista a mano recalcula el volumen ---');
 await pag.locator('dialog.modal [name="detalle"]').fill(detalle.replace('Flexiones: 4 × 12', 'Flexiones: 5 × 12'));
@@ -144,16 +146,33 @@ await pag.locator('dialog.modal button[type="submit"]').click();
 await pag.waitForTimeout(400);
 comprobar((await sesiones()).length === 2, 'la sesión se guarda aunque el LLM no esté');
 
+console.log('\n--- 6b. Si el mayordomo se salta ejercicios, las reglas los completan (caso real del 26-sep) ---');
+fallar = null;
+// Lo que devolvió de verdad el modelo del gateway con el prompt anterior: solo el primero y sin series.
+respuesta = { fecha: '2026-09-26', duracion: 30, ejercicios: [{ nombre: 'Caminata', series: [], segundos: [], kg: null, descanso: null }], nota: 'Ha sido una sesión corta.' };
+await pag.locator('[data-a="contar"]').click();
+await pag.waitForSelector('dialog.modal');
+await pag.locator('dialog.modal [name="relato"]').fill('A las diez de la mañana he hecho una caminata de unos 30 minutos y después he hecho una serie de dominadas con 20 repeticiones a continuación he hecho una serie de rodillo abdominal con 15 repeticiones y no he hecho nada más eso es todo');
+await pag.locator('dialog.modal [data-accion]').click();
+await pag.waitForTimeout(600);
+const d6b = await campo('detalle');
+console.log('  detalle:', JSON.stringify(d6b));
+comprobar(d6b === 'Caminata: 1 × 30 min\nDominadas: 1 × 20\nRodillo abdominal: 1 × 15', 'salen los tres ejercicios, con su tiempo y sus repeticiones');
+comprobar(/3 ejercicios · 3 series · 35 repeticiones · 30 min por tiempo/.test(await pag.locator('dialog.modal .volumen').innerText()), 'y el volumen los cuenta a los tres');
+await pag.locator('dialog.modal [data-cancelar]').first().click();
+
 console.log('\n--- 7. El lector sin LLM, por su cuenta ---');
 const local = await pag.evaluate(() => import('./app/interpretar-ejercicio.js').then(m => [
   m.componerDetalle(m.interpretarLocal('Hoy he hecho cinco series de diez fondos en paralelas y dos de un minuto de plancha lateral por cada lado', ['Plancha'])),
   m.interpretarLocal('Hoy no he entrenado, estaba cansado'),
   m.componerDetalle(m.leerDetalle('Remo: 12, 10, 8 · 20 kg · descanso 1:30\nEstiramientos')),
+  m.componerDetalle(m.interpretarLocal('Empecé con 10 minutos de bici estática, después 3 series de 10 sentadillas goblet con 16 kilos descansando un minuto y medio, a continuación 4 series de flexiones de 15, 12, 10 y 8, luego plancha 3 veces 40 segundos, después 2 series de 12 remo con kettlebell con 12 kilos y para terminar 5 minutos de estiramientos', ['Remo con kettlebell'])),
 ]));
 console.log('  ', JSON.stringify(local));
 comprobar(local[0] === 'Fondos paralelas: 5 × 10\nPlancha lateral: 2 × 1 min', 'números en letra, «y dos de un minuto» abre otro ejercicio');
 comprobar(local[1].length === 0, 'de un texto sin series no se inventa ninguna');
 comprobar(local[2] === 'Remo: 12, 10, 8 · 20 kg · descanso 1 min 30 s\nEstiramientos', 'la lista escrita a mano se lee y se recompone igual');
+comprobar(local[3] === 'Bici estática: 1 × 10 min\nSentadillas goblet: 3 × 10 · 16 kg · descanso 1 min 30 s\nFlexiones: 15, 12, 10, 8\nPlancha: 3 × 40 s\nRemo con kettlebell: 2 × 12 · 12 kg\nEstiramientos: 1 × 5 min', 'seis ejercicios mezclados: tiempo, peso, series distintas y «3 veces»');
 
 console.log('\n--- 8. Se puede fijar en Hoy ---');
 await ir('historial');

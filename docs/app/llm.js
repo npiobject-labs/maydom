@@ -9,8 +9,11 @@ function cabeceras() {
   if (estado.ajustes.clave) h['X-Clave'] = estado.ajustes.clave;
   return h;
 }
-export async function consultar({ tarea = '', mensaje = '', mensajes = null, formato = '', imagen = '', contexto = true, operacion = 'chat' } = {}) {
-  const cuerpo = { contexto: contexto ? resumenParaLLM() : '', tarea, formato, imagen, operacion, mensajes: mensajes || [{ rol: 'usuario', contenido: mensaje || 'Adelante.' }] };
+// El modelo de Ajustes (ADR-010) vale para lo que redacta —chat, consejos, informes—; lo que rellena
+// campos (JSON) o mira una foto sigue con el del servidor, que es barato y sabe leer imágenes.
+export async function consultar({ tarea = '', mensaje = '', mensajes = null, formato = '', imagen = '', contexto = true, operacion = 'chat', modelo, modo = '' } = {}) {
+  if (modelo === undefined) modelo = formato === 'json' || imagen ? '' : (estado.ajustes.modelo || '');
+  const cuerpo = { contexto: contexto ? resumenParaLLM() : '', tarea, formato, imagen, operacion, modelo, modo, mensajes: mensajes || [{ rol: 'usuario', contenido: mensaje || 'Adelante.' }] };
   // El backend espera hasta 150 s al gateway; el cliente, algo más, para que corte el que mide.
   const r = await fetch(urlBackend() + '/api/mayordomo', { method: 'POST', headers: cabeceras(), body: JSON.stringify(cuerpo), signal: AbortSignal.timeout(170000) });
   const j = await r.json().catch(() => ({}));
@@ -25,6 +28,17 @@ export async function estadoLLM() {
   estado.ajustes.llm = j; guardar();
   return j;
 }
+// GET al backend con la clave de acceso; el error trae el mensaje del backend.
+async function leer(ruta) {
+  const r = await fetch(urlBackend() + ruta, { headers: cabeceras(), signal: AbortSignal.timeout(30000) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+  return j;
+}
+// Catálogo de modelos de texto del gateway: {defecto, modelos: [{id, nombre, contexto, entrada, salida, json, imagen, recomendado}]}.
+export const catalogoModelos = () => leer('/api/modelos');
+// Lo que costó una operación según el gateway (dólares), o null si no anotó nada.
+export const costeDe = async operacion => { const j = await leer('/api/uso?operacion=' + encodeURIComponent(operacion)); return j.llamadas ? j.coste : null; };
 export async function pedirJSON(opciones) {
   const j = await consultar({ ...opciones, formato: 'json' });
   try { return JSON.parse(j.respuesta); } catch { throw new Error('El LLM no devolvió JSON válido'); }

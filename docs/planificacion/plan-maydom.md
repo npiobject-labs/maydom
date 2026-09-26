@@ -96,7 +96,7 @@ Input de qué busco + tiendas donde buscarlo (catálogo con categoría: alimenta
 |---|---|---|
 | Frontend | PWA estática en `docs/` (HTML + CSS + JS sin framework, módulos ES), servida por Pages y por `tools/arrancar.ps1` en local | Es lo que el flujo del proyecto publica en cada push; instalable en el móvil; sin build |
 | Datos | **Local-first**: todo en `localStorage` del dispositivo (un JSON versionado), con exportar/importar | Un usuario, un móvil; sin cuentas ni servidor con estado; nada real en el sitio público |
-| Backend | Rust (axum) en Fly.io, **sin estado**: `/salud`, `/holamundo`, `GET /api/estado`, `POST /api/mayordomo` | Cliente del gateway propio (§4.1); ninguna clave llega al navegador |
+| Backend | Rust (axum) en Fly.io, **sin estado**: `/salud`, `/holamundo`, `GET /api/estado`, `POST /api/mayordomo`, `GET /api/modelos`, `GET /api/uso` | Cliente del gateway propio (§4.1); ninguna clave llega al navegador |
 | LLM | **Gateway `npiobject-labs/openrouter`** (`https://apisor.oracle402.com/v1`, API de OpenAI), con clave de aplicación propia, presupuesto y `X-Operacion` por sección | Ya existe, mide el gasto por app y por operación, y corta si se pasa del presupuesto |
 | Notificaciones | Notificaciones locales del navegador con la app abierta o instalada (service worker) | Push real requiere servidor con estado y suscripciones: deuda |
 | Memoria del mayordomo | Bóveda **Obsidian** en `docs/planificacion/memoria/` (Markdown con frontmatter y wikilinks), en el repo | El repo es la única fuente de verdad; los agentes la leen en cada sesión; la app exporta decisiones en ese formato |
@@ -114,7 +114,7 @@ El mayordomo no habla con OpenRouter: habla con el **servicio `npiobject-labs/op
 | Clave de **aplicación** de maydom | Secreto `LLM_API_KEY` del repo → Fly | Solo el backend de maydom |
 | Clave de **acceso** a la app | Secreto `MAYDOM_CLAVE` → Fly, y el usuario la escribe una vez en Ajustes | El navegador del usuario |
 
-El backend de maydom manda `Authorization: Bearer <clave de aplicación>` y `X-Operacion: maydom-<sección>` (chat, menu, foto-stock, ejercicios, ejercicio-relato, suplementos, ocio, sueno, sueno-relato, finanzas, buscador), así que `GET /v1/uso/resumen?agrupar=operacion` en el gateway dice cuánto cuesta cada función. Sigue la guía de integración del gateway: reintentos solo ante 502/504 (dos, con espera creciente), timeout del cliente por encima del suyo, y los errores traducidos al español con su código (`sin_configurar`, `presupuesto_agotado`, `cuota_superada`, `bucle`). `GET /api/estado` dice si hay LLM y qué modelo, sin gastar crédito.
+El backend de maydom manda `Authorization: Bearer <clave de aplicación>` y `X-Operacion: maydom-<sección>` (chat, menu, foto-stock, ejercicios, ejercicio-relato, suplementos, ocio, sueno, sueno-relato, finanzas, buscador), así que `GET /v1/uso/resumen?agrupar=operacion` en el gateway dice cuánto cuesta cada función. Sigue la guía de integración del gateway: reintentos solo ante 502/504 (dos, con espera creciente), timeout del cliente por encima del suyo, y los errores traducidos al español con su código (`sin_configurar`, `presupuesto_agotado`, `cuota_superada`, `bucle`). `GET /api/estado` dice si hay LLM y qué modelo, sin gastar crédito. Desde ADR-010, `GET /api/modelos` trae el catálogo del gateway para elegir modelo en Ajustes, y `GET /api/uso?operacion=` lo que costó una operación.
 
 **Qué hace cada sección con el LLM** (todo opcional: sin clave, la app funciona con el motor de reglas):
 
@@ -131,7 +131,8 @@ El backend de maydom manda `Authorization: Bearer <clave de aplicación>` y `X-O
 | Notas | ✨ Revisar, a petición: texto corregido, versión en lista, correcciones con su tipo, avisos, título, etiquetas, tipo y tareas por separado | `nota-revisar` |
 | Alimentación | Ficha del plato: ingredientes, preparación, nutrientes, nota, etiquetas, momento y minutos | `plato` |
 | Alimentación | Modo cocina: la ficha convertida en pasos, con minutos de espera y cada cuánto remover (se guarda en el plato; sin LLM, por reglas) | `plato-cocinar` |
-| Mayordomo | Chat y tanda de consejos | `chat` |
+| Mayordomo | Chat y tanda de consejos (con el modelo elegido en Ajustes) | `chat` |
+| Notas → Ideas | 🔎 Analizar: un informe con 1 a 8 roles (una llamada por rol, cuatro a la vez) y una síntesis; modelo de Ajustes o uno solo para ese informe, coste leído del gateway (ADR-010) | `informe-<id>-<generación>` |
 
 ### 4.2 El buscador, mirando a buscaproducto
 

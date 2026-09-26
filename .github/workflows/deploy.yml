@@ -218,6 +218,41 @@ jobs:
             echo "OK: sin X-Clave responde 401"
           fi
 
+      # ADR-010: catalogo de modelos para Ajustes, una llamada en modo informe con el modelo por defecto
+      # del catalogo (como un rol de un informe) y el coste de esa operacion leido del gateway.
+      # Con LLM_API_KEY todo tiene que responder; sin ella, /api/modelos da 503 y no se sigue.
+      - name: Verificar modelos e informes
+        if: steps.fly.outputs.configurado == 'true'
+        env:
+          FLY_APP: ${{ steps.app.outputs.app }}
+          MAYDOM_CLAVE: ${{ secrets.MAYDOM_CLAVE }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        run: |
+          base="https://${FLY_APP}.fly.dev"
+          codigo="$(curl -sS --max-time 40 -o /tmp/modelos -w '%{http_code}' -H "x-clave: ${MAYDOM_CLAVE}" "${base}/api/modelos" || true)"
+          if [ -z "${LLM_API_KEY}" ]; then
+            [ "${codigo}" = "503" ] || { echo "::error::sin LLM_API_KEY, /api/modelos devolvio ${codigo}"; exit 1; }
+            echo "OK: /api/modelos 503 sin LLM_API_KEY"; exit 0
+          fi
+          [ "${codigo}" = "200" ] || { echo "::error::/api/modelos devolvio ${codigo}: $(head -c 300 /tmp/modelos)"; exit 1; }
+          n="$(jq '.modelos | length' /tmp/modelos)"; defecto="$(jq -r '.defecto // ""' /tmp/modelos)"
+          echo "Catalogo: ${n} modelos; por defecto: ${defecto}; recomendados presentes: $(jq -r '[.modelos[] | select(.recomendado) | .id] | join(", ")' /tmp/modelos)"
+          [ "${n}" -gt 0 ] || { echo "::error::/api/modelos trae el catalogo vacio"; exit 1; }
+          op="verificacion-informe-${GITHUB_RUN_ID}"
+          cuerpo="$(jq -n --arg m "${defecto}" --arg op "${op}" '{modo:"informe", modelo:$m, operacion:$op, tarea:"Devuelve solo markdown: **Veredicto:** y una frase.", mensajes:[{rol:"usuario", contenido:"Idea de prueba: regar las plantas del balcon con goteo."}]}')"
+          codigo="$(curl -sS --max-time 150 -o /tmp/informe -w '%{http_code}' -X POST "${base}/api/mayordomo" -H 'content-type: application/json' -H "x-clave: ${MAYDOM_CLAVE}" -d "${cuerpo}" || true)"
+          echo "Modo informe HTTP ${codigo}: $(head -c 300 /tmp/informe)"
+          case "${codigo}" in
+            200) jq -e '.respuesta | length > 0' /tmp/informe >/dev/null || { echo "::error::modo informe sin respuesta"; exit 1; } ;;
+            402|429) echo "::warning::El gateway corto la llamada (presupuesto o cuota)"; exit 0 ;;
+            *) echo "::error::modo informe devolvio HTTP ${codigo}"; exit 1 ;;
+          esac
+          sleep 2
+          codigo="$(curl -sS --max-time 40 -o /tmp/uso -w '%{http_code}' -H "x-clave: ${MAYDOM_CLAVE}" "${base}/api/uso?operacion=maydom-${op}" || true)"
+          echo "Uso HTTP ${codigo}: $(head -c 300 /tmp/uso)"
+          [ "${codigo}" = "200" ] && jq -e '.llamadas >= 1' /tmp/uso >/dev/null || { echo "::error::/api/uso no ve la llamada de maydom-${op}"; exit 1; }
+          echo "Modelos: ${n} en el catalogo (por defecto ${defecto}); informe de prueba con coste $(jq -r '.coste' /tmp/uso) \$" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Resumen del despliegue
         if: success() && steps.fly.outputs.configurado == 'true'
         env:
@@ -231,7 +266,7 @@ jobs:
             echo "- URL: https://${FLY_APP}.fly.dev/"
             echo "- Salud: https://${FLY_APP}.fly.dev/salud"
             echo "- Hola mundo: https://${FLY_APP}.fly.dev/holamundo"
-            echo "- Mayordomo: POST https://${FLY_APP}.fly.dev/api/mayordomo · estado: /api/estado"
+            echo "- Mayordomo: POST https://${FLY_APP}.fly.dev/api/mayordomo · estado: /api/estado · modelos: /api/modelos"
             echo "- Comprobacion desde Pages: https://${GITHUB_REPOSITORY%%/*}.github.io/${GITHUB_REPOSITORY#*/}/holamundo.html"
             echo "- Build (SHA): \`${GITHUB_SHA}\`"
           } >> "$GITHUB_STEP_SUMMARY"

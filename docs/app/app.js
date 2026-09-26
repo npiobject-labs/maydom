@@ -22,10 +22,12 @@ import buscador from './secciones/buscador.js';
 import ajustes from './secciones/ajustes.js';
 import menu from './secciones/menu.js';
 import { arrancarPWA } from './pwa.js';
+import { recuperarInformes } from './informe.js';
 
 [hoy, calendario, notas, ejercicio, sueno, meditacion, alimentacion, suplementos, compra, proyectos, ocio, finanzas, mayordomo, preferencias, buscador, ajustes, menu].forEach(registrar);
 if (!estado.ajustes.semillasCargadas) cargarSemillas(false);
 sincronizarCompra();
+recuperarInformes();
 aplicarTema();
 
 const main = document.getElementById('main'), titulo = document.getElementById('titulo'), sub = document.getElementById('sub'), nav = document.getElementById('nav'), fijar = document.getElementById('fijar');

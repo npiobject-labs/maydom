@@ -266,3 +266,32 @@ button.etq{cursor:pointer}button.etq:hover{border-color:var(--acc);color:var(--a
 .rev-hecha{font-size:.84rem;color:var(--ok);margin-top:.45rem}
 .rev-hecha blockquote{margin:.35rem 0 0;padding:.4rem .6rem;border-left:3px solid var(--line);color:var(--ink2);white-space:pre-wrap;font-size:.84rem}
 .modal .volumen{margin:.15rem 0 .7rem;color:var(--acc);font-weight:600}
+/* Informes con roles y selección de modelo (ADR-010) */
+.modal.ancho{width:min(94vw,34rem)}
+.modelo-btn{display:flex;align-items:center;gap:.6rem;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:.55rem .7rem;cursor:pointer;margin:.35rem 0}
+.modelo-btn:hover{border-color:var(--acc)}
+.modelo-btn>span:nth-child(2){flex:1;min-width:0}.modelo-btn b{display:block}.modelo-btn small{color:var(--mute);font-size:.75rem}.modelo-btn i{font-style:normal;color:var(--mute)}
+.grupo-m{font-size:.72rem;color:var(--mute);text-transform:uppercase;letter-spacing:.04em;margin:.8rem 0 .25rem}
+.lista-modelos{display:flex;flex-direction:column;gap:.3rem}
+.modelo{display:flex;align-items:center;gap:.5rem;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:.45rem .6rem;cursor:pointer}
+.modelo>span{flex:1;min-width:0}.modelo b{display:block;font-size:.88rem}.modelo code{display:block;font-size:.7rem;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.modelo small{color:var(--ink2);font-size:.74rem}
+.modelo i{font-style:normal;color:var(--acc);visibility:hidden}.modelo.on{border-color:var(--acc);background:var(--acc2)}.modelo.on i{visibility:visible}
+.modal input[type=search]{width:100%;margin:.3rem 0}
+.roles{display:grid;grid-template-columns:repeat(auto-fill,minmax(9.5rem,1fr));gap:.4rem;margin:.3rem 0}
+.rol{text-align:left;font:inherit;color:var(--ink);background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:.45rem .55rem;cursor:pointer}
+.rol b{display:block;font-size:.85rem}.rol small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--mute);font-size:.72rem;line-height:1.3}
+.rol.on{border-color:var(--acc);background:var(--acc2)}.rol.nuevo{color:var(--acc);text-align:center;border-style:dashed}
+.fuentes{max-height:28vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:.2rem .55rem;margin-top:.3rem}
+.fuentes label{display:flex;gap:.5rem;align-items:flex-start;padding:.3rem 0;margin:0;font-size:.85rem;border-bottom:1px dashed var(--line)}.fuentes label:last-child{border-bottom:0}
+.coste{margin-top:.7rem;background:var(--acc2);color:var(--acc);border-radius:8px;padding:.5rem .7rem;font-size:.82rem;line-height:1.4}
+.coste.caro{background:var(--warn2);color:var(--warn)}
+.mini.error{color:var(--mal)}
+.lista-roles .fila{width:100%;text-align:left;font:inherit;color:var(--ink);background:none;border:0;border-bottom:1px solid var(--line);padding:.55rem 0;cursor:pointer}
+.lista-roles .fila .ico{font-size:1.3rem;width:1.8rem;text-align:center}.lista-roles .fila b{display:block}
+.lista-roles .fila small{display:block;color:var(--mute);font-size:.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lista-roles .fila i{font-style:normal;color:var(--mute)}
+.titulo-informe{margin:.3rem 0 .15rem;font-size:1.15rem}
+.progreso ul{list-style:none;padding:0;margin:.4rem 0}.progreso li{padding:.12rem 0;font-size:.88rem}.progreso li.espera{color:var(--mute)}.progreso li.hecho{color:var(--ok)}.progreso li.fallido{color:var(--mal)}.progreso li.trabajando{font-weight:600}
+.aviso-informe{border-color:var(--warn);background:var(--warn2)}
+.md{line-height:1.5;overflow-wrap:anywhere}.md h1{font-size:1.2rem;margin:.2rem 0 .6rem}.md h2{font-size:1.02rem;margin:1.1rem 0 .4rem;color:var(--acc)}.md h3{font-size:.95rem;margin:.9rem 0 .3rem}.md h4{font-size:.88rem;margin:.6rem 0 .2rem}
+.md p{margin:.35rem 0}.md ul,.md ol{margin:.3rem 0;padding-left:1.3rem}.md li{margin:.15rem 0}.md code{font-size:.82em;background:var(--line);border-radius:4px;padding:0 .25rem}
+@media print{body *{visibility:hidden!important}.md-informe,.md-informe *{visibility:visible!important}.md-informe{position:absolute;left:0;top:0;width:100%;border:0;padding:0;margin:0;background:#fff;color:#000}.md-informe h2{color:#000}}

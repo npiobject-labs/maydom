@@ -1,0 +1,36 @@
+{
+  "fecha": "2026-09-26T16:53:00+02:00",
+  "titulo": "Modelo en Ajustes e informes con varios roles, como en prueba",
+  "objetivo": "Llevar a maydom la elección de modelo del gateway openrouter y el análisis con varios agentes de roles distintos que ya tiene la app prueba.",
+  "prompts": [
+    {
+      "texto": "Modelos como ves en la imagen adjunta y para la aplicación prueba donde se guardan notas en ajustes tenemos eh opciones de seleccionar el modelo y también la opción de EH utilizar varios agentes con distintos roles quiero que este mismo sistema lo lleves a maiydon openrouter en la app.",
+      "nota": "dictado, con una captura de Ajustes de prueba (modelo, roles y versión)"
+    }
+  ],
+  "cambios": [
+    "Ajustes → «Modelo e informes»: selector con buscador sobre el catálogo del gateway (recomendados, precio y contexto). El modelo vale para el chat, los consejos y los informes; lo que rellena campos o lee fotos sigue con el del servidor.",
+    "Roles de análisis: los nueve de serie de prueba y roles propios (crear, editar, duplicar y borrar), guardados en el estado local.",
+    "Notas → Ideas → 🔎 Analizar: de 1 a 20 ideas y de 1 a 8 roles, coste estimado y modelo solo para ese informe; una llamada por rol (cuatro a la vez) y una síntesis.",
+    "Nueva pestaña Informes: progreso rol a rol, reintentar solo lo fallido, lectura formateada, editar, copiar, .md, PDF, compartir, regenerar y coste real leído del gateway.",
+    "Backend: modelo y modo informe en /api/mayordomo, GET /api/modelos y GET /api/uso; deploy.yml los verifica.",
+    "ADR-010 y prueba de humo tools/prueba-informes.mjs (55 comprobaciones)."
+  ],
+  "sha": "aaf8c92",
+  "sha_completo": null,
+  "run": null,
+  "mock": null,
+  "build": "MA-B1-20260926-004",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/notas?v=ideas",
+  "fly": null,
+  "pendiente": [
+    "Revisar y fusionar el PR 29; confirmar pages.yml y deploy.yml en verde, incluido «Verificar modelos e informes»."
+  ],
+  "enlaces": [
+    {
+      "texto": "PR 29 · Modelo e informes con roles",
+      "url": "https://github.com/npiobject-labs/maydom/pull/29"
+    }
+  ],
+  "notas": "El PR no se fusionó en la sesión porque fusionar sin revisión no estaba permitido; el sha es el de la rama de trabajo y aún no hay run de despliegue."
+}

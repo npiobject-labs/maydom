@@ -286,6 +286,8 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
     };
     dlg.showModal();
     form.querySelectorAll('textarea').forEach(t => crecer(t));
+    // Para lo que se pinta dentro de la ventana según se escribe (el volumen de Ejercicio).
+    opciones.alAbrir?.({ escribir, form });
     const primero = form.querySelector('input:not([type=checkbox]),select,textarea'); if (primero) primero.focus();
   });
 }

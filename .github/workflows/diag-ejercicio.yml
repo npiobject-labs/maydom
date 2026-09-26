@@ -18,7 +18,7 @@ jobs:
           MAYDOM_CLAVE: ${{ secrets.MAYDOM_CLAVE }}
         run: |
           for f in .github/diag/cuerpo*.json; do
-            for i in 1 2; do
+            for i in 1; do
               echo "=== ${f} · intento ${i}"
               curl -sS --max-time 150 -X POST "https://${FLY_APP}.fly.dev/api/mayordomo" \
                 -H 'content-type: application/json' -H "x-clave: ${MAYDOM_CLAVE}" -d @"${f}" -w '\nHTTP %{http_code}\n'

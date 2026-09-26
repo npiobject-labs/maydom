@@ -8,7 +8,7 @@ import { botonDictado } from '../voz.js';
 import { CLASES, claseDe, topeDe, lineasDe, tituloTarea, partesDe, etiquetaCompra, sinAcentos, ETIQUETAS_COMPRA } from '../interpretar-nota.js';
 import { revision, resultado, cambios, detalleCambio } from '../revisar-texto.js';
 import { anadirCompras, etiquetaDe, nombreEtiqueta, etiquetasCompra, editarLinea, marcarComprado, categoriaBusqueda } from './compra.js';
-import { abrirAnalisis, crearInforme, regenerar, reintentar, generando, copiarInforme, descargarInforme, compartirInforme, nombreModelo, dolares, fechaHora } from '../informe.js';
+import { abrirAnalisis, crearInforme, informesDe, regenerar, reintentar, generando, copiarInforme, descargarInforme, compartirInforme, nombreModelo, dolares, fechaHora } from '../informe.js';
 import { markdown } from '../markdown.js';
 
 const ETIQUETAS = ['ejercicio', 'sueno', 'meditacion', 'alimentacion', 'suplementos', 'proyecto', 'ocio', 'finanzas', 'calendario', 'mayordomo', 'idea', 'casa', 'papeleo', 'salud'];
@@ -172,6 +172,7 @@ export function abrirNota({ clase = '', previa = null } = {}) {
       <label for="n_texto">Dicta o escribe</label>
       <textarea id="n_texto" name="texto" rows="3" placeholder="«Llamar al fontanero el jueves» · «Comprar leche, huevos y pilas» · una idea"></textarea>
       <div class="bajo-texto"><span data-voz></span><span data-para="tarea idea"><button type="button" class="btn" data-revisar>✨ Revisar</button> <small class="mini">corrige, da formato y etiqueta · 1 consulta</small></span></div>
+      <div class="bajo-texto" data-para="idea"><button type="button" class="btn" data-analizar>🔎 Analizar con roles</button>${previa && informesDe(previa.id).length ? `<button type="button" class="btn" data-ver-informes>📄 ${informesDe(previa.id).length === 1 ? '1 informe' : informesDe(previa.id).length + ' informes'}</button>` : ''}<small class="mini">guarda la idea y elige los roles</small></div>
       <div data-rev></div>
       <label>Es una</label>
       <div class="segmento" role="radiogroup">${CLASES.map(c => `<button type="button" role="radio" data-clase="${c}">${NOMBRE_CLASE[c]}</button>`).join('')}</div>
@@ -411,7 +412,8 @@ export function abrirNota({ clase = '', previa = null } = {}) {
       } else {
         if (!texto) { campo('texto').focus(); return toast('Escribe o dicta algo'); }
         cerrar(true);
-        guardarIdea(texto, { titulo, tipo: campo('tipo').value, ...extra }, previa);
+        const nota = guardarIdea(texto, { titulo, tipo: campo('tipo').value, ...extra }, previa);
+        if (st.analizar) { irA(st.clase); return analizarIdea(nota); }
         if (!previa) toast(titulo ? 'Guardada' : 'Guardada; el mayordomo le pone título');
       }
       irA(st.clase);
@@ -445,6 +447,9 @@ export function abrirNota({ clase = '', previa = null } = {}) {
       if (t.matches('[data-quitar-etq]')) { st.etiquetas = st.etiquetas.filter(x => x !== t.dataset.quitarEtq); return pintarFichas(); }
       if (t.matches('[data-sug-etq]')) return anadirEtiqueta(t.dataset.sugEtq, false);
       if (t.matches('[data-revisar]')) return revisar();
+      // Analizar con roles guarda primero (como el botón Guardar) y luego abre la hoja con esta idea marcada.
+      if (t.matches('[data-analizar]')) { st.analizar = true; form.requestSubmit(); st.analizar = false; return; }
+      if (t.matches('[data-ver-informes]')) { cerrar(null); return navegar('notas', { v: 'informes', idea: previa.id }); }
       if (t.matches('[data-rev-cerrar]')) { st.rev = null; st.revHecha = st.original ? { guardada: true } : null; return pintarRev(); }
       if (t.dataset.vista) { st.rev.vista = t.dataset.vista; return pintarRev(); }
       if (t.dataset.fmt) { st.rev.fmt = t.dataset.fmt; return pintarRev(); }
@@ -557,6 +562,12 @@ function cuerpoCompras(params) {
     ${hechos.length ? h`<details class="plegable"><summary>Comprado <span class="mini">${hechos.length}</span></summary><div class="cuerpo">${lista(hechos.map(c => h`<div class="mini">✓ ${c.nombre} ${c.cantidad || ''}</div>`))}</div></details>` : ''}
     <p class="mini">Es la misma lista que <a href="#/compra">🧺 Compra</a>, que la agrupa por tienda y repone el stock al marcar comprado.</p>`;
 }
+// Analizar una sola idea desde su diálogo: sale marcada ella sola y debajo el resto, por si se quiere sumar alguna.
+async function analizarIdea(nota) {
+  const otras = estado.notas.filter(n => esIdea(n) && n.id !== nota.id).sort((a, b) => b.fecha.localeCompare(a.fecha) || b.id.localeCompare(a.id));
+  const v = await abrirAnalisis({ ideas: [nota, ...otras], marcadas: [nota.id] });
+  if (v) navegar('notas', { v: 'informes', id: crearInforme(v) });
+}
 // Las ideas que se ven con el buscador y la etiqueta puestos: son las que se ofrecen para analizar.
 function ideasVisibles(params) {
   const filtro = (params.q || '').toLowerCase(), etq = params.etq || '';
@@ -573,7 +584,7 @@ function cuerpoIdeas(params) {
     ${sinAnalizar.length > 1 ? h`<div class="tarjeta fila"><div class="t mini">${sinAnalizar.length} ideas sin título propio</div><button class="btn" data-a="lote">Titularlas</button></div>` : ''}
     ${notas.length ? lista(notas.map(n => h`<div class="tarjeta nota t-${n.tipo}" data-a="editar" data-id="${n.id}">
       <b>${n.titulo || tituloProvisional(n.texto)}</b>
-      <div class="mini">${fechaCorta(n.fecha)} · ${n.tipo}${n.tipoSugerido ? ' (sugerido)' : ''}${n.original ? ' · ✨ revisada' : ''}</div>
+      <div class="mini">${fechaCorta(n.fecha)} · ${n.tipo}${n.tipoSugerido ? ' (sugerido)' : ''}${n.original ? ' · ✨ revisada' : ''}${informesDe(n.id).length ? ` · 🔎 ${informesDe(n.id).length === 1 ? '1 informe' : informesDe(n.id).length + ' informes'}` : ''}</div>
       <div class="cuerpo">${n.texto}</div>${(n.etiquetas || []).length ? h`<div class="etqs">${lista(n.etiquetas.map(e => h`<button class="etq" data-a="etq" data-e="${e}" aria-label="Filtrar por ${e}">${e}</button>`))}</div>` : ''}</div>`)) : aviso('Sin ideas. Cualquier cosa vale: una idea, un plato que te sentó bien, un ejercicio que no repetirías.')}`;
 }
 // Informes con roles (ADR-010): lista y lectura. El progreso se repinta solo, porque cada paso guarda.
@@ -582,8 +593,11 @@ const PILDORA = { generando: ['w', 'generando'], sintesis: ['w', 'sintetizando']
 const pildora = inf => { const [c, t] = PILDORA[inf.estado] || ['g', inf.estado]; return h`<span class="pill ${c}">${t}</span>`; };
 function cuerpoInformes(params) {
   const inf = params.id && estado.informes.find(x => x.id === params.id);
+  const idea = !inf && params.idea && estado.notas.find(n => n.id === params.idea);
+  const deIdea = idea ? informesDe(idea.id) : estado.informes;
   if (!inf) return h`<div class="acciones"><button class="btn p" data-a="irIdeas">🔎 Analizar ideas</button></div>
-    ${estado.informes.length ? lista(estado.informes.map(i => h`<div class="tarjeta" data-a="verInforme" data-id="${i.id}"><b>${i.titulo}</b>
+    ${idea ? h`<div class="tarjeta fila"><div class="t mini">Informes con la idea «${idea.titulo || idea.texto.slice(0, 60)}»</div><button class="btn mini" data-a="pestana" data-v="informes">Ver todos</button></div>` : ''}
+    ${deIdea.length ? lista(deIdea.map(i => h`<div class="tarjeta" data-a="verInforme" data-id="${i.id}"><b>${i.titulo}</b>
       <div class="mini">${fechaHora(i.creado)} · ${i.roles.map(r => r.icono).join(' ')} ${i.roles.length} ${i.roles.length === 1 ? 'rol' : 'roles'} · ${i.fuentes.length} ${i.fuentes.length === 1 ? 'idea' : 'ideas'}${i.coste != null ? ' · ' + dolares(i.coste) : ''} ${pildora(i)}</div></div>`))
       : aviso('Aún no hay informes. En Ideas, «🔎 Analizar» junta las que elijas y varios roles (crítico, económico, técnico…) las analizan; una síntesis cruza lo que dicen.')}`;
   const enMarcha = ['generando', 'sintesis'].includes(inf.estado), fallidos = inf.roles.filter(r => r.estado === 'fallido');

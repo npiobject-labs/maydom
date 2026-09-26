@@ -231,6 +231,31 @@ try {
   espera = 50;
   await ir('#/notas?v=informes');
   comprobar(await pag.locator('.tarjeta[data-a="verInforme"]').count() === 2, 'la pestaña Informes lista los dos');
+  // Desde el diálogo de una idea: guarda lo editado y analiza solo esa idea.
+  await ir('#/notas?v=ideas');
+  comprobar(/🔎 2 informes/.test(await pag.locator('.tarjeta.nota[data-id="i1"]').textContent()), 'la tarjeta de la idea dice en cuántos informes está');
+  await pag.click('.tarjeta.nota[data-id="i3"]');
+  await pag.waitForSelector('.dialogo-nota [data-analizar]');
+  comprobar(await pag.locator('.dialogo-nota [data-analizar]').isVisible(), 'el diálogo de una idea tiene «🔎 Analizar con roles»');
+  comprobar(/2 informes/.test(await pag.locator('.dialogo-nota [data-ver-informes]').textContent()), 'y un acceso a sus informes');
+  await pag.fill('.dialogo-nota [name=texto]', 'Aprender a hacer compost con los restos de cocina y usarlo en el huerto');
+  log.length = 0;
+  await pag.click('.dialogo-nota [data-analizar]');
+  await pag.waitForSelector('dialog[open] [data-roles] .rol');
+  comprobar((await datos()).notas.find(n => n.id === 'i3').texto.endsWith('usarlo en el huerto'), 'Analizar guarda antes lo editado');
+  comprobar(await dialogo().locator('.fuentes input:checked').count() === 1 && await dialogo().locator('.fuentes input[value="i3"]').isChecked(), 'la hoja sale con solo esa idea marcada');
+  comprobar(await dialogo().locator('.fuentes input').count() === 3, 'y las demás ideas debajo, por si se suman');
+  await dialogo().locator('[data-si]').click();
+  await pag.waitForFunction(() => JSON.parse(localStorage.getItem('maydom.v1')).informes[0].estado === 'listo', null, { timeout: 20000 });
+  const solo = (await datos()).informes[0];
+  comprobar(solo.fuentes.length === 1 && solo.fuentes[0].id === 'i3' && /usarlo en el huerto/.test(log.find(l => l.rol)?.usuario || ''), 'el informe es de esa idea, con el texto recién guardado');
+  comprobar(new RegExp('id=' + solo.id).test(pag.url()), 'y se abre al generarlo');
+  await ir('#/notas?v=ideas');
+  await pag.click('.tarjeta.nota[data-id="i1"]'); await pag.waitForSelector('.dialogo-nota [data-ver-informes]');
+  await pag.click('.dialogo-nota [data-ver-informes]'); await pag.waitForTimeout(400);
+  comprobar(/idea=i1/.test(pag.url()) && await pag.locator('.tarjeta[data-a="verInforme"]').count() === 2, 'el acceso lista solo los informes de esa idea');
+  const tarea = await (async () => { await ir('#/notas?v=tareas'); await pag.click('[data-a="nuevaTarea"]'); await pag.waitForSelector('.dialogo-nota'); const v = await pag.locator('.dialogo-nota [data-analizar]').isVisible(); await pag.click('.dialogo-nota [data-cancelar]'); return v; })();
+  comprobar(!tarea, 'una tarea no ofrece analizar con roles');
   comprobar(errores.length === 0, 'sin errores en consola' + (errores.length ? ': ' + errores.join(' | ') : ''));
   await nav.close();
 } finally {

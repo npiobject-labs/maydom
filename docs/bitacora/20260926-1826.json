@@ -1,0 +1,27 @@
+{
+  "fecha": "2026-09-26T18:26:00+02:00",
+  "titulo": "Analizar con roles desde el diálogo de una idea",
+  "objetivo": "Poder lanzar el análisis con varios roles desde la propia idea que se está editando, no solo desde la lista de Ideas.",
+  "prompts": [
+    { "texto": "Eh sí funciona ahora lo que me preocupa es lo siguiente eso está muy bien en la sección de ajustes pero como lo aplico a la sesión de de notas tal y como se ve en imagen adjunta", "nota": "dictado, con captura del diálogo «Editar nota» de una idea" },
+    { "texto": "En sí fusiona y verifica" }
+  ],
+  "cambios": [
+    "Diálogo de una idea: «🔎 Analizar con roles» guarda lo escrito y abre la hoja de roles con solo esa idea marcada.",
+    "«📄 N informes» en el diálogo lleva a los informes de esa idea; la tarjeta de la idea dice en cuántos está.",
+    "Prueba de humo ampliada a 65 comprobaciones."
+  ],
+  "sha": "27c09c1",
+  "sha_completo": "27c09c1036e0249157569637f213dbccb8406078",
+  "run": 36255446255,
+  "mock": null,
+  "build": "MA-B1-20260926-005",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/notas?v=ideas",
+  "fly": null,
+  "pendiente": [ "Generar en el móvil un informe real desde una idea." ],
+  "enlaces": [
+    { "texto": "PR 31 · Analizar desde la idea", "url": "https://github.com/npiobject-labs/maydom/pull/31" },
+    { "texto": "Run de Pages", "url": "https://github.com/npiobject-labs/maydom/actions/runs/36255446255" }
+  ],
+  "notas": "El texto de la idea de la captura no se copia a la bitácora: la bitácora es pública."
+}

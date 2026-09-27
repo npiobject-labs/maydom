@@ -1,7 +1,7 @@
 import { estado, guardar, h, lista, crudo, delegar, hoyISO, sumarDias, fechaLarga, duracionTexto, navegar, toast, minutos, horaActual, uid } from '../nucleo.js';
 import { eventosDe, formularioEvento, crearEvento, borrarEvento } from '../agenda.js';
 import { tarjetaDia, barraCarga } from './calendario.js';
-import { registrarNoche, registrosOrdenados, calcular } from './sueno.js';
+import { registrarNoche, registrosOrdenados, calcular, completo, interpretando } from './sueno.js';
 import { tomadoHoy, bajoStock } from './suplementos.js';
 import { pildoraAleatoria, registrarPildora } from './ejercicio.js';
 import { refrescarConsejos } from '../reglas.js';
@@ -36,7 +36,8 @@ function render(cont) {
     <div class="tarjeta fila"><div class="t"><b>Píldora de movimiento</b><div class="mini">${estado.pildoras.filter(p => p.fecha === hoy && p.hecha).length} hoy · cada ${estado.preferencias.pildoraCada} min de trabajo</div></div><button class="btn" data-a="pildora">Dame una</button></div>
     ${proximaSup ? h`<div class="tarjeta fila"><div class="t"><b>${proximaSup.nombre}</b><div class="mini">${proximaSup.dosis || ''} · ${proximaSup.hora || proximaSup.momento}${bajoStock(proximaSup) ? crudo(' · <span class="pill w">reponer</span>') : ''} · ${sups.length} pendientes</div></div><button class="btn p" data-a="tomar" data-id="${proximaSup.id}">Tomado</button></div>` : ''}
     ${menu ? h`<div class="tarjeta"><div class="mini">Menú de hoy</div><div>${['desayuno', 'comida', 'cena'].map(t => plato(menu[t])).filter(Boolean).join(' · ')}</div><div class="acciones"><button class="btn mini" data-a="ir" data-s="alimentacion">Registrar comida ›</button></div></div>` : h`<div class="tarjeta fila"><div class="t"><b>Sin menú para hoy</b></div><button class="btn" data-a="ir" data-s="alimentacion">Proponer ›</button></div>`}
-    ${anoche ? h`<div class="tarjeta fila"><div class="t"><b>Anoche: ${duracionTexto(calcular(anoche).total)}</b><div class="mini">tramo largo ${duracionTexto(calcular(anoche).tramo1)} · calidad ${anoche.calidad}/5</div></div><button class="btn" data-a="ir" data-s="sueno">Sueño ›</button></div>` : h`<div class="tarjeta fila"><div class="t"><b>Sueño de anoche</b><div class="mini">sin registrar</div></div><button class="btn p" data-a="sueno">Registrar</button></div>`}
+    ${anoche && !completo(anoche) ? h`<div class="tarjeta fila"><div class="t"><b>Anoche: contada, sin horas</b><div class="mini">${interpretando(anoche.id) ? 'interpretando lo que contaste…' : 'faltan la hora de acostarse o la de levantarse'}</div></div><button class="btn" data-a="ir" data-s="sueno">Sueño ›</button></div>`
+      : anoche ? h`<div class="tarjeta fila"><div class="t"><b>Anoche: ${duracionTexto(calcular(anoche).total)}</b><div class="mini">tramo largo ${duracionTexto(calcular(anoche).tramo1)} · calidad ${anoche.calidad}/5</div></div><button class="btn" data-a="ir" data-s="sueno">Sueño ›</button></div>` : h`<div class="tarjeta fila"><div class="t"><b>Sueño de anoche</b><div class="mini">sin registrar</div></div><button class="btn p" data-a="sueno">Registrar</button></div>`}
     ${rez.length ? h`<div class="tarjeta fila"><div class="t"><b>${rez.length} proyecto${rez.length > 1 ? 's' : ''} rezagado${rez.length > 1 ? 's' : ''}</b><div class="mini">${rez.map(p => p.nombre).join(', ')}</div></div><button class="btn" data-a="ir" data-s="proyectos">Ver ›</button></div>` : ''}
     <h3>Mayordomo ${consejosNuevos().length > 3 ? crudo(`<span class="mini">(${consejosNuevos().length} nuevos)</span>`) : ''}</h3>
     ${consejos.length ? lista(consejos.map(c => tarjetaConsejo(c, true))) : crudo('<div class="tarjeta mini">Nada nuevo que aconsejar ahora mismo.</div>')}

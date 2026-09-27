@@ -91,12 +91,15 @@ export function botonDictado(campo, contenedor, alFin = null) {
     base = campo.value ? campo.value.trimEnd() : '';
     btn.classList.add('grabando'); btn.innerHTML = '⏹ Parar';
     sesion = dictar({
-      alTexto: (parcial, definitivo) => { campo.value = pegar(definitivo, parcial); campo.dispatchEvent(new Event('input', { bubbles: true })); campo.scrollTop = campo.scrollHeight; },
-      alFin: definitivo => { campo.value = pegar(definitivo); campo.dispatchEvent(new Event('input', { bubbles: true })); parar(); campo.focus(); if (campo.value.trim()) alFin?.(campo.value.trim()); },
+      alTexto: (parcial, definitivo) => { if (!campo.isConnected) return parar(); campo.value = pegar(definitivo, parcial); campo.dispatchEvent(new Event('input', { bubbles: true })); campo.scrollTop = campo.scrollHeight; },
+      alFin: definitivo => { if (!campo.isConnected) return parar(); campo.value = pegar(definitivo); campo.dispatchEvent(new Event('input', { bubbles: true })); parar(); campo.focus(); if (campo.value.trim()) alFin?.(campo.value.trim()); },
       alError: e => { import('./nucleo.js').then(m => m.toast(e.message, 5000)); parar(); },
     });
     if (!sesion) parar();
   };
+  // Cerrar la ventana (Guardar, la cruz) apaga el micrófono: seguía escuchando hasta 20 s de silencio
+  // y al final interpretaba lo dicho sobre un formulario que ya no existía.
+  campo.closest('dialog')?.addEventListener('close', parar);
   (contenedor || campo.parentElement).appendChild(btn);
   return btn;
 }

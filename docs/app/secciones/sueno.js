@@ -103,6 +103,39 @@ Lo que no diga el texto va a null; no inventes ni redondees a horas típicas. Te
   return out;
 }
 
+// ---------- guardar primero, interpretar después ----------
+// El dictado espera 20 s de silencio antes de dar el relato por terminado, y solo entonces lo
+// interpreta. Quien pulsaba «Guardar» antes guardaba el relato sin horas: la noche quedaba arriba
+// como «sin horas», fuera de las medias y sin cifras en el historial, y volver a abrirla y guardar
+// tampoco la interpretaba (27-sep). Ahora lo que el mayordomo no leyó en la ventana se interpreta
+// después, en segundo plano: primero por reglas y luego con él. Nada tocado a mano se pisa.
+const enCurso = new Set(), intentadas = new Set();
+export const interpretando = id => enCurso.has(id);
+// En las noches guardadas antes de esto no se sabe qué se escribió a mano: solo se rellenan sus huecos.
+const SOLO_HUECOS = ['fecha', 'acostado', 'despertar', 'levantado', 'nota'];
+function libres(datos, r, soloHuecos = []) {
+  const manuales = r.manuales || [];
+  return Object.fromEntries(Object.entries(datos).filter(([k, v]) => v != null && v !== '' && !manuales.includes(k) && !(soloHuecos.includes(k) && String(r[k] ?? '') !== '')));
+}
+export async function completarNoche(id, { promesa = null, soloHuecos = [] } = {}) {
+  const r = estado.sueno.find(x => x.id === id);
+  if (!r?.relato || enCurso.has(id)) return null;
+  enCurso.add(id); intentadas.add(id);
+  const relato = r.relato, estaba = completo(r);
+  Object.assign(r, libres(interpretarLocal(relato), r, soloHuecos)); guardar();
+  let llm = null;
+  try { llm = await (promesa || interpretarConLLM(relato, fechaISO(contadaEl(r) || new Date()))); } catch { }
+  enCurso.delete(id);
+  // Otra copia de la app pudo releer el estado entretanto: se trabaja sobre el registro de ahora.
+  const x = estado.sueno.find(s => s.id === id);
+  if (!x) return null;
+  if (x.relato !== relato) return completarNoche(id, { soloHuecos });
+  if (llm) { Object.assign(x, libres(llm, x, soloHuecos)); x.interpretado = 'mayordomo'; } else x.interpretado ||= 'reglas';
+  guardar();
+  if (!estaba && completo(x)) toast(`Noche ${nocheTexto(x.fecha)} completada con lo que contaste: ${duracionTexto(calcular(x).total)} dormidas`, 6000);
+  return x;
+}
+
 // Abre la noche: relato arriba, campos debajo. Al terminar el dictado se interpreta solo; también
 // hay botón por si se escribe a mano o se quiere repetir tras corregir el texto.
 export function registrarNoche(valores = {}) {
@@ -110,40 +143,61 @@ export function registrarNoche(valores = {}) {
   // Lo contado que no llegó a guardarse vuelve al abrir, con su fecha: no hay que dictarlo otra vez.
   const previo = !editando && !Object.keys(valores).length ? leerBorrador(BORRADOR) : null;
   if (previo) { valores = previo.v; toast(`Recuperado lo que contaste el ${cuandoTexto(new Date(previo.t))} y no se guardó`, 6000); }
-  let ultimoInterpretado = '';
+  const inicial = { fecha: sumarDias(hoyISO(), -1), calidad: 3, ...valores };
+  // «Anoche» es relativo al día en que se contó, no al de hoy: un borrador o una noche de ayer se leen con su fecha.
+  const ref = previo ? fechaISO(new Date(previo.t)) : editando ? fechaISO(contadaEl(valores) || new Date()) : hoyISO();
+  // Lo que se escribe a mano en esta ventana no lo pisa ninguna interpretación: escribir() no lanza eventos, así que todo input o change en un campo de datos es del usuario.
+  const tocados = new Set(), manuales = () => [...tocados, ...(valores.manuales || [])];
+  let ultimoInterpretado = '', interpretado = null, fallido = null, enVuelo = null;
   const traducir = async (relato, { escribir }, avisar = true) => {
     const t = String(relato || '').trim();
     if (!t || t === ultimoInterpretado) return;
     ultimoInterpretado = t;
+    const libre = o => Object.fromEntries(Object.entries(o).filter(([k]) => !manuales().includes(k)));
     // Sin LLM configurado esto es lo único que hay, así que se escribe siempre primero: algo de
     // lo dictado queda en los campos aunque la llamada falle.
-    escribir(interpretarLocal(t));
-    try { escribir(await interpretarConLLM(t, hoyISO())); }
-    catch (e) { if (avisar) toast('No se pudo interpretar: ' + e.message + '. Lo dictado se guarda igual; repasa las horas.', 8000); }
+    escribir(libre(interpretarLocal(t)));
+    const promesa = interpretarConLLM(t, ref); enVuelo = { t, promesa };
+    try { escribir(libre(await promesa)); interpretado = t; }
+    catch (e) { fallido = t; if (avisar) toast('No se pudo interpretar: ' + e.message + '. Lo dictado se guarda igual; repasa las horas.', 8000); }
   };
-  return pedir(editando ? 'Editar noche' : 'La noche', campos, {
-    fecha: sumarDias(hoyISO(), -1), calidad: 3, ...valores,
-  }, {
+  return pedir(editando ? 'Editar noche' : 'La noche', campos, inicial, {
     dictar: 'relato',
     alDictar: (texto, api) => { toast('Interpretando lo que has contado…', 3000); return traducir(texto, api); },
     acciones: [{ l: '✨ Interpretar', cargando: 'Interpretando…', fn: async api => { ultimoInterpretado = ''; await traducir(api.valores.relato, api); } }],
     accionesTras: 'relato',
+    alAbrir: api => {
+      const anotar = e => { if (DATOS.includes(e.target.name)) tocados.add(e.target.name); };
+      api.form.addEventListener('input', anotar); api.form.addEventListener('change', anotar);
+      // Una noche contada y sin horas (recuperada o guardada antes de interpretarla) se interpreta al abrirla.
+      if (valores.relato && !completo(valores) && !enCurso.has(valores.id)) traducir(valores.relato, api);
+    },
     ...(editando ? {} : { borrador: BORRADOR }),
     aceptar: 'Guardar',
-    texto: 'Dicta o escribe la noche y los campos de abajo se rellenan solos. Repasa lo que haya entendido antes de guardar; lo que no hayas contado se queda como esté.',
+    texto: 'Dicta o escribe la noche y los campos de abajo se rellenan solos; si guardas antes, se rellenan después. Repasa lo que haya entendido; lo que corrijas a mano no se vuelve a tocar.',
     ...(editando ? { extra: 'Borrar' } : {}),
   }).then(v => {
     if (!v) return null;
     if (v.__extra) { estado.sueno = estado.sueno.filter(x => x.id !== valores.id); guardar(); return null; }
     v.relato = (v.relato || '').trim();
+    let r;
     if (editando) {
-      const r = estado.sueno.find(x => x.id === valores.id);
-      // Lo que se toca a mano queda marcado por si más adelante se vuelve a interpretar.
-      r.manuales = [...new Set([...(r.manuales || []), ...DATOS.filter(k => String(v[k] ?? '') !== String(r[k] ?? ''))])];
-      Object.assign(r, v); guardar(); return r;
+      r = estado.sueno.find(x => x.id === valores.id);
+      if (!r) return null;
+      // Solo lo que ha cambiado en la ventana: lo completado en segundo plano mientras estaba abierta se queda.
+      for (const k of ['relato', ...DATOS]) if (String(v[k] ?? '') !== String(inicial[k] ?? '')) r[k] = v[k];
+      r.manuales = [...new Set([...(r.manuales || []), ...tocados])];
+    } else {
+      r = { id: uid(), creado: new Date().toISOString(), ...v, manuales: [...tocados] };
+      estado.sueno.push(r);
     }
-    estado.sueno.push({ id: uid(), creado: new Date().toISOString(), manuales: [], ...v }); guardar();
-    return estado.sueno.at(-1);
+    if (r.relato && r.relato === interpretado) r.interpretado = 'mayordomo';
+    else if (r.relato && r.relato === fallido) r.interpretado = 'reglas';
+    guardar();
+    // Se guardó sin que el mayordomo lo leyera (micrófono aún abierto, llamada en curso): se completa ahora.
+    const falta = r.relato && r.relato !== interpretado && r.relato !== fallido && (!editando || r.relato !== inicial.relato || !completo(r));
+    if (falta) completarNoche(r.id, { promesa: enVuelo?.t === r.relato ? enVuelo.promesa : null });
+    return r;
   });
 }
 
@@ -162,7 +216,7 @@ function render(cont) {
     ${bor ? h`<div class="tarjeta"><div class="fila"><div class="t"><b>Noche ${bor.v.fecha ? nocheTexto(bor.v.fecha) : ''} · sin guardar</b><div class="mini">La contaste el ${cuandoTexto(new Date(bor.t))} y la ventana se cerró sin guardarla</div></div><span class="pill w">sin guardar</span></div>
       ${borTexto ? h`<div class="mini">«${borTexto.slice(0, 160)}${borTexto.length > 160 ? '…' : ''}»</div>` : ''}
       <div class="acciones"><button class="btn p" data-a="registrar">Recuperar y guardar</button><button class="btn" data-a="descartarBorrador">Descartar</button></div></div>` : ''}
-    ${pendientes.length ? lista(pendientes.map(r => h`<div class="tarjeta" data-a="editar" data-id="${r.id}"><div class="fila"><div class="t"><b>Noche ${nocheTexto(r.fecha)} · sin horas</b><div class="mini">Faltan la hora de acostarse o la de levantarse</div></div><span class="pill w">completar</span></div><div class="mini">«${r.relato.slice(0, 120)}${r.relato.length > 120 ? '…' : ''}»</div></div>`)) : ''}
+    ${pendientes.length ? lista(pendientes.map(r => h`<div class="tarjeta" data-a="editar" data-id="${r.id}"><div class="fila"><div class="t"><b>Noche ${nocheTexto(r.fecha)} · sin horas</b><div class="mini">${interpretando(r.id) ? 'Interpretando lo que contaste…' : 'Faltan la hora de acostarse o la de levantarse'}</div></div><span class="pill w">${interpretando(r.id) ? '…' : 'completar'}</span></div><div class="mini">«${r.relato.slice(0, 120)}${r.relato.length > 120 ? '…' : ''}»</div></div>`)) : ''}
     ${u ? crudo(`<h3>Última noche · ${nocheTexto(ultimo.fecha, { semana: true })}</h3><div class="tarjeta" data-a="editar" data-id="${ultimo.id}">
       <div class="fila kv"><span>Total dormido</span><b>${duracionTexto(u.total)}</b></div>
       <div class="fila kv"><span>Primer tramo</span><b>${duracionTexto(u.tramo1)} ${u.tramo1 >= 270 ? '✓' : ''}</b></div>
@@ -176,12 +230,12 @@ function render(cont) {
     <h3>Historial</h3>
     ${rs.length ? crudo(`<table class="tabla"><tr><th>Noche</th><th class="n">Total</th><th class="n">1.º</th><th class="n">2.º</th><th class="n">Cal.</th></tr>${rs.slice(0, 14).map(r => { const c = calcular(r); return completo(r)
       ? h`<tr data-a="editar" data-id="${r.id}"><td>${nocheTexto(r.fecha, { anio: false })}${r.relato ? crudo(' <span class="mini">🎤</span>') : ''}</td><td class="n ${c.total >= objMin ? 'pos' : ''}">${duracionTexto(c.total)}</td><td class="n">${duracionTexto(c.tramo1)}</td><td class="n">${r.despertar ? duracionTexto(c.tramo2) : '–'}</td><td class="n">${r.calidad}</td></tr>`
-      : h`<tr data-a="editar" data-id="${r.id}"><td>${nocheTexto(r.fecha, { anio: false })}${r.relato ? crudo(' <span class="mini">🎤</span>') : ''}</td><td class="n mini" colspan="4">sin horas · tocar para completar</td></tr>`; }).join('')}</table>`) : ''}
+      : h`<tr data-a="editar" data-id="${r.id}"><td>${nocheTexto(r.fecha, { anio: false })}${r.relato ? crudo(' <span class="mini">🎤</span>') : ''}</td><td class="n mini" colspan="4">${interpretando(r.id) ? 'interpretando lo que contaste…' : 'sin horas · tocar para completar'}</td></tr>`; }).join('')}</table>`) : ''}
     <details class="plegable"><summary>Técnicas <span class="mini">${tecnicasSueno.length}</span></summary>
       <div class="cuerpo">${lista(tecnicasSueno.map(t => h`<div class="tarjeta"><b>${t.t}</b><div class="mini">${t.d}</div></div>`))}</div></details>
     <p class="mini">Modelo aceptado: 7 h en total; vale un tramo de 4 h 30–5 h, un despertar breve y ~2 h más ligeras. La meditación nocturna está en Meditación → "Volver a dormir".</p>`;
   delegar(cont, {
-    registrar: async () => { const r = await registrarNoche(); if (r) toast(completo(r) ? `Noche ${nocheTexto(r.fecha)} guardada: ${duracionTexto(calcular(r).total)} dormidas` : `Noche ${nocheTexto(r.fecha)} guardada; faltan horas por completar`, 5000); else render(cont); },
+    registrar: async () => { const r = await registrarNoche(); if (r) toast(completo(r) ? `Noche ${nocheTexto(r.fecha)} guardada: ${duracionTexto(calcular(r).total)} dormidas` : `Noche ${nocheTexto(r.fecha)} guardada; ${interpretando(r.id) ? 'interpretando lo que contaste…' : 'faltan horas por completar'}`, 5000); else render(cont); },
     descartarBorrador: async () => { if (await confirmar('¿Descartar lo que contaste y no se guardó? No se puede recuperar.', 'Descartar')) { quitarBorrador(BORRADOR); render(cont); } },
     analizarLLM: el => conLLM(el, async () => {
       const filas = registrosCompletos().slice(0, 14).map(r => { const c = calcular(r); return `${r.fecha}: acostado ${r.acostado}, latencia ${r.latencia || 0} min, ${r.despertar ? 'despertar ' + r.despertar + ' (' + c.despierto + ' min despierto)' : 'sin despertar'}, levantado ${r.levantado}, total ${duracionTexto(c.total)}, calidad ${r.calidad}${r.nota ? ', nota: ' + r.nota : ''}`; }).join('\n');
@@ -191,5 +245,7 @@ function render(cont) {
     editar: el => registrarNoche(estado.sueno.find(x => x.id === el.dataset.id)),
     nocturno: () => navegar('meditacion', { guion: 'm_vd', oscuro: '1' }),
   });
+  // Las contadas sin horas que nadie ha interpretado todavía se interpretan solas, una vez por arranque.
+  for (const r of pendientes) if (!r.interpretado && !intentadas.has(r.id)) { intentadas.add(r.id); setTimeout(() => completarNoche(r.id, { soloHuecos: SOLO_HUECOS })); }
 }
 export default { id: 'sueno', titulo: 'Sueño', grupo: 'Cuerpo', icono: '☾', render };

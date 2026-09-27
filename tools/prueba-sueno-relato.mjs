@@ -17,7 +17,7 @@ const web = http.createServer((req, res) => {
 await new Promise(r => web.listen(8095, r));
 
 // Gateway simulado: responde lo que se le diga en `respuesta`, o falla si `fallar` está puesto.
-let respuesta = null, fallar = null, pedido = null;
+let respuesta = null, fallar = null, pedido = null, llamadas = 0, retraso = 0;
 const api = http.createServer((req, res) => {
   const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': '*' };
   if (req.method === 'OPTIONS') { res.writeHead(204, cors); return res.end(); }
@@ -25,10 +25,10 @@ const api = http.createServer((req, res) => {
   req.on('data', c => cuerpo += c);
   req.on('end', () => {
     if (req.url.startsWith('/api/estado')) { res.writeHead(200, { ...cors, 'content-type': 'application/json' }); return res.end(JSON.stringify({ llm: true, modelo: 'simulado', clave_requerida: false, build: 'test' })); }
-    pedido = JSON.parse(cuerpo || '{}');
+    pedido = JSON.parse(cuerpo || '{}'); llamadas++;
     if (fallar) { res.writeHead(503, { ...cors, 'content-type': 'application/json' }); return res.end(JSON.stringify({ error: fallar, code: 'gateway_simulado' })); }
-    res.writeHead(200, { ...cors, 'content-type': 'application/json' });
-    res.end(JSON.stringify({ respuesta: JSON.stringify(respuesta) }));
+    const r = respuesta;
+    setTimeout(() => { res.writeHead(200, { ...cors, 'content-type': 'application/json' }); res.end(JSON.stringify({ respuesta: JSON.stringify(r) })); }, retraso);
   });
 });
 await new Promise(r => api.listen(8098, r));
@@ -237,9 +237,82 @@ await otra.waitForTimeout(300);
 comprobar(!(await otra.locator('main').innerText()).includes('Primera copia'), 'un borrado en una copia llega a la otra sin recargar');
 await otra.close();
 
-console.log('\nerrores de consola:', errores.length ? errores : 'ninguno', '(el 503 del paso 4 es de la propia prueba)');
+console.log('\n--- 10. «Guardar» con el micrófono aún abierto: la noche se interpreta después ---');
+// Caso real del 27-sep: el relato se veía en la caja, pero el dictado espera 20 s de silencio antes de
+// interpretarlo y «Guardar» llegaba antes. La noche quedaba «sin horas», sin cifras en el historial.
+await pag.addInitScript(() => {
+  class Rec { constructor() { window.__rec = this; window.__escuchando = false; } start() { window.__escuchando = true; } stop() { window.__escuchando = false; setTimeout(() => this.onend?.(), 10); } abort() { this.stop(); } }
+  window.SpeechRecognition = Rec;
+  window.__decir = t => { const res = [[{ transcript: t }]]; res[0].isFinal = true; window.__rec.onresult({ resultIndex: 0, results: res }); };
+});
+await pag.evaluate(() => { const e = JSON.parse(localStorage.getItem('maydom.v1')); e.sueno = []; localStorage.setItem('maydom.v1', JSON.stringify(e)); localStorage.removeItem('maydom.borradores'); });
+await pag.reload(); await pag.waitForTimeout(400);
+const SIN_CIFRAS = 'Me acosté a las once y cuarto, tardé un rato en dormirme y me levanté a las siete menos cuarto bastante bien.';
+respuesta = { acostado: '23:15', latencia: 20, levantado: '06:45', calidad: 4, nota: 'Noche tranquila.' };
+retraso = 700; llamadas = 0;
+await pag.locator('[data-a="registrar"]').first().click();
+await pag.waitForSelector('dialog.modal');
+await pag.locator('dialog.modal .dictar').click();
+await pag.evaluate(t => window.__decir(t), SIN_CIFRAS);
+await pag.waitForTimeout(200);
+comprobar((await campo('relato')) === SIN_CIFRAS && (await campo('acostado')) === '', 'el relato está en la caja y los campos aún vacíos: el dictado sigue abierto');
+await pag.locator('dialog.modal button[type="submit"]').click();
+await pag.waitForTimeout(150);
+comprobar(!(await pag.evaluate(() => window.__escuchando)), 'cerrar la ventana apaga el micrófono');
+main = await pag.locator('main').innerText();
+comprobar(/interpretando lo que contaste/i.test(main), 'mientras el mayordomo lee, la noche dice que se está interpretando');
+await pag.waitForTimeout(1000);
+rs = await sueno();
+console.log('  guardada:', JSON.stringify(rs[0]).slice(0, 200));
+comprobar(rs.length === 1 && rs[0].acostado === '23:15' && rs[0].levantado === '06:45' && rs[0].interpretado === 'mayordomo', 'y al volver la respuesta la noche queda con sus horas');
+comprobar(rs[0].relato === SIN_CIFRAS, 'con el relato tal cual');
+comprobar(llamadas === 1, `una sola llamada al mayordomo — ${llamadas}`);
+main = await pag.locator('main').innerText();
+comprobar(!/sin horas/i.test(main) && /Última noche/i.test(main), 'ya no sale «sin horas»: es la última noche');
+comprobar(await pag.locator('table.tabla tr[data-a="editar"] td.n').count() >= 4, 'y en el historial tiene sus cifras');
+comprobar(/completada con lo que contaste/.test(await pag.locator('#toast').innerText()), 'avisa de que se ha completado');
+// Lo corregido a mano antes de guardar no lo pisa la respuesta que llega después.
+respuesta = { fecha: sumar(hoy, -2), acostado: '23:30', levantado: '07:00', calidad: 3 };
+await pag.locator('[data-a="registrar"]').first().click();
+await pag.waitForSelector('dialog.modal');
+await pag.locator('dialog.modal .dictar').click();
+await pag.evaluate(() => window.__decir('Me acosté a las once y media y me levanté a las siete.'));
+await pag.locator('dialog.modal [name="levantado"]').fill('07:05');
+await pag.locator('dialog.modal [name="fecha"]').fill(sumar(hoy, -2));
+await pag.locator('dialog.modal button[type="submit"]').click();
+await pag.waitForTimeout(1000);
+const corregida = (await sueno()).find(r => r.relato.startsWith('Me acosté a las once y media'));
+comprobar(corregida?.acostado === '23:30' && corregida.levantado === '07:05' && corregida.manuales.includes('levantado'), `la hora corregida a mano se queda y el resto lo rellena el mayordomo — ${corregida?.acostado} / ${corregida?.levantado}`);
+
+console.log('\n--- 11. Las noches que ya se guardaron sin horas se completan solas ---');
+const [pAyer, pAntes] = [sumar(hoy, -1), sumar(hoy, -3)];
+await pag.goto('http://localhost:8095/?api=8098#/hoy'); await pag.waitForTimeout(300);
+await pag.evaluate(([f1, f2, c]) => { const e = JSON.parse(localStorage.getItem('maydom.v1')); e.sueno = [
+  { id: 'viejaA', fecha: f1, creado: c, relato: 'Me acosté tarde, sobre la una, y me levanté a las ocho.', acostado: '', latencia: 15, despertar: '', despierto: 0, levantado: '', calidad: '3', nota: 'escrita a mano', manuales: [] },
+  { id: 'viejaB', fecha: f2, creado: c, relato: 'Dormí fatal.', acostado: '', latencia: 15, despertar: '', despierto: 0, levantado: '', calidad: '3', nota: '', manuales: [], interpretado: 'reglas' },
+]; localStorage.setItem('maydom.v1', JSON.stringify(e)); }, [pAyer, pAntes, new Date().toISOString()]);
+respuesta = { fecha: sumar(hoy, -2), acostado: '01:00', latencia: 10, levantado: '08:00', calidad: 2, nota: 'Se acostó tarde.' };
+retraso = 300; llamadas = 0;
+await pag.reload(); await pag.waitForTimeout(400);
+comprobar(/Anoche: contada, sin horas/.test(await pag.locator('main').innerText()), 'Hoy no pinta cifras falsas de una noche sin horas');
+await pag.goto('http://localhost:8095/?api=8098#/sueno'); await pag.waitForTimeout(1200);
+comprobar(!(await sueno()).some(r => r.relato === SIN_CIFRAS), 'la prueba parte solo de las dos noches viejas');
+rs = await sueno();
+const va = rs.find(r => r.id === 'viejaA'), vb = rs.find(r => r.id === 'viejaB');
+console.log('  vieja A:', JSON.stringify(va).slice(0, 220));
+comprobar(va.acostado === '01:00' && va.levantado === '08:00', 'la guardada sin horas se interpreta al abrir Sueño');
+comprobar(va.fecha === pAyer && va.nota === 'escrita a mano', 'sin cambiarle la fecha ni pisar lo que ya tenía escrito');
+comprobar(llamadas === 1 && !vb.acostado, `solo se llama por la que nunca se interpretó — ${llamadas}`);
+await pag.locator(`table.tabla tr[data-id="viejaB"]`).click();
+await pag.waitForSelector('dialog.modal');
+await pag.waitForTimeout(500);
+comprobar((await campo('acostado')) === '01:00', 'y la que falló, al abrirla, se interpreta en la propia ventana');
+await pag.locator('dialog.modal .cerrar').click();
+retraso = 0;
+
+console.log('\nerrores de consola:', errores.length ? errores : 'ninguno', '(los 503 de los pasos 4 y 8 son de la propia prueba)');
 await nav.close(); web.close(); api.close();
 console.log(fallos.length ? `\n${fallos.length} FALLOS` : '\nTODO OK');
-// El 503 del paso 4 lo provoca la propia prueba: el navegador lo registra siempre.
+// Los 503 de los pasos 4 y 8 los provoca la propia prueba: el navegador lo registra siempre.
 const inesperados = errores.filter(e => !/503/.test(e));
 process.exit(fallos.length || inesperados.length ? 1 : 0);

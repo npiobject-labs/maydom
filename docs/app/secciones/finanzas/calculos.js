@@ -3,8 +3,46 @@
 import { estado, mesISO } from '../../nucleo.js';
 import { CONCEPTOS_NEUTROS } from '../../datos/semillas.js';
 
-export function balanceMes(mes) {
-  const ms = estado.movimientos.filter(m => mesISO(m.fecha) === mes);
+// ---------- cuentas ----------
+// Tres cuentas del mismo banco; el IBAN de cada una lo pone el usuario (o se aprende del primer
+// extracto) y es lo que decide a qué cuenta va cada fichero. Vive cifrado con el resto de Finanzas.
+export const CUENTAS_INICIALES = [
+  { id: 'fijos', nombre: 'Gastos fijos', iban: '' },
+  { id: 'variables', nombre: 'Ingresos y gastos variables', iban: '' },
+  { id: 'ahorro', nombre: 'Ahorro', iban: '' },
+];
+export function asegurarCuentas() {
+  if (estado.cuentas.length) return false;
+  estado.cuentas = CUENTAS_INICIALES.map(c => ({ ...c }));
+  return true;
+}
+export const SIN_CUENTA = '-';
+export const nombreCuenta = id => estado.cuentas.find(c => c.id === id)?.nombre || 'Sin cuenta';
+export const normIban = t => String(t || '').toUpperCase().replace(/[^A-Z0-9*]/g, '');
+export const ibanCorto = t => { const i = normIban(t); return !i ? '' : i.startsWith('*') ? '•••• ' + i.slice(1) : `${i.slice(0, 4)} •••• ${i.slice(-4)}`; };
+// Un extracto puede traer el IBAN entero o solo sus cuatro últimas cifras («*7890»).
+export function cuentaDeIban(iban) {
+  const i = normIban(iban);
+  if (!i) return null;
+  return estado.cuentas.find(c => { const x = normIban(c.iban); return x && (i.startsWith('*') ? x.endsWith(i.slice(1)) : x === i); }) || null;
+}
+const deCuenta = (m, cuenta) => !cuenta || (cuenta === SIN_CUENTA ? !m.cuenta : m.cuenta === cuenta);
+// Último saldo que dio el banco para una cuenta: el del movimiento más reciente que lo traiga.
+export function saldoCuenta(id) {
+  let u = null;
+  for (const m of estado.movimientos) if (m.cuenta === id && m.saldo != null && (!u || m.fecha > u.fecha || (m.fecha === u.fecha && (m.orden || 0) > (u.orden || 0)))) u = m;
+  return u ? { saldo: u.saldo, fecha: u.fecha } : null;
+}
+// Filtro común de los listados: fechas, cuenta, ingresos o gastos, concepto y texto.
+export function filtrar({ desde, hasta, cuenta, tipo, concepto, texto } = {}) {
+  const q = sinTildes(texto || '').trim();
+  return estado.movimientos.filter(m => (!desde || m.fecha >= desde) && (!hasta || m.fecha <= hasta) && deCuenta(m, cuenta)
+    && (tipo !== 'gastos' || m.importe < 0) && (tipo !== 'ingresos' || m.importe > 0) && (!concepto || m.concepto === concepto)
+    && (!q || sinTildes(m.descripcion).includes(q)));
+}
+
+export function balanceMes(mes, cuenta = '') {
+  const ms = estado.movimientos.filter(m => mesISO(m.fecha) === mes && deCuenta(m, cuenta));
   const ing = ms.filter(m => m.importe > 0).reduce((s, m) => s + m.importe, 0), gas = ms.filter(m => m.importe < 0).reduce((s, m) => s - m.importe, 0);
   const por = {};
   for (const m of ms) if (m.importe < 0) por[m.concepto] = (por[m.concepto] || 0) - m.importe;
@@ -12,8 +50,8 @@ export function balanceMes(mes) {
 }
 
 // Resumen del año: una fila por mes con ingresos, gastos y neto, más totales y conceptos del año.
-export function balanceAnio(anio) {
-  const ms = estado.movimientos.filter(m => String(m.fecha).startsWith(anio + '-'));
+export function balanceAnio(anio, cuenta = '') {
+  const ms = estado.movimientos.filter(m => String(m.fecha).startsWith(anio + '-') && deCuenta(m, cuenta));
   const meses = new Map();
   const por = {};
   for (const m of ms) {

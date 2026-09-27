@@ -1,0 +1,33 @@
+{
+  "fecha": "2026-09-27T14:05:00+02:00",
+  "titulo": "Finanzas con clave, tres cuentas, Excel de BBVA y listados",
+  "objetivo": "Proteger Finanzas con una clave pedida una vez al entrar, separar la incorporación de datos (Excel de BBVA, tres cuentas por IBAN, actualizar siempre) de los listados con parámetros.",
+  "prompts": [
+    { "texto": "Funciona. Ahora lo que vas a hacer es poner una clave en la entrada a finanzas y que cualquiera de las opciones y listados pase primero por esa clave de entrada. Primero planifica cómo lo hacemos: si te la doy yo, si la pones tú o cómo irá. Quiero que solo me la pida una vez cuando se entra desde el menú principal en finanzas y que nadie pueda acceder sin clave a una de las opciones del menú de finanzas, como los listados del año 2025 o cualquier otra cosa de finanzas. Recuerda que las tablas de entrada de finanzas son ficheros XLS con un formato predeterminado, el del banco BBVA, y que una vez incorporados los datos ese fichero debería borrarse, porque una vez que se tiene el dato no hace falta la tabla. En finanzas hay dos grandes partes: la incorporación de datos, de cualquier margen temporal, donde el fichero nuevo actualiza los registros anteriores y, si no existe el registro, se añade, y se elimina el fichero subido; y una sección de listados, que a veces salen directamente pero normalmente pasarán por una selección de parámetros. La idea es tener control sobre gastos e ingresos. Los ficheros pueden pertenecer a tres cuentas distintas: una de gastos fijos, otra de ingresos y gastos variables y otra de ahorro; habrá que determinar qué número de IBAN corresponde a cada una para tenerlo en cuenta al incorporar los datos. Hazme lo que tengas que hacer y planifica o desarrolla lo que tengas que hacer.", "nota": "dictado; transcripción limpiada de repeticiones y errores del reconocimiento de voz" }
+  ],
+  "cambios": [
+    "Finanzas con clave (ADR-011): se crea en la app, se pide una vez al entrar y se cierra al salir, con el 🔒 o a los 5 minutos en segundo plano.",
+    "Movimientos, cuentas con IBAN, recurrentes y cargas cifrados con AES-GCM (llave PBKDF2) fuera de maydom.v1; cerrada, ninguna otra sección ve cifras.",
+    "Tres cuentas (Gastos fijos, Ingresos y gastos variables, Ahorro) con IBAN y último saldo.",
+    "Excel de BBVA sin preguntar columnas, también .xls binario (BIFF8) leído sin librerías; la cuenta sale del IBAN del extracto.",
+    "Importar siempre actualiza lo que había en la cuenta y añade lo que falta, sin duplicar; el fichero no se guarda.",
+    "Listados con selección de parámetros: Resumen del año, Movimientos, Gasto por concepto y Cuentas.",
+    "Copia JSON con Finanzas cifrada; «He olvidado la clave» y «Cambiar la clave».",
+    "Prueba de humo nueva prueba-finanzas-clave.mjs y las de Finanzas adaptadas."
+  ],
+  "sha": null,
+  "sha_completo": null,
+  "run": null,
+  "mock": null,
+  "build": "MA-B1-20260927-003",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/finanzas",
+  "fly": null,
+  "pendiente": [
+    "Fusionar el PR 36 y confirmar el run de Pages.",
+    "Probar con los tres Excel reales de BBVA: que traen el IBAN y el formato esperado."
+  ],
+  "enlaces": [
+    { "texto": "PR 36", "url": "https://github.com/npiobject-labs/maydom/pull/36" }
+  ],
+  "notas": "Prompt dictado y largo, transcrito limpiando repeticiones; sin datos personales. Ni la clave ni los IBAN están en el repositorio: los pone el usuario en la app. El SHA no se sabe hasta el commit y cambiará al fusionar con squash."
+}

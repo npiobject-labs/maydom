@@ -35,19 +35,35 @@ export const fechaNorm = s => {
 };
 
 // ---------- entrada única ----------
+// Además de la tabla devuelve `iban`: el de la cuenta si el extracto lo trae antes de la tabla (o en
+// el nombre del fichero), completo o enmascarado («****1234»), para saber de qué cuenta es.
 export async function leerExtracto(fichero) {
-  const bytes = new Uint8Array(await fichero.arrayBuffer());
+  const p = await leerTabla(new Uint8Array(await fichero.arrayBuffer()));
+  // En un PDF solo la cabecera: más abajo puede salir el IBAN de un destinatario de transferencia.
+  return { ...p, iban: ibanDe([p.pre || '', (p.texto || '').slice(0, 1500), fichero.name || ''].join(' ')) };
+}
+async function leerTabla(bytes) {
   const firma = String.fromCharCode(...bytes.subarray(0, 8));
   if (firma.startsWith('%PDF')) return leerPDF(bytes);
   if (firma.startsWith('PK')) return leerXLSX(bytes);
-  // BIFF: el Excel anterior a 2007 es un binario OLE que no se lee sin librería.
-  if (/^\xd0\xcf\x11\xe0/.test(firma)) throw new Error('Excel antiguo (.xls): guárdalo como .xlsx o CSV');
+  if (/^\xd0\xcf\x11\xe0/.test(firma)) return leerXLS(bytes);
   // Muchos bancos exportan el CSV en Windows-1252: el rombo de sustitución delata que no era UTF-8.
   let texto = new TextDecoder('utf-8').decode(bytes);
   if (texto.includes('\ufffd')) texto = new TextDecoder('windows-1252').decode(bytes);
+  // Hay bancos cuyo «.xls» es una tabla HTML con esa extensión.
+  if (/^\s*(\ufeff)?\s*<(!doctype|html|table|meta|head)/i.test(texto)) return leerHTML(texto);
   const p = parseCSV(texto);
   if (!p) throw new Error('CSV vacío o sin cabecera');
   return { ...p, origen: 'CSV', texto: '' };
+}
+
+// IBAN español completo («ES12 0182 …») o, si el banco lo enmascara, sus cuatro últimas cifras.
+export function ibanDe(texto) {
+  const t = String(texto || '').toUpperCase();
+  const m = /\bES\d{2}(?:[\s-]?\d{4}){5}\b/.exec(t);
+  if (m) return m[0].replace(/[\s-]/g, '');
+  const e = /(?:\*{2,}|•{2,}|X{4,})\s?(\d{4})\b/.exec(t);
+  return e ? '*' + e[1] : '';
 }
 
 // ---------- CSV ----------
@@ -73,7 +89,7 @@ function conCabecera(filas) {
   if (i < 0) i = 0;
   const ancho = Math.max(...filas.slice(i).map(f => f.length));
   const norm = f => Array.from({ length: ancho }, (_, k) => String(f[k] ?? '').trim());
-  return { cab: norm(filas[i]), filas: filas.slice(i + 1).map(norm) };
+  return { cab: norm(filas[i]), filas: filas.slice(i + 1).map(norm), pre: filas.slice(0, i).map(f => f.join(' ')).join('\n') };
 }
 
 // ---------- ZIP mínimo (lo justo para un .xlsx) ----------
@@ -142,6 +158,107 @@ async function leerXLSX(bytes) {
   const p = conCabecera(filas);
   if (!p) throw new Error('La hoja está vacía');
   return { ...p, origen: 'Excel', texto: '' };
+}
+
+// ---------- Excel antiguo (.xls): BIFF8 dentro de un contenedor OLE ----------
+// El contenedor (Compound File) es un sistema de ficheros por sectores con su tabla de asignación
+// (FAT); dentro, el flujo «Workbook» es una sucesión de registros BIFF. Basta leer la primera hoja:
+// las cadenas compartidas (SST, partidas en CONTINUE) y las celdas de texto, número, RK y fórmula.
+function flujoOLE(bytes, nombre) {
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const tam = 1 << dv.getUint16(30, true), mini = 1 << dv.getUint16(32, true), corte = dv.getUint32(56, true);
+  const sector = n => bytes.subarray((n + 1) * tam, (n + 2) * tam);
+  const difat = [];
+  for (let i = 0; i < 109; i++) difat.push(dv.getUint32(76 + i * 4, true));
+  for (let d = dv.getUint32(68, true), n = dv.getUint32(72, true); n-- > 0 && d < 0xfffffffa;) {
+    const sd = new DataView(bytes.buffer, bytes.byteOffset + (d + 1) * tam, tam);
+    for (let i = 0; i < tam / 4 - 1; i++) difat.push(sd.getUint32(i * 4, true));
+    d = sd.getUint32(tam - 4, true);
+  }
+  const fat = [];
+  for (const f of difat.slice(0, dv.getUint32(44, true))) { const sd = new DataView(bytes.buffer, bytes.byteOffset + (f + 1) * tam, tam); for (let i = 0; i < tam / 4; i++) fat.push(sd.getUint32(i * 4, true)); }
+  const cadenaDe = (ini, tabla, trozo) => { const partes = []; for (let n = ini, g = 0; n < 0xfffffffa && g < 1e6; n = tabla[n], g++) partes.push(trozo(n)); const out = new Uint8Array(partes.reduce((t, p) => t + p.length, 0)); let i = 0; for (const p of partes) { out.set(p, i); i += p.length; } return out; };
+  const dir = cadenaDe(dv.getUint32(48, true), fat, sector);
+  const dd = new DataView(dir.buffer, dir.byteOffset, dir.byteLength);
+  const entradas = [];
+  for (let o = 0; o + 128 <= dir.length; o += 128) {
+    const ln = dd.getUint16(o + 64, true);
+    entradas.push({ nombre: new TextDecoder('utf-16le').decode(dir.subarray(o, o + Math.max(0, ln - 2))), tipo: dir[o + 66], ini: dd.getUint32(o + 116, true), tam: dd.getUint32(o + 120, true) });
+  }
+  const e = entradas.find(x => x.tipo === 2 && nombre.test(x.nombre));
+  if (!e) return null;
+  if (e.tam >= corte) return cadenaDe(e.ini, fat, sector).subarray(0, e.tam);
+  // Flujo pequeño: vive en el «mini stream» de la entrada raíz, en sectores de 64 bytes.
+  const raiz = cadenaDe(entradas[0].ini, fat, sector), mfat = [];
+  const mf = cadenaDe(dv.getUint32(60, true), fat, sector), mdv = new DataView(mf.buffer, mf.byteOffset, mf.byteLength);
+  for (let i = 0; i + 4 <= mf.length; i += 4) mfat.push(mdv.getUint32(i, true));
+  return cadenaDe(e.ini, mfat, n => raiz.subarray(n * mini, (n + 1) * mini)).subarray(0, e.tam);
+}
+function leerXLS(bytes) {
+  const wb = flujoOLE(bytes, /^workbook$/i);
+  if (!wb) throw new Error(flujoOLE(bytes, /^book$/i) ? 'Excel de 1995 (BIFF5): guárdalo como .xlsx o CSV' : 'El .xls no trae hoja de cálculo');
+  const dv = new DataView(wb.buffer, wb.byteOffset, wb.byteLength);
+  const registros = [];
+  for (let o = 0; o + 4 <= wb.length;) { const tipo = dv.getUint16(o, true), ln = dv.getUint16(o + 2, true); registros.push({ tipo, o: o + 4, ln }); o += 4 + ln; }
+  // Cadenas compartidas: una cadena puede partirse entre el SST y sus CONTINUE, y cada CONTINUE
+  // que parte los caracteres empieza con su propio byte de opciones (8 o 16 bits por carácter).
+  const sst = [];
+  const iSst = registros.findIndex(r => r.tipo === 0x00fc);
+  if (iSst >= 0) {
+    const trozos = [registros[iSst]];
+    for (let k = iSst + 1; registros[k]?.tipo === 0x003c; k++) trozos.push(registros[k]);
+    let t = 0, p = trozos[0].o + 8;
+    const fin = () => trozos[t].o + trozos[t].ln;
+    const saltar = () => { if (p >= fin() && t + 1 < trozos.length) { t++; p = trozos[t].o; } };
+    const u8 = () => { saltar(); return wb[p++]; };
+    const u16 = () => u8() | (u8() << 8);
+    const u32 = () => (u16() | (u16() << 16)) >>> 0;
+    const n = dv.getUint32(trozos[0].o + 4, true);
+    for (let s = 0; s < n && t < trozos.length; s++) {
+      const cch = u16(); let op = u8();
+      const runs = op & 8 ? u16() : 0, ext = op & 4 ? u32() : 0;
+      let txt = '';
+      for (let c = 0; c < cch; c++) {
+        if (p >= fin() && t + 1 < trozos.length) { t++; p = trozos[t].o; op = wb[p++]; }
+        txt += String.fromCharCode(op & 1 ? u16() : u8());
+      }
+      for (let k = 0; k < runs * 4 + ext; k++) u8();
+      sst.push(txt);
+    }
+  }
+  const cadena = o => { const cch = dv.getUint16(o, true), op = wb[o + 2]; let t = ''; for (let c = 0; c < cch; c++) t += String.fromCharCode(op & 1 ? dv.getUint16(o + 3 + c * 2, true) : wb[o + 3 + c]); return t; };
+  const rk = v => { const n = v & 2 ? v >> 2 : new DataView(new Uint32Array([0, v & 0xfffffffc]).buffer).getFloat64(0, true); return v & 1 ? n / 100 : n; };
+  const numero = n => String(Math.round(n * 1e6) / 1e6);
+  // Primera hoja: desde su BOF (lo dice BOUNDSHEET) hasta su EOF.
+  const hoja = registros.find(r => r.tipo === 0x0085 && wb[r.o + 5] === 0);
+  const ini = hoja ? registros.findIndex(r => r.o - 4 === dv.getUint32(hoja.o, true)) : -1;
+  const filas = [];
+  const poner = (f, c, v) => { (filas[f] = filas[f] || [])[c] = v; };
+  let formula = null;
+  for (let k = ini + 1; k > 0 && k < registros.length && registros[k].tipo !== 0x000a; k++) {
+    const { tipo, o } = registros[k], f = dv.getUint16(o, true), c = dv.getUint16(o + 2, true);
+    if (tipo === 0x00fd) poner(f, c, sst[dv.getUint32(o + 6, true)] ?? '');
+    else if (tipo === 0x0204) poner(f, c, cadena(o + 6));
+    else if (tipo === 0x0203) poner(f, c, numero(dv.getFloat64(o + 6, true)));
+    else if (tipo === 0x027e) poner(f, c, numero(rk(dv.getUint32(o + 6, true))));
+    else if (tipo === 0x00bd) { const ult = dv.getUint16(o + registros[k].ln - 2, true); for (let i = c; i <= ult; i++) poner(f, i, numero(rk(dv.getUint32(o + 4 + (i - c) * 6 + 2, true)))); }
+    else if (tipo === 0x0006) {
+      if (dv.getUint16(o + 12, true) !== 0xffff) poner(f, c, numero(dv.getFloat64(o + 6, true)));
+      else if (wb[o + 6] === 0) formula = [f, c];
+    } else if (tipo === 0x0207 && formula) { poner(formula[0], formula[1], cadena(o)); formula = null; }
+  }
+  const p = conCabecera(Array.from(filas, f => Array.from(f || [], v => String(v ?? '').trim())));
+  if (!p) throw new Error('La hoja está vacía');
+  return { ...p, origen: 'Excel (.xls)', texto: '' };
+}
+
+// ---------- «.xls» que en realidad es HTML ----------
+function leerHTML(texto) {
+  const doc = new DOMParser().parseFromString(texto, 'text/html');
+  const filas = [...doc.querySelectorAll('tr')].map(tr => [...tr.querySelectorAll('th,td')].map(td => td.textContent.replace(/\s+/g, ' ').trim()));
+  const p = conCabecera(filas);
+  if (!p) throw new Error('La tabla está vacía');
+  return { ...p, origen: 'Excel (HTML)', texto: '' };
 }
 
 // ---------- PDF ----------

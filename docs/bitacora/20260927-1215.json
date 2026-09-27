@@ -1,0 +1,30 @@
+{
+  "fecha": "2026-09-27T12:15:00+02:00",
+  "titulo": "La noche contada ayer no aparecía en Sueño",
+  "objetivo": "Averiguar por qué la noche dictada el 26/09 no aparecía el 27/09 y evitar que vuelva a pasar.",
+  "prompts": [
+    { "texto": "Ayer en sueño grabé la locución de cómo había dormido y no se ha grabado en el sueño de ayer; he ido hoy a grabar y he visto que no estaba, lo puedes ver en la ventana adjunta. No estaba grabado el de ayer, no se ha consolidado o no ha pasado al histórico, algo de eso está pasando.", "nota": "dictado, con captura de Sueño; transcripción limpiada de repeticiones del dictado" }
+  ],
+  "cambios": [
+    "Dos copias de la app abiertas (instalada y pestaña de Chrome) ya no se pisan: cada una relee al volver a primer plano y fusiona por id antes de guardar.",
+    "pedir() guarda borrador: lo dictado sobrevive a cerrar la ventana sin guardar; Sueño lo enseña como «sin guardar» con Recuperar y Descartar.",
+    "La noche se pinta con sus dos días («vie 25 → sáb 26/09») y dice cuándo se contó.",
+    "La fecha que devuelve el mayordomo solo vale si es de antes de hoy y de las dos últimas semanas.",
+    "Prueba de humo de Sueño ampliada con borrador y dos pestañas."
+  ],
+  "sha": "68ff52f",
+  "sha_completo": "68ff52f92d1a99ff8ed6d72e72680c068a827041",
+  "run": 36311914586,
+  "mock": null,
+  "build": "MA-B1-20260927-001",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/sueno",
+  "fly": null,
+  "pendiente": [
+    "Confirmar en el móvil la causa: «Contada el …» de la noche del 25→26/09 y si falta también el ejercicio del 26/09."
+  ],
+  "enlaces": [
+    { "texto": "PR 34 · Copias de la app y noche sin guardar", "url": "https://github.com/npiobject-labs/maydom/pull/34" },
+    { "texto": "Run de Pages", "url": "https://github.com/npiobject-labs/maydom/actions/runs/36311914586" }
+  ],
+  "notas": "Transcripción del prompt limpiada de repeticiones del dictado. La causa exacta no se puede comprobar desde la sesión: los datos están en el localStorage del móvil."
+}

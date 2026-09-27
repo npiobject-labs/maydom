@@ -43,11 +43,17 @@ await pag.evaluate(() => {
   localStorage.setItem('maydom.v1', JSON.stringify(e));
 });
 await pag.reload(); await pag.waitForTimeout(400);
+// Finanzas va con clave (ADR-011): se crea una y lo de arriba pasa a cifrado.
+await pag.locator('[data-candado] [name="clave"]').fill('1234');
+await pag.locator('[data-candado] [name="otra"]').fill('1234');
+await pag.locator('[data-candado] button[type="submit"]').click();
+await pag.waitForSelector('.pestanas', { timeout: 15000 });
 
 console.log('\n--- 1. Las cuatro pestañas ---');
-const pest = await pag.locator('.pestanas button').allInnerTexts();
+const pest = await pag.locator('.pestanas button[data-a="pestana"]').allInnerTexts();
 console.log('  ', pest.join(' | '));
-comprobar(pest.length === 4 && /Movimientos/.test(pest[0]) && /Importar/.test(pest[1]) && /Informes/.test(pest[2]) && /Recurrentes/.test(pest[3]), 'Movimientos, Importar, Informes y Recurrentes, en ese orden');
+comprobar(pest.length === 4 && /Movimientos/.test(pest[0]) && /Importar/.test(pest[1]) && /Listados/.test(pest[2]) && /Recurrentes/.test(pest[3]), 'Movimientos, Importar, Listados y Recurrentes, en ese orden');
+comprobar(await pag.locator('.pestanas [data-a="bloquear"]').count() === 1, 'y al final el 🔒 para cerrar Finanzas');
 comprobar(/Movimientos3/.test(pest[0].replace(/\s/g, '')), `la pestaña lleva el contador de movimientos — «${pest[0]}»`);
 comprobar(await pag.locator('.pestanas button.sel').innerText().then(t => /Movimientos/.test(t)), 'Movimientos es la pestaña por defecto');
 
@@ -77,9 +83,12 @@ console.log('  ', t.split('\n').slice(0, 3).join(' | '));
 comprobar(/Resumen del año/.test(t), 'la portada lista el informe anual');
 comprobar(/comparación entre años|presupuesto/.test(t), 'anuncia los informes que vendrán');
 await pag.locator('[data-a="abrir"]').first().click();
+await pag.waitForSelector('dialog.modal select[name="anio"]');
+comprobar(await pag.locator('dialog.modal select[name="anio"]').inputValue() === '2026', 'antes de listar pide el año y la cuenta, con el más reciente de partida');
+await pag.locator('dialog.modal button[type="submit"]').click();
 await pag.waitForTimeout(350);
 t = await texto();
-comprobar(/Todos los informes/.test(t), 'dentro de un informe hay botón para volver a la lista');
+comprobar(/Todos los listados/.test(t), 'dentro de un listado hay botón para volver a la lista');
 comprobar(/2026/.test(t) && /Ingresos y gastos por mes/i.test(t), 'abre el año más reciente con datos');
 await pag.locator('.chips .pill', { hasText: '2025' }).click();
 await pag.waitForTimeout(350);

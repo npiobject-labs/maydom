@@ -93,6 +93,11 @@ if (await conId.count()) { await conId.click(); await pag.waitForTimeout(200); c
 
 console.log('\n--- 5. Finanzas: la pestaña entra en el destino, el mes no ---');
 await ir('#/finanzas?v=movimientos&mes=2026-01');
+// Finanzas va con clave (ADR-011): con el candado delante no hay botones que fijar.
+await pag.locator('[data-candado] [name="clave"]').fill('1234');
+await pag.locator('[data-candado] [name="otra"]').fill('1234');
+await pag.locator('[data-candado] button[type="submit"]').click();
+await pag.waitForSelector('.pestanas', { timeout: 15000 });
 await pag.click('#fijar');
 const opsF = await pag.$$eval('.fijar-acceso select option', os => os.map(o => o.textContent));
 console.log('  opciones:', opsF.join(' | '));

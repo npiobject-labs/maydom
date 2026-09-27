@@ -1,3 +1,4 @@
+import { LISTAS, conClave, abrir, cerrar, copiaCifrada, restaurarCopia, borrarFinanzas } from '../cofre.js';
 import { estado, guardar, reemplazarEstado, h, lista, crudo, delegar, pedir, confirmar, toast, urlBackend, pedirPermisoAvisos, hoyISO, CLAVE, rutaActual } from '../nucleo.js';
 import { estadoLLM } from '../llm.js';
 import { esc } from '../nucleo.js';
@@ -17,7 +18,7 @@ function descargar(nombre, contenido, tipo = 'application/json') {
 function render(cont) {
   const a = estado.ajustes;
   const tam = Math.round((localStorage.getItem(CLAVE) || '').length / 1024);
-  const cuenta = ['eventos', 'notas', 'ejercicios', 'sueno', 'suplementos', 'proyectos', 'movimientos', 'consejos', 'tiendas'].map(k => `${k} ${estado[k].length}`).join(' · ');
+  const cuenta = ['eventos', 'notas', 'ejercicios', 'sueno', 'suplementos', 'proyectos', 'movimientos', 'consejos', 'tiendas'].map(k => k === 'movimientos' && conClave() ? 'finanzas 🔒 cifrada' : `${k} ${estado[k].length}`).join(' · ');
   cont.innerHTML = h`
     <h3>Datos</h3>
     <div class="tarjeta"><div class="mini">Todo vive en este navegador (${tam} KB): ${cuenta}.</div>
@@ -54,14 +55,30 @@ function render(cont) {
     <div class="tarjeta"><div class="acciones">${lista(['auto', 'light', 'dark'].map(t => h`<button class="btn ${a.tema === t ? 'p' : ''}" data-a="tema" data-t="${t}">${{ auto: 'Sistema', light: 'Claro', dark: 'Oscuro' }[t]}</button>`))}</div></div>
     <p class="mini"><a href="bitacora.html">bitácora</a> · <a href="mocks/">mocks</a> · <a href="holamundo.html">comprobación del backend</a></p>`;
   delegar(cont, {
-    exportar: () => descargar(`maydom-${hoyISO()}.json`, JSON.stringify(estado, null, 1)),
+    // Con clave, Finanzas viaja cifrada dentro de la copia (`__finanzas`): exportar no pide la clave y
+    // el fichero no lleva ni un movimiento en claro. Al importarlo, Finanzas pedirá la clave de esa copia.
+    exportar: () => descargar(`maydom-${hoyISO()}.json`, JSON.stringify(conClave() ? { ...estado, ...Object.fromEntries(LISTAS.map(k => [k, []])), __finanzas: copiaCifrada() } : estado, null, 1)),
     importar: async el => {
-      const f = el.files[0]; if (!f) return;
-      try { const j = JSON.parse(await f.text()); if (!j || typeof j !== 'object' || !('preferencias' in j)) throw new Error('no parece una copia de maydom'); if (await confirmar('Sustituir todos los datos por los del fichero?')) { reemplazarEstado(j); toast('Importado'); } }
-      catch (e) { toast('No se pudo importar: ' + e.message); }
-      el.value = '';
+      const f = el.files[0]; el.value = ''; if (!f) return;
+      try {
+        const j = JSON.parse(await f.text()); if (!j || typeof j !== 'object' || !('preferencias' in j)) throw new Error('no parece una copia de maydom');
+        if (!await confirmar('Sustituir todos los datos por los del fichero?')) return;
+        const cifrada = j.__finanzas; delete j.__finanzas;
+        const enClaro = LISTAS.some(k => Array.isArray(j[k]) && j[k].length);
+        if (cifrada) { await restaurarCopia(cifrada); for (const k of LISTAS) j[k] = []; reemplazarEstado(j); return toast('Importado. Finanzas pedirá la clave que tenía esa copia', 6000); }
+        if (enClaro && conClave()) {
+          // Una copia de antes de la clave trae Finanzas sin cifrar: se cifra con la de este dispositivo.
+          const v = await pedir('Clave de Finanzas', [{ n: 'clave', l: 'Clave de Finanzas de este dispositivo', t: 'password', req: true }], {}, { texto: 'La copia trae los movimientos sin cifrar. Con la clave se guardan cifrados; sin ella se importa todo menos Finanzas, que se queda como está.', aceptar: 'Importar con Finanzas', otro: 'Sin Finanzas' });
+          if (!v) return;
+          if (v.__otro) { for (const k of LISTAS) delete j[k]; reemplazarEstado(j); return toast('Importado todo menos Finanzas', 5000); }
+          if (!await abrir(v.clave)) return toast('Esa no es la clave: no se ha importado nada', 6000);
+          reemplazarEstado(j); cerrar(); guardar();
+          return toast('Importado, con Finanzas cifrada', 5000);
+        }
+        reemplazarEstado(j); toast('Importado');
+      } catch (e) { toast('No se pudo importar: ' + e.message); }
     },
-    borrar: async () => { if (await confirmar('Se borra TODO lo guardado en este navegador. ¿Seguro?', 'Borrar')) { reemplazarEstado({}); cargarSemillas(); toast('Datos borrados'); } },
+    borrar: async () => { if (await confirmar('Se borra TODO lo guardado en este navegador, Finanzas y su clave incluidas. ¿Seguro?', 'Borrar')) { borrarFinanzas(); reemplazarEstado({}); cargarSemillas(); toast('Datos borrados'); } },
     semillas: () => { cargarSemillas(false); toast('Semillas cargadas'); },
     semillasForzar: async () => { if (await confirmar('Sobrescribe ejercicios, tablas, platos y tiendas con las semillas.')) { cargarSemillas(true); toast('Semillas restauradas'); } },
     avisos: async () => { if (await pedirPermisoAvisos()) toast('Avisos activados'); else toast('Sin permiso de avisos'); render(cont); },

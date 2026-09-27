@@ -1,0 +1,31 @@
+{
+  "fecha": "2026-09-27T12:55:00+02:00",
+  "titulo": "«Guardar» dejaba la noche contada sin horas",
+  "objetivo": "Averiguar por qué la noche contada se ve arriba pero al guardarla no aparece en el historial de Sueño, y arreglarlo.",
+  "prompts": [
+    { "texto": "Ya sabes lo que ha pasado en la sección de sueño en el historial con el día 26 de este mes de la noche de ayer, y ya te dije que está grabado, se ve en la parte de arriba, pero al darle guardar no aparece en el historial.", "nota": "dictado; transcripción limpiada de errores del reconocimiento de voz" }
+  ],
+  "cambios": [
+    "Guardar primero e interpretar después: una noche guardada antes de que el mayordomo la lea se interpreta en segundo plano.",
+    "Las noches con relato y sin horas se completan solas al abrir Sueño, sin pisar lo escrito; abrir una la interpreta en la ventana.",
+    "Lo corregido a mano en la ventana queda en manuales y ninguna interpretación lo pisa.",
+    "Cerrar el diálogo apaga el micrófono del dictado.",
+    "Hoy ya no pinta cifras falsas de una noche sin horas.",
+    "Prueba de humo de Sueño ampliada con dictado simulado (pasos 10 y 11)."
+  ],
+  "sha": "badece2",
+  "sha_completo": null,
+  "run": null,
+  "mock": null,
+  "build": "MA-B1-20260927-002",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/sueno",
+  "fly": null,
+  "pendiente": [
+    "Fusionar el PR 36 y confirmar el run de Pages.",
+    "Confirmar en el móvil que la noche del 26→27/09 se completa sola al abrir Sueño."
+  ],
+  "enlaces": [
+    { "texto": "PR 36 · Interpretar la noche guardada antes de tiempo", "url": "https://github.com/npiobject-labs/maydom/pull/36" }
+  ],
+  "notas": "Prompt dictado, limpiado de errores de reconocimiento. El SHA es el de la rama: al fusionar con squash, el de main será otro. La causa se reprodujo con reconocimiento de voz simulado; los datos reales viven en el localStorage del móvil."
+}

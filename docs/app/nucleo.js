@@ -15,7 +15,7 @@ const vacio = () => ({
   eventos: [], notas: [], ejercicios: [], tablas: [], sesionesEjercicio: [], pildoras: [],
   sueno: [], alimentos: [], platos: [], menus: [], comidas: [],
   suplementos: [], tomas: [], compra: [], proyectos: [], horas: [], sesionTrabajo: null,
-  ocio: [], movimientos: [], recurrentes: [], importaciones: [], tiendas: [], consejos: [], chat: [], memoria: [],
+  ocio: [], movimientos: [], recurrentes: [], importaciones: [], cuentas: [], tiendas: [], consejos: [], chat: [], memoria: [],
   accesos: [], usos: {}, roles: [], informes: [],
   // modelo: el de Ajustes para lo que redacta el mayordomo ('' = el del servidor); rolesInforme: la última elección de roles.
   ajustes: { backend: '', clave: '', avisos: false, tema: 'auto', semillasCargadas: false, llm: null, modelo: '', rolesInforme: null },
@@ -23,6 +23,8 @@ const vacio = () => ({
 
 // Texto de maydom.v1 que esta copia de la app leyó o escribió por última vez (ver volcar()).
 let conocido = null;
+// Finanzas con clave (cofre.js): declarado antes de que el arranque pueda llamar a volcar().
+let cofre = null;
 function cargar() {
   let e = null;
   try { conocido = localStorage.getItem(CLAVE); e = JSON.parse(conocido || 'null'); } catch { e = null; }
@@ -59,6 +61,8 @@ export const estado = cargar();
 if (estado.__migrado) { delete estado.__migrado; try { volcar(); } catch { } }
 const oyentes = new Set();
 export function alCambiar(fn) { oyentes.add(fn); return () => oyentes.delete(fn); }
+// Repinta sin escribir: para lo que ya está guardado (cofre.js, al recibir lo que guardó otra copia).
+export function notificarCambio() { for (const fn of oyentes) fn(); }
 export function guardar() {
   try { volcar(); } catch (e) { toast('No se pudo guardar: ' + e.message, 10000); }
   for (const fn of oyentes) fn();
@@ -75,10 +79,14 @@ export function persistir() { try { volcar(); } catch { } }
 function volcar() {
   const ahora = localStorage.getItem(CLAVE);
   if (ahora != null && ahora !== conocido) fusionar(ahora);
-  const texto = JSON.stringify(estado);
+  // Con clave de Finanzas (cofre.js), sus listas nunca se escriben en claro aquí: van cifradas aparte.
+  const texto = JSON.stringify(cofre?.activo() ? { ...estado, ...cofre.vacias() } : estado);
   localStorage.setItem(CLAVE, texto);
   conocido = texto;
+  cofre?.alGuardar();
 }
+// cofre.js se registra aquí para no crear una importación circular.
+export function usarCofre(c) { cofre = c; }
 function fusionar(ahora) {
   let suyo, base;
   try { suyo = JSON.parse(ahora) || {}; base = JSON.parse(conocido || '{}') || {}; } catch { return; }
@@ -95,9 +103,9 @@ function fusionar(ahora) {
 function releer() {
   let texto; try { texto = localStorage.getItem(CLAVE); } catch { return; }
   if (texto == null || texto === conocido || document.querySelector('dialog[open]')) return;
-  const nuevo = cargar();
+  const nuevo = cargar(), abiertas = cofre?.conservar();
   for (const k of Object.keys(estado)) delete estado[k];
-  Object.assign(estado, nuevo);
+  Object.assign(estado, nuevo, abiertas || {});
   if (estado.__migrado) { delete estado.__migrado; try { volcar(); } catch { } }
   for (const fn of oyentes) fn();
 }

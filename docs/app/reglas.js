@@ -6,6 +6,7 @@ import { rezagados } from './secciones/proyectos.js';
 import { bajoStock, tomadoHoy } from './secciones/suplementos.js';
 import { gastoOcioMes, ocioMes } from './secciones/ocio.js';
 import { balanceMes } from './secciones/finanzas.js';
+import { cerrada } from './cofre.js';
 
 export function generarConsejos() {
   const p = estado.preferencias, hoy = hoyISO(), out = [];
@@ -85,7 +86,8 @@ export function resumenParaLLM() {
     `Suplementos: ${estado.suplementos.map(s => `${s.nombre} ${s.momento} ${s.hora || ''}${bajoStock(s) ? ' (reponer)' : ''}${tomadoHoy(s) ? ' ✓' : ''}`).join('; ') || '-'}.`,
     `Alimentación: menú hoy ${(estado.menus.find(m => m.fecha === hoy) ? 'sí' : 'no')}; comidas según menú últimas 12: ${estado.comidas.slice(-12).filter(x => x.segunMenu).length}/${Math.min(12, estado.comidas.length)}; stock bajo: ${estado.alimentos.filter(a => Number(a.stock) <= Number(a.umbral)).map(a => a.nombre).join(', ') || 'nada'}.`,
     `Ocio ${mesISO(hoy)}: ${ocioMes()} aceptadas, gasto ${euros(gastoOcioMes())}; propuestas: ${estado.ocio.filter(o => o.estado === 'propuesta').map(o => o.titulo).join('; ') || '-'}; fijas: ${estado.ocio.filter(o => o.fija).map(o => o.titulo).join('; ') || '-'}.`,
-    `Finanzas ${mesISO(hoy)}: neto ${euros(balanceMes(mesISO(hoy)).neto)}; gastos por concepto ${Object.entries(balanceMes(mesISO(hoy)).por).map(([k, v]) => k + ' ' + euros(v)).join(', ') || '-'}.`,
+    // Con clave, Finanzas está cerrada fuera de su sección: al mayordomo no le llega ninguna cifra.
+    cerrada() ? 'Finanzas: protegidas con clave; no se comparten.' : `Finanzas ${mesISO(hoy)}: neto ${euros(balanceMes(mesISO(hoy)).neto)}; gastos por concepto ${Object.entries(balanceMes(mesISO(hoy)).por).map(([k, v]) => k + ' ' + euros(v)).join(', ') || '-'}.`,
     `Consejos en curso: ${estado.consejos.filter(c => c.estado === 'probar').map(c => c.texto.slice(0, 80)).join(' | ') || '-'}. Rechazados recientes: ${estado.consejos.filter(c => c.estado === 'rechazado').slice(-5).map(c => c.texto.slice(0, 60)).join(' | ') || '-'}.`,
     `Notas recientes: ${estado.notas.filter(n => (n.clase || 'idea') === 'idea').slice(-5).map(n => `[${n.tipo}] ${n.texto.slice(0, 100)}`).join(' | ') || '-'}.`,
     `Tareas pendientes: ${estado.notas.filter(n => n.clase === 'tarea' && !n.hecha).sort((a, b) => (a.tope || '9').localeCompare(b.tope || '9')).slice(0, 8).map(n => `${n.titulo} (tope ${n.tope || '-'})`).join('; ') || '-'}.`,

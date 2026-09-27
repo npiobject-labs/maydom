@@ -296,3 +296,13 @@ button.etq{cursor:pointer}button.etq:hover{border-color:var(--acc);color:var(--a
 .md{line-height:1.5;overflow-wrap:anywhere}.md h1{font-size:1.2rem;margin:.2rem 0 .6rem}.md h2{font-size:1.02rem;margin:1.1rem 0 .4rem;color:var(--acc)}.md h3{font-size:.95rem;margin:.9rem 0 .3rem}.md h4{font-size:.88rem;margin:.6rem 0 .2rem}
 .md p{margin:.35rem 0}.md ul,.md ol{margin:.3rem 0;padding-left:1.3rem}.md li{margin:.15rem 0}.md code{font-size:.82em;background:var(--line);border-radius:4px;padding:0 .25rem}
 @media print{body *{visibility:hidden!important}.md-informe,.md-informe *{visibility:visible!important}.md-informe{position:absolute;left:0;top:0;width:100%;border:0;padding:0;margin:0;background:#fff;color:#000}.md-informe h2{color:#000}}
+/* Finanzas con clave (ADR-011): el candado ocupa la sección hasta que se abre; el 🔒 de las pestañas la cierra. */
+.candado{text-align:center;padding:1.4rem 1rem}
+.candado .grande{font-size:2.4rem;margin-bottom:.3rem}
+.candado .mini{text-align:left;max-width:30rem;margin:.6rem auto}
+.candado form{max-width:20rem;margin:.9rem auto 0;display:flex;flex-direction:column;gap:.55rem}
+.candado input{width:100%;box-sizing:border-box;font:1rem var(--sans);padding:.6rem .7rem;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.error{color:var(--mal)}
+.error:empty{display:none}
+.pestanas [data-a="bloquear"]{margin-left:auto}
+.filtros-listado{display:flex;flex-wrap:wrap;gap:.3rem;margin:.2rem 0 .7rem}

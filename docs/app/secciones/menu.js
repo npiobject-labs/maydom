@@ -4,6 +4,7 @@ import { mediaSueno } from './sueno.js';
 import { rezagados } from './proyectos.js';
 import { bajoStock } from './suplementos.js';
 import { balanceMes } from './finanzas.js';
+import { cerrada } from '../cofre.js';
 import { consejosNuevos } from './mayordomo.js';
 
 const GRUPOS = ['Agenda', 'Cuerpo', 'Mesa', 'Vida', 'Mayordomo', 'Ajustes'];
@@ -13,7 +14,7 @@ function resumen(id) {
     calendario: () => `hoy ${eventosDe(hoyISO()).length} eventos`, notas: () => { const t = estado.notas.filter(n => n.clase === 'tarea' && !n.hecha), v = t.filter(n => n.tope && n.tope < hoyISO()).length; return t.length ? `${t.length} tarea${t.length > 1 ? 's' : ''}${v ? ` (${v} vencida${v > 1 ? 's' : ''})` : ''}` : estado.notas.length + ''; },
     ejercicio: () => estado.sesionesEjercicio.length + ' sesiones', sueno: () => media != null ? duracionTexto(media) + ' media' : 'sin datos', meditacion: () => '',
     alimentacion: () => estado.menus.some(m => m.fecha === hoyISO()) ? 'menú de hoy listo' : 'sin menú hoy', suplementos: () => { const n = estado.suplementos.filter(bajoStock).length; return n ? n + ' por reponer' : estado.suplementos.length + ''; }, compra: () => { const n = estado.compra.filter(c => !c.comprado).length; return n ? n + ' líneas' : ''; },
-    proyectos: () => { const n = rezagados().length; return n ? n + ' rezagado' + (n > 1 ? 's' : '') : estado.proyectos.filter(p => p.estado === 'activo').length + ' activos'; }, ocio: () => estado.ocio.filter(o => o.estado === 'propuesta').length + ' propuestas', finanzas: () => euros(balanceMes(mesISO(hoyISO())).neto),
+    proyectos: () => { const n = rezagados().length; return n ? n + ' rezagado' + (n > 1 ? 's' : '') : estado.proyectos.filter(p => p.estado === 'activo').length + ' activos'; }, ocio: () => estado.ocio.filter(o => o.estado === 'propuesta').length + ' propuestas', finanzas: () => (cerrada() ? '🔒 con clave' : euros(balanceMes(mesISO(hoyISO())).neto)),
     mayordomo: () => { const n = consejosNuevos().length; return n ? n + ' nuevos' : ''; }, preferencias: () => 'horizonte: ' + estado.preferencias.horizonte, buscador: () => estado.tiendas.filter(t => t.activa).length + ' tiendas', ajustes: () => '',
   }[id];
   try { return r ? r() : ''; } catch { return ''; }

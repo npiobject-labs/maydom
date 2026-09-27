@@ -47,6 +47,7 @@ const RELATO = 'Apagué la luz sobre las 23:45, tardé un cuarto de hora en dorm
 
 const ir = async () => { await pag.goto('http://localhost:8095/?api=8098#/sueno'); await pag.waitForTimeout(400); };
 const campo = n => pag.locator(`dialog.modal [name="${n}"]`).inputValue();
+const sumar = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
 const sueno = () => pag.evaluate(() => JSON.parse(localStorage.getItem('maydom.v1')).sueno);
 
 await ir();
@@ -78,7 +79,8 @@ comprobar(sitio.boton < sitio.fecha, 'y por encima de los campos que rellena, no
 comprobar(sitio.boton < sitio.enviar, 'antes que el botón de guardar');
 
 console.log('\n--- 2. Escribir la noche y que el agente la traduzca ---');
-respuesta = { fecha: '2026-09-21', acostado: '23:45', latencia: 15, despertar: '04:30', despierto: 40, levantado: '07:20', calidad: 2, nota: 'Cena tarde; desvelado tras el despertar y leyó 40 min.' };
+const [hoy, ayer, antier] = await pag.evaluate(() => import('./app/nucleo.js').then(m => [m.hoyISO(), m.sumarDias(m.hoyISO(), -1), m.sumarDias(m.hoyISO(), -2)]));
+respuesta = { fecha: antier, acostado: '23:45', latencia: 15, despertar: '04:30', despierto: 40, levantado: '07:20', calidad: 2, nota: 'Cena tarde; desvelado tras el despertar y leyó 40 min.' };
 await pag.locator('dialog.modal [name="relato"]').fill(RELATO);
 await pag.locator('dialog.modal [data-accion]').click();
 await pag.waitForTimeout(600);
@@ -89,9 +91,16 @@ comprobar(leidos.acostado === '23:45' && leidos.levantado === '07:20', 'rellena 
 comprobar(leidos.despertar === '04:30' && leidos.despierto === '40', 'rellena el despertar nocturno y los minutos despierto');
 comprobar(leidos.latencia === '15', 'rellena lo que tardó en dormirse');
 comprobar(leidos.calidad === '2' && /cena tarde/i.test(leidos.nota), 'rellena calidad y nota');
-comprobar(leidos.fecha === '2026-09-21', 'la noche es la del día anterior, no la de hoy');
+comprobar(leidos.fecha === antier, `acepta la noche que diga el mayordomo si es de antes de hoy — ${leidos.fecha}`);
 comprobar(pedido.operacion === 'sueno-relato', `la llamada lleva su propia operación — ${pedido.operacion}`);
 comprobar(pedido.contexto === '', 'no manda el contexto entero de la app para esto');
+
+const conHoy = await pag.evaluate(([h]) => {
+  const orig = window.fetch;
+  window.fetch = async () => new Response(JSON.stringify({ respuesta: JSON.stringify({ fecha: h, acostado: '23:00', levantado: '07:00' }) }), { headers: { 'content-type': 'application/json' } });
+  return import('./app/secciones/sueno.js').then(m => m.interpretarConLLM('Me acosté a las 23:00 y me levanté a las 7:00', h)).finally(() => { window.fetch = orig; });
+}, [hoy]);
+comprobar(!('fecha' in conHoy) && conHoy.acostado === '23:00', `si el modelo pone la noche de hoy, se ignora y queda la de ayer del formulario — ${JSON.stringify(conHoy)}`);
 
 console.log('\n--- 3. Guardar ---');
 await pag.locator('dialog.modal button[type="submit"]').click();
@@ -100,10 +109,16 @@ let rs = await sueno();
 console.log('  guardado:', JSON.stringify(rs[0]).slice(0, 160));
 comprobar(rs.length === 1 && rs[0].acostado === '23:45', 'guarda la noche con sus horas');
 comprobar(rs[0].relato === RELATO, 'guarda también el relato original, palabra por palabra');
+comprobar(!!rs[0].creado, 'guarda cuándo se contó');
+const aviso3 = await pag.locator('#toast').innerText();
+comprobar(/→/.test(aviso3) && /guardada/.test(aviso3), `el aviso dice qué noche se ha guardado, con sus dos días — «${aviso3}»`);
 let main = await pag.locator('main').innerText();
 console.log('  ', main.split('\n').slice(0, 6).join(' | '));
 comprobar(/6 h 40/.test(main), `descuenta del total lo que tardó en dormirse y lo que pasó despierto — ${main.match(/\d+ h( \d+)?/)?.[0]}`);
 comprobar(main.includes(RELATO.slice(0, 30)), 'la ficha enseña lo que contaste junto a los datos');
+comprobar(/Última noche · \S+ \d\d → \S+ \d\d\/\d\d\/\d{4}/i.test(main), `la noche se nombra con el día de acostarse y el de levantarse — ${main.match(/Última noche[^\n]*/i)?.[0]}`);
+comprobar(/Contada el \S+ \d\d\/\d\d\/\d{4} a las \d\d:\d\d/.test(main), 'y dice cuándo se contó');
+comprobar(!/\d{4}-\d\d-\d\d/.test(main), 'sin fechas ISO a la vista');
 
 console.log('\n--- 4. Si el LLM falla, lo dictado no se pierde ---');
 fallar = 'gateway simulado caído';
@@ -158,6 +173,69 @@ comprobar((await pag.locator('main').innerText()).includes('Ancla el reloj inter
 await det.locator('summary').click();
 await pag.waitForTimeout(250);
 comprobar(!(await det.evaluate(e => e.open)), 'y se vuelve a cerrar');
+
+console.log('\n--- 8. Lo contado no se pierde al cerrar la ventana sin guardar ---');
+fallar = 'sin mayordomo';
+let antes = (await sueno()).length;
+await pag.locator('[data-a="registrar"]').first().click();
+await pag.waitForSelector('dialog.modal');
+await pag.locator('dialog.modal [name="relato"]').fill('Me acosté a las 23:10 y me levanté a las 7:40, bien.');
+await pag.locator('dialog.modal [data-accion]').click();
+await pag.waitForTimeout(500);
+await pag.locator('dialog.modal .cerrar').click();
+await pag.waitForTimeout(300);
+main = await pag.locator('main').innerText();
+comprobar(/sin guardar/i.test(main) && main.includes('Me acosté a las 23:10'), 'al cerrar con la cruz, la noche queda a la vista como «sin guardar»');
+await pag.reload(); await pag.waitForTimeout(400);
+comprobar(/sin guardar/i.test(await pag.locator('main').innerText()), 'y sigue ahí aunque se cierre la app');
+await pag.locator('main button:has-text("Recuperar")').click();
+await pag.waitForSelector('dialog.modal');
+comprobar((await campo('relato')).includes('23:10') && (await campo('acostado')) === '23:10', 'al recuperarla vuelven el relato y lo que se había interpretado');
+await pag.locator('dialog.modal button[type="submit"]').click();
+await pag.waitForTimeout(400);
+comprobar((await sueno()).length === antes + 1, 'se guarda como una noche más');
+comprobar(!/sin guardar/i.test(await pag.locator('main').innerText()), 'y el aviso de «sin guardar» desaparece');
+await pag.locator('[data-a="registrar"]').first().click();
+await pag.waitForSelector('dialog.modal');
+comprobar((await campo('relato')) === '', 'la siguiente noche empieza en blanco');
+await pag.locator('dialog.modal .cerrar').click();
+await pag.waitForTimeout(200);
+comprobar(await pag.evaluate(() => !JSON.parse(localStorage.getItem('maydom.borradores') || '{}').sueno), 'abrir y cerrar sin escribir no deja borrador');
+fallar = null;
+
+console.log('\n--- 9. Dos copias de la app abiertas: la vieja no borra lo que guardó la otra ---');
+const otra = await pag.context().newPage();
+await otra.goto('http://localhost:8095/?api=8098#/sueno'); await otra.waitForTimeout(400);
+antes = (await sueno()).length;
+// La otra copia tiene una ventana abierta (así no relee) mientras en esta se guarda una noche.
+await otra.locator('[data-a="registrar"]').first().click();
+await otra.waitForSelector('dialog.modal');
+await pag.bringToFront();
+await pag.locator('[data-a="registrar"]').first().click();
+await pag.waitForSelector('dialog.modal');
+await pag.locator('dialog.modal [name="relato"]').fill('Primera copia: me acosté a las 22:50 y me levanté a las 6:55.');
+await pag.locator('dialog.modal [name="acostado"]').fill('22:50');
+await pag.locator('dialog.modal [name="levantado"]').fill('06:55');
+await pag.locator('dialog.modal [name="fecha"]').fill(sumar(antier, -5));
+await pag.locator('dialog.modal button[type="submit"]').click();
+await pag.waitForTimeout(300);
+await otra.bringToFront();
+await otra.locator('dialog.modal [name="relato"]').fill('Segunda copia: me acosté a las 00:20 y me levanté a las 8:00.');
+await otra.locator('dialog.modal [name="acostado"]').fill('00:20');
+await otra.locator('dialog.modal [name="levantado"]').fill('08:00');
+await otra.locator('dialog.modal [name="fecha"]').fill(sumar(antier, -6));
+await otra.locator('dialog.modal button[type="submit"]').click();
+await otra.waitForTimeout(300);
+rs = await sueno();
+comprobar(rs.length === antes + 2, `se quedan las dos noches, la de cada copia — ${rs.length - antes} nuevas`);
+comprobar(rs.some(r => r.relato.startsWith('Primera copia')) && rs.some(r => r.relato.startsWith('Segunda copia')), 'la que guardó primero no desaparece al guardar la otra');
+comprobar((await otra.locator('table.tabla tr[data-a="editar"]').count()) === antes + 2, 'y la segunda copia ya enseña las dos');
+// Sin ventana abierta, la copia de fondo se pone al día sola cuando la otra guarda.
+await pag.bringToFront();
+await pag.evaluate(() => import('./app/nucleo.js').then(m => { m.estado.sueno = m.estado.sueno.filter(r => !r.relato.startsWith('Primera copia')); m.guardar(); }));
+await otra.waitForTimeout(300);
+comprobar(!(await otra.locator('main').innerText()).includes('Primera copia'), 'un borrado en una copia llega a la otra sin recargar');
+await otra.close();
 
 console.log('\nerrores de consola:', errores.length ? errores : 'ninguno', '(el 503 del paso 4 es de la propia prueba)');
 await nav.close(); web.close(); api.close();

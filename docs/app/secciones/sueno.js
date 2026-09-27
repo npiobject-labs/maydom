@@ -1,4 +1,4 @@
-import { estado, guardar, h, lista, crudo, delegar, uid, hoyISO, sumarDias, fechaCorta, minutos, pad, duracionTexto, pedir, aviso, navegar, toast } from '../nucleo.js';
+import { estado, guardar, h, lista, crudo, delegar, uid, hoyISO, sumarDias, fechaLarga, fechaISO, minutos, pad, duracionTexto, pedir, aviso, navegar, toast, confirmar, leerBorrador, quitarBorrador } from '../nucleo.js';
 import { tecnicasSueno } from '../datos/semillas.js';
 import { hayVoz } from '../voz.js';
 import { consultar, pedirJSON, conLLM, textoAConsejos } from '../llm.js';
@@ -37,6 +37,23 @@ const campos = [
   { n: 'nota', l: 'Qué pasó (opcional)', ph: 'cena tarde, café a las 17, pantalla…' },
 ];
 const DATOS = ['fecha', 'acostado', 'latencia', 'despertar', 'despierto', 'levantado', 'calidad', 'nota'];
+
+// Una noche se guarda con el día en que uno se acuesta, pero se cuenta a la mañana siguiente: pintarla
+// con los dos días evita que la contada ayer parezca la de anteayer. «25→26/09», «30/09→01/10».
+const SEM = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+export function nocheTexto(iso, { anio = true, semana = false } = {}) {
+  const a = new Date(iso + 'T12:00:00'), b = new Date(sumarDias(iso, 1) + 'T12:00:00');
+  const dm = d => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
+  const ini = (semana ? SEM[a.getDay()] + ' ' : '') + (a.getMonth() === b.getMonth() ? pad(a.getDate()) : dm(a));
+  return `${ini}${semana ? ' → ' + SEM[b.getDay()] + ' ' : '→'}${dm(b)}${anio ? '/' + b.getFullYear() : ''}`;
+}
+// Cuándo se contó: `creado` en las nuevas; en las de antes, la marca de tiempo que lleva el id (uid()).
+export function contadaEl(r) {
+  const n = r?.creado ? Date.parse(r.creado) : parseInt(String(r?.id || '').slice(-8), 36);
+  return Number.isFinite(n) && n > Date.UTC(2025, 0, 1) && n < Date.now() + 864e5 ? new Date(n) : null;
+}
+const cuandoTexto = d => `${fechaLarga(fechaISO(d))} a las ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const BORRADOR = 'sueno';
 
 // ---------- contar la noche hablando ----------
 // Normaliza una hora venga como venga: «7:5», «07.05», «23:40».
@@ -78,7 +95,10 @@ Lo que no diga el texto va a null; no inventes ni redondees a horas típicas. Te
   for (const k of ['acostado', 'despertar', 'levantado']) { const v = hora(j?.[k]); if (v) out[k] = v; }
   for (const [k, max] of [['latencia', 600], ['despierto', 900]]) { const v = entero(j?.[k], max); if (v != null) out[k] = v; }
   const cal = entero(j?.calidad, 5); if (cal >= 1) out.calidad = cal;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(String(j?.fecha || ''))) out.fecha = j.fecha;
+  // La noche es de antes de hoy y de las dos últimas semanas; lo demás es un error del modelo (poner
+  // la de hoy a lo contado por la mañana) y se queda la de ayer que trae el formulario.
+  const f = String(j?.fecha || '');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(f) && sumarDias(f, 0) === f && f < fechaRef && f >= sumarDias(fechaRef, -14)) out.fecha = f;
   if (j?.nota) out.nota = String(j.nota).trim().slice(0, 300);
   return out;
 }
@@ -87,6 +107,9 @@ Lo que no diga el texto va a null; no inventes ni redondees a horas típicas. Te
 // hay botón por si se escribe a mano o se quiere repetir tras corregir el texto.
 export function registrarNoche(valores = {}) {
   const editando = !!valores.id;
+  // Lo contado que no llegó a guardarse vuelve al abrir, con su fecha: no hay que dictarlo otra vez.
+  const previo = !editando && !Object.keys(valores).length ? leerBorrador(BORRADOR) : null;
+  if (previo) { valores = previo.v; toast(`Recuperado lo que contaste el ${cuandoTexto(new Date(previo.t))} y no se guardó`, 6000); }
   let ultimoInterpretado = '';
   const traducir = async (relato, { escribir }, avisar = true) => {
     const t = String(relato || '').trim();
@@ -105,6 +128,7 @@ export function registrarNoche(valores = {}) {
     alDictar: (texto, api) => { toast('Interpretando lo que has contado…', 3000); return traducir(texto, api); },
     acciones: [{ l: '✨ Interpretar', cargando: 'Interpretando…', fn: async api => { ultimoInterpretado = ''; await traducir(api.valores.relato, api); } }],
     accionesTras: 'relato',
+    ...(editando ? {} : { borrador: BORRADOR }),
     aceptar: 'Guardar',
     texto: 'Dicta o escribe la noche y los campos de abajo se rellenan solos. Repasa lo que haya entendido antes de guardar; lo que no hayas contado se queda como esté.',
     ...(editando ? { extra: 'Borrar' } : {}),
@@ -118,7 +142,7 @@ export function registrarNoche(valores = {}) {
       r.manuales = [...new Set([...(r.manuales || []), ...DATOS.filter(k => String(v[k] ?? '') !== String(r[k] ?? ''))])];
       Object.assign(r, v); guardar(); return r;
     }
-    estado.sueno.push({ id: uid(), manuales: [], ...v }); guardar();
+    estado.sueno.push({ id: uid(), creado: new Date().toISOString(), manuales: [], ...v }); guardar();
     return estado.sueno.at(-1);
   });
 }
@@ -130,29 +154,35 @@ function render(cont) {
   const ultimo = registrosCompletos()[0], u = ultimo ? calcular(ultimo) : null;
   const modeloOk = u && (u.tramo1 >= 270 || u.total >= objMin);
   const pendientes = rs.filter(r => r.relato && !completo(r));
+  const bor = leerBorrador(BORRADOR), borTexto = String(bor?.v?.relato || '').trim();
   cont.innerHTML = h`
     <div class="tarjeta"><div class="grande">${media != null ? duracionTexto(media) : '–'}</div><div class="mini">media de las últimas ${Math.min(7, registrosCompletos().length)} noches · objetivo ${obj} h</div>
       <div class="barra"><i class="${media != null && media >= objMin ? 'ok' : media != null && media >= objMin * 0.8 ? '' : 'w'}" style="width:${media != null ? Math.min(100, media / objMin * 100) : 0}%"></i></div>
       <div class="acciones"><button class="btn p" data-a="registrar">${hayVoz() ? '🎤 ' : ''}Contar la noche</button><button class="btn" data-a="nocturno">Me he despertado</button>${registrosCompletos().length >= 3 ? crudo('<button class="btn" data-a="analizarLLM">Analizar con LLM</button>') : ''}</div></div>
-    ${pendientes.length ? lista(pendientes.map(r => h`<div class="tarjeta" data-a="editar" data-id="${r.id}"><div class="fila"><div class="t"><b>Noche del ${fechaCorta(r.fecha)} · sin horas</b><div class="mini">Faltan la hora de acostarse o la de levantarse</div></div><span class="pill w">completar</span></div><div class="mini">«${r.relato.slice(0, 120)}${r.relato.length > 120 ? '…' : ''}»</div></div>`)) : ''}
-    ${u ? crudo(`<h3>Última noche · ${fechaCorta(ultimo.fecha)}</h3><div class="tarjeta" data-a="editar" data-id="${ultimo.id}">
+    ${bor ? h`<div class="tarjeta"><div class="fila"><div class="t"><b>Noche ${bor.v.fecha ? nocheTexto(bor.v.fecha) : ''} · sin guardar</b><div class="mini">La contaste el ${cuandoTexto(new Date(bor.t))} y la ventana se cerró sin guardarla</div></div><span class="pill w">sin guardar</span></div>
+      ${borTexto ? h`<div class="mini">«${borTexto.slice(0, 160)}${borTexto.length > 160 ? '…' : ''}»</div>` : ''}
+      <div class="acciones"><button class="btn p" data-a="registrar">Recuperar y guardar</button><button class="btn" data-a="descartarBorrador">Descartar</button></div></div>` : ''}
+    ${pendientes.length ? lista(pendientes.map(r => h`<div class="tarjeta" data-a="editar" data-id="${r.id}"><div class="fila"><div class="t"><b>Noche ${nocheTexto(r.fecha)} · sin horas</b><div class="mini">Faltan la hora de acostarse o la de levantarse</div></div><span class="pill w">completar</span></div><div class="mini">«${r.relato.slice(0, 120)}${r.relato.length > 120 ? '…' : ''}»</div></div>`)) : ''}
+    ${u ? crudo(`<h3>Última noche · ${nocheTexto(ultimo.fecha, { semana: true })}</h3><div class="tarjeta" data-a="editar" data-id="${ultimo.id}">
       <div class="fila kv"><span>Total dormido</span><b>${duracionTexto(u.total)}</b></div>
       <div class="fila kv"><span>Primer tramo</span><b>${duracionTexto(u.tramo1)} ${u.tramo1 >= 270 ? '✓' : ''}</b></div>
       ${ultimo.despertar ? `<div class="fila kv"><span>Despertar</span><b>${ultimo.despertar} · ${u.despierto} min despierto</b></div><div class="fila kv"><span>Segundo tramo</span><b>${duracionTexto(u.tramo2)}</b></div>` : ''}
       <div class="fila kv"><span>Calidad</span><b>${ultimo.calidad}/5</b></div>
       ${ultimo.nota ? `<div class="mini">${ultimo.nota}</div>` : ''}
       ${ultimo.relato ? `<div class="mini">«${ultimo.relato}»</div>` : ''}
+      ${contadaEl(ultimo) ? `<div class="mini">Contada el ${cuandoTexto(contadaEl(ultimo))}</div>` : ''}
       <p class="mini">${modeloOk ? 'Encaja en el modelo aceptado: tramo largo de al menos 4 h 30, despertar breve y segundo tramo ligero.' : 'Por debajo del modelo (tramo largo ≥ 4 h 30 o 7 h en total). Aquí es donde el mayordomo pone el acento.'}</p></div>`)
       : aviso('Sin registros. Por la mañana, toca «Contar la noche» y díctalo como salga: «apagué la luz sobre las 23:45, tardé un cuarto de hora, a las 4:30 me desperté…».')}
     <h3>Historial</h3>
     ${rs.length ? crudo(`<table class="tabla"><tr><th>Noche</th><th class="n">Total</th><th class="n">1.º</th><th class="n">2.º</th><th class="n">Cal.</th></tr>${rs.slice(0, 14).map(r => { const c = calcular(r); return completo(r)
-      ? h`<tr data-a="editar" data-id="${r.id}"><td>${fechaCorta(r.fecha)}${r.relato ? crudo(' <span class="mini">🎤</span>') : ''}</td><td class="n ${c.total >= objMin ? 'pos' : ''}">${duracionTexto(c.total)}</td><td class="n">${duracionTexto(c.tramo1)}</td><td class="n">${r.despertar ? duracionTexto(c.tramo2) : '–'}</td><td class="n">${r.calidad}</td></tr>`
-      : h`<tr data-a="editar" data-id="${r.id}"><td>${fechaCorta(r.fecha)}${r.relato ? crudo(' <span class="mini">🎤</span>') : ''}</td><td class="n mini" colspan="4">sin horas · tocar para completar</td></tr>`; }).join('')}</table>`) : ''}
+      ? h`<tr data-a="editar" data-id="${r.id}"><td>${nocheTexto(r.fecha, { anio: false })}${r.relato ? crudo(' <span class="mini">🎤</span>') : ''}</td><td class="n ${c.total >= objMin ? 'pos' : ''}">${duracionTexto(c.total)}</td><td class="n">${duracionTexto(c.tramo1)}</td><td class="n">${r.despertar ? duracionTexto(c.tramo2) : '–'}</td><td class="n">${r.calidad}</td></tr>`
+      : h`<tr data-a="editar" data-id="${r.id}"><td>${nocheTexto(r.fecha, { anio: false })}${r.relato ? crudo(' <span class="mini">🎤</span>') : ''}</td><td class="n mini" colspan="4">sin horas · tocar para completar</td></tr>`; }).join('')}</table>`) : ''}
     <details class="plegable"><summary>Técnicas <span class="mini">${tecnicasSueno.length}</span></summary>
       <div class="cuerpo">${lista(tecnicasSueno.map(t => h`<div class="tarjeta"><b>${t.t}</b><div class="mini">${t.d}</div></div>`))}</div></details>
     <p class="mini">Modelo aceptado: 7 h en total; vale un tramo de 4 h 30–5 h, un despertar breve y ~2 h más ligeras. La meditación nocturna está en Meditación → "Volver a dormir".</p>`;
   delegar(cont, {
-    registrar: async () => { const r = await registrarNoche(); if (r) toast(completo(r) ? `Noche del ${fechaCorta(r.fecha)}: ${duracionTexto(calcular(r).total)} dormidas` : 'Noche guardada; faltan horas por completar', 5000); },
+    registrar: async () => { const r = await registrarNoche(); if (r) toast(completo(r) ? `Noche ${nocheTexto(r.fecha)} guardada: ${duracionTexto(calcular(r).total)} dormidas` : `Noche ${nocheTexto(r.fecha)} guardada; faltan horas por completar`, 5000); else render(cont); },
+    descartarBorrador: async () => { if (await confirmar('¿Descartar lo que contaste y no se guardó? No se puede recuperar.', 'Descartar')) { quitarBorrador(BORRADOR); render(cont); } },
     analizarLLM: el => conLLM(el, async () => {
       const filas = registrosCompletos().slice(0, 14).map(r => { const c = calcular(r); return `${r.fecha}: acostado ${r.acostado}, latencia ${r.latencia || 0} min, ${r.despertar ? 'despertar ' + r.despertar + ' (' + c.despierto + ' min despierto)' : 'sin despertar'}, levantado ${r.levantado}, total ${duracionTexto(c.total)}, calidad ${r.calidad}${r.nota ? ', nota: ' + r.nota : ''}`; }).join('\n');
       const j = await consultar({ operacion: 'sueno', tarea: `Analiza estas noches (objetivo ${obj} h; se acepta un tramo de 4,5–5 h + despertar breve + ~2 h ligeras) y detecta patrones (hora de acostarse, despertares, notas). Da 3 acciones concretas para esta semana, cada una en una línea que empiece por "- ", sencillas y sin preparar nada. Sin diagnósticos médicos.\n${filas}` });

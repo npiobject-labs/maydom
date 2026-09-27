@@ -21,9 +21,11 @@ const vacio = () => ({
   ajustes: { backend: '', clave: '', avisos: false, tema: 'auto', semillasCargadas: false, llm: null, modelo: '', rolesInforme: null },
 });
 
+// Texto de maydom.v1 que esta copia de la app leyó o escribió por última vez (ver volcar()).
+let conocido = null;
 function cargar() {
   let e = null;
-  try { e = JSON.parse(localStorage.getItem(CLAVE) || 'null'); } catch { e = null; }
+  try { conocido = localStorage.getItem(CLAVE); e = JSON.parse(conocido || 'null'); } catch { e = null; }
   const base = vacio();
   if (!e || typeof e !== 'object') return base;
   // Migración por fusión: cualquier clave nueva del esquema aparece con su valor por defecto.
@@ -54,15 +56,54 @@ function cargar() {
 }
 
 export const estado = cargar();
-if (estado.__migrado) { delete estado.__migrado; try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch { } }
+if (estado.__migrado) { delete estado.__migrado; try { volcar(); } catch { } }
 const oyentes = new Set();
 export function alCambiar(fn) { oyentes.add(fn); return () => oyentes.delete(fn); }
 export function guardar() {
-  try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch (e) { toast('No se pudo guardar: ' + e.message); }
+  try { volcar(); } catch (e) { toast('No se pudo guardar: ' + e.message, 10000); }
   for (const fn of oyentes) fn();
 }
 // Escribe sin avisar a los oyentes: para lo que no cambia nada visible (contar usos) y no debe repintar.
-export function persistir() { try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch { } }
+export function persistir() { try { volcar(); } catch { } }
+
+// Varias copias de la app abiertas a la vez (la instalada y una pestaña de Chrome, o dos pestañas)
+// comparten localStorage, pero cada una tiene el estado en memoria: la que llevaba horas en segundo
+// plano escribía al guardar su copia vieja encima y borraba lo que la otra hubiera añadido entretanto
+// (la causa más probable de una noche contada que al día siguiente no estaba, 27-sep). Si desde la última lectura otra copia ha
+// guardado, antes de escribir se le suman sus registros nuevos, por id y lista a lista: lo que esta
+// copia borró sigue borrado, y en un registro tocado en las dos gana esta.
+function volcar() {
+  const ahora = localStorage.getItem(CLAVE);
+  if (ahora != null && ahora !== conocido) fusionar(ahora);
+  const texto = JSON.stringify(estado);
+  localStorage.setItem(CLAVE, texto);
+  conocido = texto;
+}
+function fusionar(ahora) {
+  let suyo, base;
+  try { suyo = JSON.parse(ahora) || {}; base = JSON.parse(conocido || '{}') || {}; } catch { return; }
+  for (const [k, lista] of Object.entries(suyo)) {
+    if (!Array.isArray(lista) || !Array.isArray(estado[k])) continue;
+    const ids = xs => new Set((Array.isArray(xs) ? xs : []).map(x => x?.id).filter(Boolean));
+    const mios = ids(estado[k]), antes = ids(base[k]);
+    for (const x of lista) if (x?.id && !mios.has(x.id) && !antes.has(x.id)) estado[k].push(x);
+  }
+}
+// Y para no llegar a eso: al volver a primer plano, o cuando otra pestaña guarda, esta copia relee.
+// Con una ventana abierta no se toca (su código puede tener en la mano registros del estado de antes):
+// al guardarla, volcar() fusiona.
+function releer() {
+  let texto; try { texto = localStorage.getItem(CLAVE); } catch { return; }
+  if (texto == null || texto === conocido || document.querySelector('dialog[open]')) return;
+  const nuevo = cargar();
+  for (const k of Object.keys(estado)) delete estado[k];
+  Object.assign(estado, nuevo);
+  if (estado.__migrado) { delete estado.__migrado; try { volcar(); } catch { } }
+  for (const fn of oyentes) fn();
+}
+addEventListener('storage', e => { if (e.key === CLAVE || e.key === null) releer(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) releer(); });
+addEventListener('pageshow', e => { if (e.persisted) releer(); });
 export function reemplazarEstado(nuevo) {
   for (const k of Object.keys(estado)) delete estado[k];
   Object.assign(estado, vacio(), nuevo);
@@ -218,6 +259,14 @@ export function salirPantalla(raiz = document) {
   return true;
 }
 
+// Borradores de las ventanas de pedir() que los piden, fuera del estado: { clave: { v, t } }.
+const CLAVE_BORRADORES = 'maydom.borradores';
+const borradores = () => { try { return JSON.parse(localStorage.getItem(CLAVE_BORRADORES)) || {}; } catch { return {}; } };
+const ponerBorradores = b => { try { localStorage.setItem(CLAVE_BORRADORES, JSON.stringify(b)); } catch { } };
+export const leerBorrador = clave => borradores()[clave] || null;
+export function quitarBorrador(clave) { const b = borradores(); if (clave in b) { delete b[clave]; ponerBorradores(b); } }
+function ponerBorrador(clave, v) { const b = borradores(); b[clave] = { v, t: Date.now() }; ponerBorradores(b); }
+
 // Formulario declarativo dentro de un <dialog>. Devuelve el objeto con los valores o null.
 // campo: {n, l, t:'text|number|date|time|select|textarea|check|tags', o:[{v,l}]|[str], v, req, min, max, step, ph, ayuda}
 export function pedir(titulo, campos, valores = {}, opciones = {}) {
@@ -240,15 +289,26 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
     document.body.appendChild(dlg);
     const form = dlg.querySelector('form');
     montarCajas(form);
-    const cerrar = v => { salirPantalla(dlg); dlg.close(); dlg.remove(); resolve(v); };
+    let cerrada = false;
+    const cerrar = v => { cerrada = true; salirPantalla(dlg); dlg.close(); dlg.remove(); resolve(v); };
     dlg.querySelectorAll('[data-cancelar]').forEach(b => { b.onclick = () => cerrar(null); });
     const fj = dlg.querySelector('[data-fijar]'); if (fj) fj.onclick = () => { cerrar(null); import('./accesos.js').then(m => m.abrirFijar({ ops: [fijable] })); };
-    const ex = dlg.querySelector('[data-extra]'); if (ex) ex.onclick = () => cerrar({ __extra: true });
+    const ex = dlg.querySelector('[data-extra]'); if (ex) ex.onclick = () => { if (opciones.borrador) quitarBorrador(opciones.borrador); cerrar({ __extra: true }); };
     const ot = dlg.querySelector('[data-otro]'); if (ot) ot.onclick = () => cerrar({ __otro: true });
     const leer = () => Object.fromEntries(campos.map(c => [c.n, form.elements[c.n]?.value]));
     // Las cajas de texto crecen con lo que se escribe, se dicta o genera la IA (hasta el 60 % de la pantalla; luego, barra),
     // salvo que el usuario les haya dado alto con el asa.
-    const escribir = datos => { for (const [k, v] of Object.entries(datos)) { const el = form.elements[k]; if (el && v != null && v !== '') { el.value = v; if (el.tagName === 'TEXTAREA') crecer(el); } } };
+    // Borrador: con `opciones.borrador`, lo escrito sobrevive a cerrar sin guardar (la cruz, el «atrás»
+    // de Android, la app cerrada en segundo plano). Se anota con cada cambio mientras alguna caja de
+    // texto tenga algo, y se borra al guardar. Una respuesta del mayordomo que llegue con la ventana
+    // ya cerrada no lo resucita.
+    const anotar = () => {
+      if (!opciones.borrador || cerrada) return;
+      const v = leer();
+      if (campos.some(c => c.t === 'textarea' && String(v[c.n] || '').trim())) ponerBorrador(opciones.borrador, v); else quitarBorrador(opciones.borrador);
+    };
+    if (opciones.borrador) { form.addEventListener('input', anotar); form.addEventListener('change', anotar); }
+    const escribir = datos => { for (const [k, v] of Object.entries(datos)) { const el = form.elements[k]; if (el && v != null && v !== '') { el.value = v; if (el.tagName === 'TEXTAREA') crecer(el); } } anotar(); };
     const zonaAcciones = dlg.querySelector('[data-acciones]');
     if (zonaAcciones && opciones.accionesTras) {
       const campo = form.elements[opciones.accionesTras];
@@ -283,6 +343,7 @@ export function pedir(titulo, campos, valores = {}, opciones = {}) {
         else out[c.n] = el.value;
         if (c.req && (out[c.n] === '' || out[c.n] == null)) { el.focus?.(); toast('Falta: ' + c.l); return; }
       }
+      if (opciones.borrador) quitarBorrador(opciones.borrador);
       cerrar(out);
     };
     dlg.showModal();

@@ -1,6 +1,6 @@
 # Tickets de compra → desglose del gasto variable
 
-**Estado**: planificado el 01-oct-2026 y revisado el mismo día para que valga para **cualquier formato de ticket**; **sin desarrollo**. Decisión en [`memoria/decisiones/ADR-012-tickets-de-compra.md`](memoria/decisiones/ADR-012-tickets-de-compra.md) (propuesta). Preferencias del día en [`memoria/preferencias/2026-10-01.md`](memoria/preferencias/2026-10-01.md).
+**Estado**: planificado el 01-oct-2026 y revisado el mismo día para que valga para **cualquier formato de ticket**; **sin desarrollo**. El usuario aceptó las recomendaciones de §15 el mismo día. Decisión en [`memoria/decisiones/ADR-012-tickets-de-compra.md`](memoria/decisiones/ADR-012-tickets-de-compra.md) (aceptada). Preferencias del día en [`memoria/preferencias/2026-10-01.md`](memoria/preferencias/2026-10-01.md).
 
 ## 1. Qué se pide
 
@@ -116,6 +116,15 @@ Listas nuevas en el cofre (`LISTAS` de `cofre.js`): `tickets`, `comercios` y `pr
 - **Fiabilidad**: si un comercio acumula correcciones, la pestaña lo dice y ofrece fijarle un modelo mejor.
 
 [SUPUESTO] Basta con aplicar el perfil después de leer, porque no se sabe de qué comercio es un ticket hasta leerlo. Plan B: elegir el comercio antes de la foto (con «el último» a un toque) para mandar las pistas ya en la primera llamada.
+
+**Ficha del comercio, legible y editable en la app** (pestaña Tickets → Comercios): nombre, tipo, categoría, si se desglosa, nombres en el ticket y en el banco, retraso, fiabilidad y las **pistas en texto libre**, que se leen y se corrigen como una nota. Es lo que el usuario vería en Obsidian, pero sin salir de la app y sin publicar nada.
+
+**Por qué el perfil no vive en la bóveda de Obsidian** (propuesta del usuario del 1-oct, valorada el mismo día):
+- **Es pública.** `pages.yml` publica `docs/` entero, también `docs/planificacion/memoria/`. La lista de comercios, con sus nombres en el banco, CIF y retrasos, dice dónde y cuándo compra el usuario. Es lo que ADR-011 cifró a propósito, y `CLAUDE.md` prohíbe datos reales en `docs/`.
+- **Dejaría de aprender sola.** La app no puede escribir en el repositorio sin un token en el navegador, descartado en D10. Cada corrección pasaría a ser un commit a mano desde el móvil.
+- **Serían dos fuentes de verdad.** La app necesita el perfil al leer cada ticket, también sin red. Una copia en Obsidian se desfasaría con la primera corrección hecha en la app.
+
+**Lo que sí va a Obsidian**: lo que se aprenda **en general** sobre leer tickets y no dependa de los datos del usuario. Por ejemplo, «los restaurantes casi nunca desglosan el IVA» o «las ofertas en bloque aparte nombran la línea abreviada». Lo anota una sesión de desarrollo, como ADR o lección, y de ahí pasa al prompt general de `finanzas-ticket`. Es como ya funciona la memoria: decisiones y criterios, no datos. [SUPUESTO] El perfil no se pierde porque viaja cifrado en la copia JSON; plan B: exportar las fichas de comercio a Markdown dentro de esa copia.
 
 ## 7. Lectura con el LLM: operación `finanzas-ticket`
 
@@ -269,14 +278,16 @@ Abrir Finanzas pide la clave, y en la cola de una tienda eso es fricción. Dos n
 | **T1** · Leer | Pestaña Tickets; foto o captura → `finanzas-ticket` → repaso con comprobaciones en vivo; alta a mano; efectivo; perfil del comercio básico (reconocer, crear, tipo, categoría, desglosar, IVA por letras); listas en el cofre; acción pendiente tras el candado; conceptos hogar y cuidado personal; muestrario y prueba de humo | `secciones/finanzas.js`, `finanzas/tickets.js` (nuevo), `interpretar-ticket.js` (nuevo, funciones puras: `comprobar`, `componerLineas`/`leerLineas` con ida y vuelta, `atribuirDescuentos`, `reconocerComercio`, reglas), `cofre.js`, `accesos.js`, `datos/semillas.js`, `sw.js`, `pages.yml` | ~5 h |
 | **T2** · Vincular | Candidatos, puntos, tolerancias por tipo y multiplicidad; vínculo al guardar y tras cada importación; descriptores del banco, retraso y tarjeta aprendidos; varios con varios (manual con propuestas); 🧾 en Movimientos, «Vincular ticket», deshacer | `finanzas/vincular.js` (nuevo, puro), `finanzas/importar.js` (gancho), `finanzas.js` | ~4 h |
 | **T3** · Desglosar | `partidas()`; Gasto por concepto desglosado; listados Gasto variable y Tickets; efectivo en el resumen del año | `finanzas/calculos.js`, `finanzas/informes.js` | ~3 h |
-| **T4** · Aprender | `productos` aprendidos; subcategorías de alimentación; segunda lectura con pistas y `finanzas-ticket-pista`; modelo por comercio y fiabilidad; listado Cobertura | `interpretar-ticket.js`, `finanzas/tickets.js`, `informes.js` | ~3 h |
+| **T4** · Aprender | `productos` aprendidos; subcategorías de alimentación; segunda lectura con pistas y `finanzas-ticket-pista`; modelo por comercio y fiabilidad; vista Comercios con la ficha editable; listado Cobertura | `interpretar-ticket.js`, `finanzas/tickets.js`, `informes.js` | ~3 h |
 | **T5** · Extras (a demanda) | Tickets en PDF por `extracto.js`; buzón sellado (§12); conservar la foto; compartir a maydom (`share_target`, con D14); lo comprado marcado en Compra y stock de Alimentación; histórico de precios por nombre genérico (enlaza con P2 de [`obtener-datos-de-productos.md`](obtener-datos-de-productos.md)) | varios | — |
 
 T1 y T2 son lo mínimo para que tenga sentido; T3 es lo que contesta la pregunta del usuario.
 
-## 15. Decisiones que tiene que tomar el usuario
+## 15. Decisiones
 
-| # | Pregunta | Recomendación |
+El usuario **aceptó todas las recomendaciones** el 01-oct-2026. La 9 se valoró después, a propuesta suya.
+
+| # | Pregunta | Decidido |
 |---|---|---|
 | 1 | ¿Pedir la clave de Finanzas para hacer la foto? | Sí en T1 (es lo que ya hay); buzón sellado (T5) solo si en el uso real molesta |
 | 2 | ¿Conservar la foto del ticket? | No por defecto; casilla por ticket para lo que tenga garantía o devolución |
@@ -286,6 +297,7 @@ T1 y T2 son lo mínimo para que tenga sentido; T3 es lo que contesta la pregunta
 | 6 | ¿Desglosar línea a línea los restaurantes y similares? | No: el comercio va entero a su categoría; se puede activar por comercio |
 | 7 | ¿Elegir el comercio antes de la foto? | No: se reconoce al leer y se confirma en el repaso |
 | 8 | ¿Avisar de cargos grandes de la cuenta de variables sin ticket? | No como aviso; sí en el listado Cobertura (T4) |
+| 9 | ¿Aprender los formatos de cada comercio en Obsidian? | Recomendado: no. El perfil, cifrado en la app y editable en su ficha; a Obsidian, solo lo general y sin datos (§6). **Pendiente de confirmar** |
 
 ## 16. Supuestos sin verificar
 

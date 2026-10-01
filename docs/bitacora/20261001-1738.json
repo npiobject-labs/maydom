@@ -1,0 +1,29 @@
+{
+  "fecha": "2026-10-01T17:38:00+02:00",
+  "titulo": "El plan de tickets vale para cualquier formato, con perfil por comercio",
+  "objetivo": "Revisar el plan de tickets de compra para que no dependa del ticket de ejemplo: los tickets son muy variados y cada comercio repite el suyo.",
+  "prompts": [
+    { "texto": "Una cosa a tener en cuenta en la planificación que has hecho: te estás ciñendo a la imagen de la factura que te he pasado, pero las facturas pueden ser muy variadas. Siempre que vaya al mismo comercio tendré el mismo tipo de factura, pero entre unas y otras van a ser muy distintas. Es una variante que has de tener en cuenta; no te ciñas demasiado a la factura que te he pasado, eso solamente es un ejemplo. ¿Se ha entendido?", "nota": "dictado; transcripción limpiada de errores del reconocimiento de voz" }
+  ],
+  "cambios": [
+    "tickets-gastos-variables.md reescrito: principio de diseño (ningún código conoce el formato de una tienda), catálogo de variedad por tipo de comercio, esquema con casi todo opcional, perfil del comercio aprendido, comprobaciones según lo que traiga el ticket, segunda lectura con pistas, tolerancias de vínculo por tipo, varios con varios, muestrario inventado para las pruebas; el ticket del usuario pasa a apéndice.",
+    "ADR-012 (propuesta) con la variedad de formatos y el perfil por comercio.",
+    "Preferencias del 1-oct: los tickets son muy variados y el de ejemplo no es el molde.",
+    "plan-maydom.md: Finanzas, §4.1 y F21 al día."
+  ],
+  "sha": null,
+  "sha_completo": null,
+  "run": null,
+  "mock": null,
+  "build": null,
+  "pagina": null,
+  "fly": null,
+  "pendiente": [
+    "Decidir los ocho puntos de §15 del plan y aceptar ADR-012.",
+    "Antes de T1: workflow temporal que mida al modelo real con el muestrario inventado."
+  ],
+  "enlaces": [
+    { "texto": "PR 37", "url": "https://github.com/npiobject-labs/maydom/pull/37" }
+  ],
+  "notas": "Sesión solo de planificación, sin código ni build nuevo. Ningún ticket real en el repositorio."
+}

@@ -1,0 +1,27 @@
+{
+  "fecha": "2026-10-01T17:03:00+02:00",
+  "titulo": "Plan de tickets de compra para desglosar el gasto variable",
+  "objetivo": "Planificar, sin desarrollar, cómo subir la foto de cada ticket de compra, asociarlo al movimiento del extracto de BBVA y saber qué parte del gasto variable es alimentación, ocio, ropa…",
+  "prompts": [
+    { "texto": "Vamos a hablar de la parte de finanzas. Cada día voy haciendo compras y esas compras generan una factura; por ejemplo, voy al supermercado, pago con tarjeta o en efectivo, y me dan una factura. La idea es que a esa factura le saque una fotografía y la suba a maydom, y cuando exista un movimiento en el fichero descargado del BBVA que corresponda a esa factura, que lo asocie; imagino que no es difícil por la fecha, porque viene en la factura, por el importe y demás. El objetivo final es saber de esos gastos variables qué corresponde a alimentación, qué a ocio, ropa, etcétera. Te voy a adjuntar una factura para que veas cómo tendrías que hacerlo. De momento solamente haz una planificación, no desarrolles nada.", "nota": "dictado; transcripción limpiada de errores del reconocimiento de voz. Adjuntaba la foto de un ticket de supermercado, que no se reproduce" }
+  ],
+  "cambios": [
+    "docs/planificacion/tickets-gastos-variables.md: plan nuevo (lectura con finanzas-ticket y tres cuadres, vínculo con el movimiento, desglose por líneas en los listados, efectivo, privacidad, fases T1–T5, decisiones y supuestos).",
+    "ADR-012 (propuesta): tickets cifrados en el cofre, lee el LLM y comprueba el navegador, vínculo en el ticket, partidas() para los listados.",
+    "Preferencias del 1-oct en la memoria.",
+    "plan-maydom.md: Finanzas, fila finanzas-ticket en §4.1 y fase F21 planificada."
+  ],
+  "sha": null,
+  "sha_completo": null,
+  "run": null,
+  "mock": null,
+  "build": null,
+  "pagina": null,
+  "fly": null,
+  "pendiente": [
+    "Decidir los seis puntos de §12 del plan y aceptar ADR-012.",
+    "T1: leer el ticket (y arreglar que un acceso de Hoy a Finanzas pierda su acción al pasar por el candado)."
+  ],
+  "enlaces": [],
+  "notas": "Sesión solo de planificación, sin código ni build nuevo. La foto del ticket real no se copia al repositorio ni a la bitácora: lleva comercio, fecha, hora y últimas cifras de la tarjeta. El SHA no se sabe hasta el commit."
+}

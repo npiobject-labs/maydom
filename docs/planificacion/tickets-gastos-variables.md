@@ -285,7 +285,7 @@ T1 y T2 son lo mínimo para que tenga sentido; T3 es lo que contesta la pregunta
 
 ## 15. Decisiones
 
-El usuario **aceptó todas las recomendaciones** el 01-oct-2026. La 9 se valoró después, a propuesta suya.
+El usuario **aceptó todas las recomendaciones** el 01-oct-2026. La 9 la propuso él y confirmó la recomendación ese mismo día.
 
 | # | Pregunta | Decidido |
 |---|---|---|
@@ -297,7 +297,7 @@ El usuario **aceptó todas las recomendaciones** el 01-oct-2026. La 9 se valoró
 | 6 | ¿Desglosar línea a línea los restaurantes y similares? | No: el comercio va entero a su categoría; se puede activar por comercio |
 | 7 | ¿Elegir el comercio antes de la foto? | No: se reconoce al leer y se confirma en el repaso |
 | 8 | ¿Avisar de cargos grandes de la cuenta de variables sin ticket? | No como aviso; sí en el listado Cobertura (T4) |
-| 9 | ¿Aprender los formatos de cada comercio en Obsidian? | Recomendado: no. El perfil, cifrado en la app y editable en su ficha; a Obsidian, solo lo general y sin datos (§6). **Pendiente de confirmar** |
+| 9 | ¿Aprender los formatos de cada comercio en Obsidian? | No (confirmado por el usuario). El perfil, cifrado en la app y editable en su ficha; a Obsidian, solo lo general y sin datos (§6) |
 
 ## 16. Supuestos sin verificar
 

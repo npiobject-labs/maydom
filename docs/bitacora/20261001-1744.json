@@ -1,0 +1,29 @@
+{
+  "fecha": "2026-10-01T17:44:00+02:00",
+  "titulo": "Decisiones del plan de tickets y por qué los formatos no van a Obsidian",
+  "objetivo": "Anotar las decisiones aceptadas del plan de tickets y valorar si aprender los formatos de cada comercio en la bóveda de Obsidian.",
+  "prompts": [
+    { "texto": "Acepto tus recomendaciones. Una pregunta o sugerencia: cuando una factura se repite, el formato se repite porque es del mismo comercio, y sería interesante que pusiéramos Obsidian para aprender esos formatos de factura. ¿Qué opinas? ¿Sería bueno para el proyecto o lo complicaría?", "nota": "dictado; transcripción limpiada de errores del reconocimiento de voz" }
+  ],
+  "cambios": [
+    "ADR-012 aceptada, con las recomendaciones del plan.",
+    "tickets-gastos-variables.md: decisiones de §15 tomadas; la 9 (Obsidian) queda con recomendación y pendiente de confirmar; ficha del comercio legible y editable en la app; por qué el perfil no vive en la bóveda y qué sí va a ella.",
+    "Preferencias del 1-oct: recomendaciones aceptadas y deseo de aprender el formato de cada comercio.",
+    "plan-maydom.md: F21 con las decisiones tomadas."
+  ],
+  "sha": null,
+  "sha_completo": null,
+  "run": null,
+  "mock": null,
+  "build": null,
+  "pagina": null,
+  "fly": null,
+  "pendiente": [
+    "Confirmar la decisión 9 (formatos de comercio fuera de Obsidian).",
+    "T1: leer el ticket, empezando por medir el modelo real con el muestrario inventado."
+  ],
+  "enlaces": [
+    { "texto": "PR 37", "url": "https://github.com/npiobject-labs/maydom/pull/37" }
+  ],
+  "notas": "Sesión solo de planificación, sin código ni build nuevo."
+}

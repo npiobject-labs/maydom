@@ -1,0 +1,28 @@
+{
+  "fecha": "2026-10-01T17:48:00+02:00",
+  "titulo": "Cierre: plan de tickets decidido, perfil de comercio fuera de Obsidian",
+  "objetivo": "Confirmar la última decisión del plan de tickets y cerrar la sesión.",
+  "prompts": [
+    { "texto": "Confirmo la decisión. Cierra sesión y continuamos en otro momento." }
+  ],
+  "cambios": [
+    "Decisión 9 confirmada: el perfil de cada comercio queda cifrado en la app con ficha editable; a Obsidian solo van lecciones generales sin datos (plan, ADR-012 y preferencias).",
+    "Resumen de la sesión rehecho en cinco puntos."
+  ],
+  "sha": null,
+  "sha_completo": null,
+  "run": null,
+  "mock": null,
+  "build": null,
+  "pagina": null,
+  "fly": null,
+  "pendiente": [
+    "Fusionar el PR 37.",
+    "T1: leer el ticket, empezando por un workflow temporal que mida el modelo real con el muestrario inventado."
+  ],
+  "enlaces": [
+    { "texto": "PR 37", "url": "https://github.com/npiobject-labs/maydom/pull/37" },
+    { "texto": "Plan de tickets", "url": "https://github.com/npiobject-labs/maydom/blob/claude/friendly-archimedes-631i8u/docs/planificacion/tickets-gastos-variables.md" }
+  ],
+  "notas": "Sesión solo de planificación, sin código ni build nuevo. Sin Drive configurado."
+}

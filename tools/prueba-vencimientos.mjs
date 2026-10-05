@@ -33,7 +33,7 @@ const google = por('google');
 comprobar(google.length === 2 && google.every(p => p.periodo === 1), 'dos suscripciones con el mismo texto y distinto importe son dos pagos mensuales');
 comprobar(por('gimnasio').length === 1 && !por('gimnasio')[0].activo, 'el gimnasio dado de baja se detecta pero ya no está activo');
 comprobar(!por('mercadona').length && !por('cafeteria').length, 'el súper y los cafés no son pagos fijos');
-comprobar(!det.some(p => /traspaso|cajero/.test(p.clave)), 'ni los traspasos entre cuentas ni el cajero');
+comprobar(!det.some(p => /traspaso|cajero|guitarra|bizum/.test(p.clave)), 'ni los traspasos entre cuentas, ni el cajero, ni un Bizum que se repite cada mes');
 comprobar(claveDe('Adeudo recibo · IBERDROLA CLIENTES SAU · FACTURA 202503 Nº 1') === claveDe('Adeudo recibo · IBERDROLA CLIENTES SAU · FACTURA 202504 Nº 2'), 'la clave no cambia con la factura ni el número');
 comprobar(nombreDe('Adeudo recibo · IBERDROLA CLIENTES SAU · FACTURA 202503') === 'IBERDROLA CLIENTES SAU', 'el nombre es el emisor, sin el trámite bancario');
 comprobar(fechaPrevista({ dia: 5, finSemana: false }, '2026-09') === '2026-09-07', 'un recibo que vence en sábado se prevé el lunes');

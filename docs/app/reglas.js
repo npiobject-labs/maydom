@@ -61,7 +61,7 @@ export function generarConsejos() {
   const b = balanceMes(mes), bPrev = balanceMes(mesISO(sumarDias(hoy, -30)));
   if (b.n && b.neto < 0 && diaMes >= 20) c('fin:neto:' + mes, `${mes} va en ${euros(b.neto)}. Mayor partida: ${Object.entries(b.por).sort((x, z) => z[1] - x[1])[0]?.join(' ') || '–'}.`, 'finanzas', 'finanzas');
   for (const [con, v] of Object.entries(b.por)) if (bPrev.por[con] && v > bPrev.por[con] * 1.5 && v > 50) c('fin:sube:' + con + ':' + mes, `El gasto en ${con} este mes (${euros(v)}) supera en más de la mitad al del mes pasado (${euros(bPrev.por[con])}).`, 'finanzas', 'finanzas');
-  const recSinAplicar = estado.recurrentes.filter(r => !estado.movimientos.some(x => x.recurrenteId === r.id && mesISO(x.fecha) === mes));
+  const recSinAplicar = estado.recurrentes.filter(r => !r.clave && !estado.movimientos.some(x => x.recurrenteId === r.id && mesISO(x.fecha) === mes));
   if (recSinAplicar.length && diaMes >= 5) c('fin:rec:' + mes, `${recSinAplicar.length} servicios recurrentes sin aplicar a ${mes} (${recSinAplicar.map(r => r.descripcion).join(', ')}).`, 'finanzas', 'finanzas');
   return out;
 }

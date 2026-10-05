@@ -1,13 +1,14 @@
 // Finanzas: tres pestañas con oficios distintos —los movimientos del mes, el módulo de carga y los
-// informes— más los recurrentes. Separarlas es lo que deja sitio para que los informes crezcan sin
+// informes— más los pagos fijos. Separarlas es lo que deja sitio para que los informes crezcan sin
 // que la pantalla de movimientos se llene de botones que no son de ahí.
-import { estado, guardar, persistir, h, lista, crudo, delegar, uid, hoyISO, mesISO, fechaCorta, mesNombre, euros, pedir, toast, aviso, navegar } from '../nucleo.js';
+import { estado, guardar, persistir, h, lista, crudo, delegar, uid, hoyISO, mesISO, fechaCorta, fechaLarga, mesNombre, euros, pedir, toast, aviso, navegar } from '../nucleo.js';
 import { CONCEPTOS } from '../datos/semillas.js';
 import { consultar, conLLM, textoAConsejos } from '../llm.js';
 import { balanceMes, asegurarCuentas, nombreCuenta, SIN_CUENTA } from './finanzas/calculos.js';
 import { conClave, abierta, abrir, crearClave, cerrar, borrarFinanzas } from '../cofre.js';
 import * as importar from './finanzas/importar.js';
 import * as informes from './finanzas/informes.js';
+import { pagosFijos, proximos, alMes, PERIODOS } from './finanzas/vencimientos.js';
 
 // reglas.js y menu.js consultan los balances desde fuera de la sección.
 export { balanceMes, balanceAnio, adivinar } from './finanzas/calculos.js';
@@ -17,14 +18,22 @@ const campos = [
   { n: 'importe', l: 'Importe (negativo = gasto)', t: 'number', step: 0.01, req: true }, { n: 'concepto', l: 'Concepto', t: 'select', o: CONCEPTOS },
 ];
 const camposMov = () => [...campos, { n: 'cuenta', l: 'Cuenta', t: 'select', o: opcionesCuenta(false) }];
-const camposRec = [{ n: 'descripcion', l: 'Servicio', req: true }, { n: 'importe', l: 'Importe mensual (negativo = gasto)', t: 'number', step: 0.01, req: true }, { n: 'concepto', l: 'Concepto', t: 'select', o: CONCEPTOS, v: 'servicios web' }, { n: 'dia', l: 'Día del mes', t: 'number', v: 1, min: 1, max: 28 }];
+const MESES_NOMBRE = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const camposRec = () => [{ n: 'descripcion', l: 'Pago', req: true }, { n: 'importe', l: 'Importe de cada pago (negativo = gasto)', t: 'number', step: 0.01, req: true }, { n: 'concepto', l: 'Concepto', t: 'select', o: CONCEPTOS, v: 'servicios web' },
+  { n: 'dia', l: 'Día del mes', t: 'number', v: 1, min: 1, max: 31 }, { n: 'periodo', l: 'Cada cuánto', t: 'select', o: Object.entries(PERIODOS).map(([v, l]) => ({ v, l })), v: '1' },
+  { n: 'mes', l: 'Mes de un pago (si no es mensual)', t: 'select', o: MESES_NOMBRE.map((l, i) => ({ v: String(i + 1), l })), v: String(Number(hoyISO().slice(5, 7))) },
+  { n: 'cuenta', l: 'Cuenta', t: 'select', o: [{ v: '', l: '—' }, ...estado.cuentas.map(c => ({ v: c.id, l: c.nombre }))] }];
+// Los recurrentes apuntados a mano: los que tienen `clave` son decisiones sobre un pago detectado (su
+// nombre, o que no es un pago fijo), no pagos que aplicar.
+const aMano = () => estado.recurrentes.filter(r => !r.clave);
 
 // La ruta de los listados sigue siendo `v=informes`: así no se rompen los accesos ya fijados.
 const PESTANAS = [
   { v: 'movimientos', l: 'Movimientos' },
   { v: 'importar', l: 'Importar' },
   { v: 'informes', l: 'Listados' },
-  { v: 'recurrentes', l: 'Recurrentes' },
+  // Ruta `recurrentes` por compatibilidad con los accesos ya fijados (ADR-012).
+  { v: 'recurrentes', l: 'Pagos fijos' },
 ];
 
 // ---------- la clave (ADR-011) ----------
@@ -73,13 +82,16 @@ function render(cont, params) {
   const v = params.vista === 'anio' ? 'informes' : (PESTANAS.some(p => p.v === params.v) ? params.v : 'movimientos');
   if (params.vista === 'anio') params = { ...params, informe: 'anual' };
   cont.innerHTML = h`<div class="pestanas">${lista(PESTANAS.map(p => {
-    const n = { movimientos: estado.movimientos.length, recurrentes: estado.recurrentes.length }[p.v];
+    const n = { movimientos: estado.movimientos.length, recurrentes: p.v === 'recurrentes' ? pagosFijos(estado.movimientos, estado.recurrentes).activos.length : 0 }[p.v];
     return h`<button class="${p.v === v ? 'sel' : ''}" data-a="pestana" data-v="${p.v}">${p.l}${n ? crudo(`<i class="n">${n}</i>`) : ''}</button>`;
   }))}<button data-a="bloquear" title="Cerrar Finanzas" aria-label="Cerrar Finanzas">🔒</button></div><div id="fin-cuerpo"></div>`;
   delegar(cont, {
     pestana: el => navegar('finanzas', el.dataset.v === 'movimientos' ? { v: 'movimientos', mes: params.mes || mesISO(hoyISO()), ...(params.cuenta ? { cuenta: params.cuenta } : {}) } : { v: el.dataset.v }),
     bloquear: () => { cerrar(); render(cont, params); },
   });
+  // En el móvil no caben las cinco pestañas: la elegida se desliza a la vista.
+  const sel = cont.querySelector('.pestanas .sel');
+  if (sel) sel.parentNode.scrollLeft = Math.max(0, sel.offsetLeft - sel.parentNode.offsetLeft - 16);
   const cuerpo = cont.querySelector('#fin-cuerpo');
   if (v === 'importar') return importar.render(cuerpo);
   if (v === 'informes') return informes.render(cuerpo, params);
@@ -94,13 +106,13 @@ function renderMovimientos(cont, params) {
   const [y, m] = mes.split('-').map(Number);
   const prev = `${m === 1 ? y - 1 : y}-${String(m === 1 ? 12 : m - 1).padStart(2, '0')}`, next = `${m === 12 ? y + 1 : y}-${String(m === 12 ? 1 : m + 1).padStart(2, '0')}`;
   const movs = estado.movimientos.filter(x => mesISO(x.fecha) === mes && (!cuenta || (cuenta === SIN_CUENTA ? !x.cuenta : x.cuenta === cuenta))).sort((a, c) => c.fecha.localeCompare(a.fecha));
-  const recAplicadas = estado.recurrentes.filter(r => estado.movimientos.some(x => x.recurrenteId === r.id && mesISO(x.fecha) === mes)).length;
+  const rec = aMano(), recAplicadas = rec.filter(r => estado.movimientos.some(x => x.recurrenteId === r.id && mesISO(x.fecha) === mes)).length;
   cont.innerHTML = h`
     <div class="fila cab"><button class="btn" data-a="mes" data-m="${prev}">‹</button><div class="t centro"><b>${mesNombre(mes)}</b></div><button class="btn" data-a="mes" data-m="${next}">›</button></div>
     <select data-c="cuenta" aria-label="Cuenta">${lista(opcionesCuenta().map(o => h`<option value="${o.v}" ${o.v === cuenta ? 'selected' : ''}>${o.l}</option>`))}</select>
     <div class="tarjeta"><div class="grande ${b.neto >= 0 ? 'pos' : 'neg'}">${euros(b.neto)}</div><div class="mini">ingresos ${euros(b.ing)} · gastos ${euros(b.gas)} · ${b.n} ${b.n === 1 ? 'movimiento' : 'movimientos'}</div>
       ${Object.keys(b.por).length ? crudo('<table class="tabla">' + Object.entries(b.por).sort((x, z) => z[1] - x[1]).map(([c, v]) => h`<tr><td>${c}</td><td class="n">${euros(v)}</td><td style="width:40%"><div class="barra"><i style="width:${Math.round(v / b.gas * 100)}%"></i></div></td></tr>`).join('') + '</table>') : ''}</div>
-    <div class="acciones"><button class="btn p" data-a="nuevo">+ Movimiento</button>${estado.recurrentes.length ? h`<button class="btn" data-a="aplicarRec">Aplicar recurrentes (${recAplicadas}/${estado.recurrentes.length})</button>` : crudo('')}${b.n ? crudo('<button class="btn" data-a="analizarLLM">Recomendaciones con LLM</button>') : ''}</div>
+    <div class="acciones"><button class="btn p" data-a="nuevo">+ Movimiento</button>${rec.length ? h`<button class="btn" data-a="aplicarRec">Aplicar recurrentes (${recAplicadas}/${rec.length})</button>` : crudo('')}${b.n ? crudo('<button class="btn" data-a="analizarLLM">Recomendaciones con LLM</button>') : ''}</div>
     ${movs.length ? crudo('<table class="tabla">' + movs.slice(0, 60).map(x => h`<tr data-a="editar" data-id="${x.id}"><td class="mini">${fechaCorta(x.fecha)}</td><td>${x.descripcion}<div class="mini">${x.concepto}${cuenta ? '' : ' · ' + nombreCuenta(x.cuenta)}</div></td><td class="n ${x.importe >= 0 ? 'pos' : 'neg'}">${euros(x.importe)}</td></tr>`).join('') + '</table>') : aviso('Sin movimientos en ' + mesNombre(mes) + '. Cambia de mes con las flechas, carga el extracto del banco desde la pestaña Importar o añade uno a mano.')}
     ${movs.length > 60 ? h`<p class="mini">Se enseñan los 60 primeros de ${movs.length}.</p>` : ''}`;
   delegar(cont, {
@@ -108,25 +120,72 @@ function renderMovimientos(cont, params) {
     cuenta: el => navegar('finanzas', { v: 'movimientos', mes, ...(el.value ? { cuenta: el.value } : {}) }),
     analizarLLM: el => conLLM(el, async () => {
       const bp = balanceMes(prev);
-      const j = await consultar({ operacion: 'finanzas', tarea: `Analiza las finanzas de ${mesNombre(mes)}: ingresos ${euros(b.ing)}, gastos ${euros(b.gas)}, por concepto ${Object.entries(b.por).map(([k, v]) => k + ' ' + euros(v)).join(', ')}; mes anterior gastos ${euros(bp.gas)} (${Object.entries(bp.por).map(([k, v]) => k + ' ' + euros(v)).join(', ') || 'sin datos'}); recurrentes: ${estado.recurrentes.map(r => r.descripcion + ' ' + euros(r.importe)).join(', ') || 'ninguno'}. Da 3 recomendaciones concretas y accionables, cada una en una línea que empiece por "- ". Solo recomendar, nunca ejecutar.` });
+      const j = await consultar({ operacion: 'finanzas', tarea: `Analiza las finanzas de ${mesNombre(mes)}: ingresos ${euros(b.ing)}, gastos ${euros(b.gas)}, por concepto ${Object.entries(b.por).map(([k, v]) => k + ' ' + euros(v)).join(', ')}; mes anterior gastos ${euros(bp.gas)} (${Object.entries(bp.por).map(([k, v]) => k + ' ' + euros(v)).join(', ') || 'sin datos'}); recurrentes: ${rec.map(r => r.descripcion + ' ' + euros(r.importe)).join(', ') || 'ninguno'}. Da 3 recomendaciones concretas y accionables, cada una en una línea que empiece por "- ". Solo recomendar, nunca ejecutar.` });
       toast(textoAConsejos(j.respuesta, 'finanzas') + ' recomendaciones en Consejos'); navegar('mayordomo');
     }),
     nuevo: async () => { const v = await pedir('Movimiento', camposMov(), { fecha: hoyISO(), concepto: 'otros', cuenta: cuenta && cuenta !== SIN_CUENTA ? cuenta : estado.cuentas[1]?.id }); if (v) { estado.movimientos.push({ id: uid(), ...v }); guardar(); } },
     editar: async el => { const x = estado.movimientos.find(z => z.id === el.dataset.id); const v = await pedir('Editar', camposMov(), x, { extra: 'Borrar' }); if (!v) return; if (v.__extra) estado.movimientos = estado.movimientos.filter(z => z.id !== x.id); else { if (v.concepto !== x.concepto) v.conceptoManual = true; Object.assign(x, v); } guardar(); },
-    aplicarRec: () => { let n = 0; for (const r of estado.recurrentes) { if (estado.movimientos.some(x => x.recurrenteId === r.id && mesISO(x.fecha) === mes)) continue; estado.movimientos.push({ id: uid(), fecha: `${mes}-${String(r.dia || 1).padStart(2, '0')}`, descripcion: r.descripcion, importe: r.importe, concepto: r.concepto, recurrenteId: r.id }); n++; } guardar(); toast(n + ' aplicados'); },
+    aplicarRec: () => { let n = 0; for (const r of rec) { if (estado.movimientos.some(x => x.recurrenteId === r.id && mesISO(x.fecha) === mes)) continue; estado.movimientos.push({ id: uid(), fecha: `${mes}-${String(r.dia || 1).padStart(2, '0')}`, descripcion: r.descripcion, importe: r.importe, concepto: r.concepto, recurrenteId: r.id }); n++; } guardar(); toast(n + ' aplicados'); },
   });
 }
 
+// ---------- pagos fijos (ADR-012) ----------
+// Los que se detectan solos en los movimientos importados más los apuntados a mano, con lo que vence
+// en los próximos 30 días encima: es lo que leerán los avisos al móvil cuando los haya.
+const cuando = n => (n === 0 ? 'hoy' : n === 1 ? 'mañana' : n === 2 ? 'pasado mañana' : `en ${n} días`);
+const diaTexto = d => (d <= 0 ? 31 + d : d);
+const CADA = { 1: 'al mes', 2: 'cada 2 meses', 3: 'cada 3 meses', 6: 'cada 6 meses', 12: 'al año' };
+function lineaPago(p) {
+  const cuenta = p.cuenta ? nombreCuenta(p.cuenta) : '';
+  const dia = p.margen ? `día ${p.dia} (entre el ${diaTexto(p.desde)} y el ${diaTexto(p.hasta)})` : `día ${p.dia}`;
+  const historia = p.origen === 'detectado' ? `${p.cargos.length} cargos, del ${fechaCorta(p.primero)} al ${fechaCorta(p.ultimo)}` : 'apuntado a mano';
+  const horquilla = p.minimo != null && p.minimo !== p.maximo ? `de ${euros(p.minimo)} a ${euros(p.maximo)}` : '';
+  return [PERIODOS[p.periodo], dia, cuenta, horquilla, historia].filter(Boolean).join(' · ');
+}
+const tarjetaPago = (p, accion) => h`<div class="tarjeta fila" data-a="${accion}" ${p.origen === 'manual' ? h`data-id="${p.id}"` : h`data-k="${p.clave}"`}><div class="t"><b>${p.nombre}</b> <span class="pill g">${p.origen === 'manual' ? 'a mano' : 'detectado'}</span><div class="mini">${lineaPago(p)}</div></div>
+  <div class="n"><b class="${p.ingreso ? 'pos' : 'neg'}">${p.origen === 'detectado' ? '≈\u00a0' : ''}${euros(p.importe)}</b><div class="mini">${CADA[p.periodo]}</div></div></div>`;
+
 function renderRecurrentes(cont) {
-  const total = estado.recurrentes.reduce((s, r) => s + Number(r.importe || 0), 0);
+  const hoy = hoyISO();
+  const { activos, terminados, descartados } = pagosFijos(estado.movimientos, estado.recurrentes);
+  const gastos = activos.filter(p => !p.ingreso), alMesTotal = gastos.reduce((s, p) => s + alMes(p), 0);
+  const nDet = activos.filter(p => p.origen === 'detectado').length, nMan = activos.length - nDet;
+  const prox = proximos(gastos, hoy, 30);
   cont.innerHTML = h`
-    ${estado.recurrentes.length ? h`<div class="tarjeta"><div class="grande ${total >= 0 ? 'pos' : 'neg'}">${euros(total)}</div><div class="mini">al mes entre ${estado.recurrentes.length} ${estado.recurrentes.length === 1 ? 'servicio' : 'servicios'} · ${euros(total * 12)} al año</div></div>` : ''}
-    ${estado.recurrentes.length ? lista(estado.recurrentes.map(r => h`<div class="tarjeta fila" data-a="editarRec" data-id="${r.id}"><div class="t"><b>${r.descripcion}</b><div class="mini">${r.concepto} · día ${r.dia}</div></div><b class="${r.importe >= 0 ? 'pos' : 'neg'}">${euros(r.importe)}/mes</b></div>`))
-      : aviso('Servidor, OpenRouter, dominios, suscripciones… Lo que se paga todos los meses se apunta aquí una vez y se aplica al mes con un botón desde Movimientos.')}
-    <div class="acciones"><button class="btn p" data-a="nuevoRec">+ Recurrente</button></div>`;
+    ${activos.length ? h`<div class="tarjeta"><div class="grande neg">≈\u00a0${euros(alMesTotal)} al mes</div><div class="mini">${euros(alMesTotal * 12)} al año en ${activos.length} ${activos.length === 1 ? 'pago fijo' : 'pagos fijos'}: ${nDet} ${nDet === 1 ? 'detectado' : 'detectados'} en tus movimientos y ${nMan} ${nMan === 1 ? 'apuntado' : 'apuntados'} a mano</div></div>`
+      : aviso(estado.movimientos.length ? 'No se ha detectado ningún pago que se repita con un ritmo fijo. Hace falta haber importado al menos tres meses de extractos (un año para los anuales); también puedes apuntarlos a mano.' : 'Importa los extractos del banco (pestaña Importar) y aquí saldrán solos los pagos que se repiten —luz, comunidad, gas, seguros, suscripciones— con el día en que vence cada uno. También puedes apuntarlos a mano.')}
+    ${activos.length ? h`<h3>Próximos 30 días</h3>
+      ${prox.length ? crudo('<table class="tabla">' + prox.map(f => h`<tr data-a="${f.pago.origen === 'manual' ? 'editarRec' : 'pago'}" ${f.pago.origen === 'manual' ? h`data-id="${f.pago.id}"` : h`data-k="${f.pago.clave}"`}><td><b>${cuando(f.dentro)}</b><div class="mini">${fechaLarga(f.fecha)}</div></td><td>${f.pago.nombre}<div class="mini">${PERIODOS[f.pago.periodo]}${f.pago.cuenta ? ' · ' + nombreCuenta(f.pago.cuenta) : ''}</div></td><td class="n neg">${f.pago.origen === 'detectado' ? '≈\u00a0' : ''}${euros(f.importe)}</td></tr>`).join('') + '</table>') : aviso('Nada en los próximos 30 días.')}
+      <div class="acciones"><button class="btn" data-a="calendario">📅 Vencimientos mes a mes</button></div>
+      <h3>Pagos fijos</h3>${lista(activos.map(p => tarjetaPago(p, p.origen === 'manual' ? 'editarRec' : 'pago')))}` : ''}
+    ${terminados.length ? h`<details class="plegable"><summary>Ya no se cobran (${terminados.length})</summary><div class="cuerpo">${lista(terminados.map(p => tarjetaPago(p, 'pago')))}<p class="mini">Se cobraban con ritmo y el último cargo es de hace más de periodo y medio. No entran en el calendario.</p></div></details>` : ''}
+    ${descartados.length ? h`<details class="plegable"><summary>Descartados (${descartados.length})</summary><div class="cuerpo">${lista(descartados.map(p => tarjetaPago(p, 'recuperar')))}<p class="mini">Toca uno para volver a contarlo como pago fijo.</p></div></details>` : ''}
+    <div class="acciones"><button class="btn p" data-a="nuevoRec">+ Pago a mano</button></div>
+    <p class="mini">Se detectan solos en los movimientos importados: cargos del mismo emisor que se repiten cada mes, dos, tres, seis o doce meses en un día parecido. El día es el habitual; un recibo domiciliado que vence en fin de semana se cuenta el lunes. Toca uno para cambiarle el nombre o quitarlo si no es un pago fijo.</p>`;
+  const detectado = k => [...activos, ...terminados, ...descartados].find(p => p.clave === k);
+  // La decisión sobre un pago detectado se guarda en un recurrente con su clave.
+  const decidir = (p, cambios) => {
+    let r = estado.recurrentes.find(x => x.clave === p.clave);
+    if (!r) { r = { id: uid(), clave: p.clave, descripcion: p.nombre }; estado.recurrentes.push(r); }
+    Object.assign(r, cambios); guardar();
+  };
   delegar(cont, {
-    nuevoRec: async () => { const v = await pedir('Recurrente', camposRec); if (v) { estado.recurrentes.push({ id: uid(), ...v }); guardar(); } },
-    editarRec: async el => { const r = estado.recurrentes.find(z => z.id === el.dataset.id); const v = await pedir('Editar recurrente', camposRec, r, { extra: 'Borrar' }); if (!v) return; if (v.__extra) estado.recurrentes = estado.recurrentes.filter(z => z.id !== r.id); else Object.assign(r, v); guardar(); },
+    calendario: () => navegar('finanzas', { v: 'informes', informe: 'vencimientos' }),
+    pago: async el => {
+      const p = detectado(el.dataset.k);
+      if (!p) return;
+      const ultimos = p.cargos.slice(-6).reverse().map(c => `${fechaCorta(c.fecha)} ${euros(-c.importe)}`).join(' · ');
+      const v = await pedir(p.nombre, [{ n: 'descripcion', l: 'Nombre', req: true }], { descripcion: p.nombre }, {
+        texto: `${PERIODOS[p.periodo]}, ${p.margen ? `del ${diaTexto(p.desde)} al ${diaTexto(p.hasta)} de cada mes que toca` : `el día ${p.dia}`}${p.cuenta ? ', en ' + nombreCuenta(p.cuenta) : ''}. Últimos cargos: ${ultimos}.`,
+        extra: 'No es un pago fijo',
+      });
+      if (!v) return;
+      if (v.__extra) { decidir(p, { descartado: true }); toast(`«${p.nombre}» ya no cuenta como pago fijo; está en Descartados`, 5000); }
+      else decidir(p, { descripcion: v.descripcion.trim() || p.nombre });
+    },
+    recuperar: el => { const p = detectado(el.dataset.k); if (p) { decidir(p, { descartado: false }); toast(`«${p.nombre}» vuelve a contar como pago fijo`); } },
+    nuevoRec: async () => { const v = await pedir('Pago fijo a mano', camposRec(), {}, { texto: 'Para lo que no pasa por los extractos importados o aún no se ha cobrado tres veces. Los que salen en los movimientos se detectan solos.' }); if (v) { estado.recurrentes.push({ id: uid(), ...v }); guardar(); } },
+    editarRec: async el => { const r = estado.recurrentes.find(z => z.id === el.dataset.id); if (!r) return; const v = await pedir('Editar pago fijo', camposRec(), { periodo: '1', ...r }, { extra: 'Borrar' }); if (!v) return; if (v.__extra) estado.recurrentes = estado.recurrentes.filter(z => z.id !== r.id); else Object.assign(r, v); guardar(); },
   });
 }
 

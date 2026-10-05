@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="build" content="MA-B1-20261005-001">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0B6E7A">
+<title>maydom · mock 7 · pagos fijos y avisos</title>
+<style>
+:root{--bg:#F6F7F4;--bg2:#FFFFFF;--ink:#1B2430;--ink2:#4B5563;--mute:#8A93A0;--line:#D9DED8;--acc:#0B6E7A;--acc2:#0B6E7A1A;--warn:#B85C1E;--warn2:#B85C1E14;--ok:#2E7D4F;--ok2:#2E7D4F14;--mal:#B00020;--mal2:#B0002014;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#131A20;--bg2:#1B232B;--ink:#E6EAE7;--ink2:#B7C0C7;--mute:#7F8A94;--line:#2C3740;--acc:#4FB3BF;--acc2:#4FB3BF22;--warn:#E08A4C;--warn2:#E08A4C1F;--ok:#5FBF87;--ok2:#5FBF871F;--mal:#FF6B6B;--mal2:#FF6B6B1F}}
+:root[data-theme="dark"]{--bg:#131A20;--bg2:#1B232B;--ink:#E6EAE7;--ink2:#B7C0C7;--mute:#7F8A94;--line:#2C3740;--acc:#4FB3BF;--acc2:#4FB3BF22;--warn:#E08A4C;--warn2:#E08A4C1F;--ok:#5FBF87;--ok2:#5FBF871F;--mal:#FF6B6B;--mal2:#FF6B6B1F}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans)}
+a{color:var(--acc);text-underline-offset:2px}
+.app{max-width:32rem;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
+header.cab{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:.6rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+header.cab h1{font-size:1.1rem;margin:0;flex:1}
+header.cab small{color:var(--mute);font-size:.72rem;text-align:right}
+main{flex:1;padding:.9rem 1rem 5.5rem}
+.banda{background:#0B6E7A;color:#fff;font-size:.85rem;padding:.45rem 1rem;display:flex;gap:.6rem;align-items:center;justify-content:center;flex-wrap:wrap;text-align:center}
+.banda[hidden]{display:none}
+.banda .btn{padding:.2rem .75rem;background:transparent;color:#fff;border-color:#fffb}
+h2{font-size:1.2rem;margin:.5rem 0 .75rem}
+h3{font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:1.2rem 0 .45rem}
+.tarjeta{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:.8rem .95rem;margin:.45rem 0}
+.tarjeta[data-a]{cursor:pointer}
+.fila{display:flex;align-items:center;gap:.7rem}
+.fila.cab{margin-bottom:.5rem}
+.fila .t{flex:1;min-width:0}
+.fila.kv{justify-content:space-between;font-size:.88rem;padding:.2rem 0;border-bottom:1px dashed var(--line)}
+.fila.kv b{text-align:right;max-width:55%}
+.centro{text-align:center}
+.mini{color:var(--mute);font-size:.8rem}
+.grande{font-size:2rem;font-weight:700;line-height:1.1}
+.pill{font-size:.72rem;padding:.12rem .55rem;border-radius:999px;background:var(--acc2);color:var(--acc);border:0;font-family:inherit;white-space:nowrap}
+.pill.w{background:var(--warn2);color:var(--warn)}.pill.ok{background:var(--ok2);color:var(--ok)}.pill.mal{background:var(--mal2);color:var(--mal)}.pill.g{background:var(--line);color:var(--ink2)}
+button.pill{cursor:pointer}button.pill.sel{background:var(--acc);color:#fff}
+.pestanas{display:flex;gap:.1rem;margin:0 0 .9rem;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.pestanas::-webkit-scrollbar{display:none}
+.pestanas button{font:500 .85rem var(--sans);color:var(--ink2);background:none;border:0;border-bottom:2px solid transparent;padding:.5rem .7rem;cursor:pointer;white-space:nowrap;margin-bottom:-1px}
+.pestanas button:hover{color:var(--ink)}
+.pestanas button.sel{color:var(--acc);border-bottom-color:var(--acc)}
+.pestanas .n{font-style:normal;font-size:.7rem;background:var(--acc2);color:var(--acc);border-radius:999px;padding:.05rem .35rem;margin-left:.3rem}
+details.plegable{background:var(--bg2);border:1px solid var(--line);border-radius:10px;margin:.45rem 0;overflow:hidden}
+details.plegable>summary{list-style:none;cursor:pointer;padding:.7rem .95rem;font-weight:600;font-size:.95rem;display:flex;align-items:center;gap:.5rem}
+details.plegable>summary::-webkit-details-marker{display:none}
+details.plegable>summary::after{content:'▾';margin-left:auto;color:var(--mute);font-size:.8rem;transition:transform .15s}
+details.plegable[open]>summary::after{transform:rotate(180deg)}
+details.plegable>summary:hover{color:var(--acc)}
+details.plegable>summary .mini{font-weight:400}
+details.plegable .cuerpo{padding:0 .95rem .85rem}
+details.plegable .cuerpo .tarjeta{margin:.4rem 0;border-radius:8px}
+.zona{border:1px dashed var(--line);border-radius:10px;padding:1.1rem .95rem;text-align:center;background:var(--bg2)}
+.zona .btn{margin-top:.5rem}
+.chips{display:flex;flex-wrap:wrap;gap:.35rem;margin:.5rem 0}
+.barra{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:.35rem 0}
+.barra i{display:block;height:100%;background:var(--acc)}.barra i.w{background:var(--warn)}.barra i.mal{background:var(--mal)}.barra i.ok{background:var(--ok)}
+.btn{font:500 .85rem var(--sans);color:var(--acc);background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:.42rem .72rem;cursor:pointer;display:inline-flex;align-items:center;gap:.3rem}
+.btn:hover{border-color:var(--acc)}
+.btn.p{background:var(--acc);color:#fff;border-color:var(--acc)}
+.btn.peligro{color:var(--mal)}
+.btn.mini{font-size:.72rem;padding:.2rem .45rem}
+.btn.chk{padding:.2rem .5rem;font-size:1rem}
+.acciones{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.55rem;align-items:center}
+.acciones.fin{justify-content:flex-end}
+.acciones input[type=search],.acciones input[type=text]{flex:1;min-width:8rem}
+input,select,textarea{font:inherit;padding:.5rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--bg2);color:var(--ink);width:100%}
+input[type=checkbox]{width:auto}
+label{display:block;font-size:.82rem;color:var(--ink2);margin-top:.55rem}
+label.check{display:flex;align-items:center;gap:.5rem;font-size:.95rem;color:var(--ink)}
+.filtros{display:flex;gap:.45rem;margin:.5rem 0}
+.filtros select{flex:1;padding:.35rem .5rem;font-size:.85rem}
+.opciones{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.3rem}
+.opciones label.opcion{flex:1 1 7rem;margin:0;padding:.5rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--bg2);cursor:pointer}
+.opciones label.opcion:has(input:checked){border-color:var(--acc);background:var(--acc2);color:var(--acc)}
+.form small{display:block;margin-top:.15rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+nav.inferior{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--line);display:flex;justify-content:center;z-index:6;padding-bottom:env(safe-area-inset-bottom)}
+nav.inferior .in{display:flex;width:100%;max-width:32rem;justify-content:space-around;padding:.3rem 0}
+nav.inferior a{background:none;border:0;color:var(--mute);font-size:.68rem;display:flex;flex-direction:column;align-items:center;gap:.1rem;padding:.2rem .5rem;text-decoration:none;position:relative}
+nav.inferior a.activo{color:var(--acc)}
+nav.inferior a span{font-size:1.3rem;line-height:1.2}
+nav.inferior a .n{position:absolute;top:0;right:.1rem;background:var(--warn);color:#fff;font-size:.6rem;border-radius:999px;padding:0 .3rem}
+.menu{list-style:none;margin:0;padding:0}
+.menu li a{display:flex;justify-content:space-between;align-items:center;padding:.65rem .25rem;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none}
+.menu li a span{color:var(--mute);font-size:.8rem}
+.dia{display:grid;grid-template-columns:3rem 1fr;gap:.3rem .5rem;font-size:.9rem;align-items:start}
+.dia .hh{color:var(--mute);font-variant-numeric:tabular-nums;text-align:right;padding-top:.15rem}
+.dia .ev{border-left:3px solid var(--acc);padding:.2rem .5rem;background:var(--acc2);border-radius:0 6px 6px 0;display:flex;align-items:center;gap:.4rem;cursor:pointer}
+.dia .ev span{flex:1}.dia .ev small{color:var(--mute)}
+.dia .ev.hecho span{text-decoration:line-through;color:var(--mute)}
+.dia .ev.s-ocio{border-color:var(--warn);background:var(--warn2)}
+.dia .ev.s-proyecto{border-color:var(--ok);background:var(--ok2)}
+.dia .ev.s-alimentacion{border-color:#8a6d3b;background:#8a6d3b14}
+.dia .ev.s-meditacion,.dia .ev.s-sueno{border-color:#6b5bd2;background:#6b5bd214}
+.dia .ev.s-aviso{border-color:var(--mal);background:var(--mal2)}
+.chk{background:none;border:1px solid var(--line);border-radius:999px;width:1.6rem;height:1.6rem;color:var(--acc);cursor:pointer;font-size:.9rem;flex:none}
+.semana{display:flex;gap:.3rem;margin-bottom:.7rem}
+.semana div{flex:1;text-align:center;font-size:.7rem;padding:.3rem 0 .1rem;border-radius:6px;border:1px solid var(--line);cursor:pointer;color:var(--mute)}
+.semana div b{display:block;font-size:.95rem;color:var(--ink)}.semana div i{display:block;font-style:normal;color:var(--acc);height:.8rem;line-height:.8rem}
+.semana div.sel{border-color:var(--acc);background:var(--acc2)}.semana div.hoy b{color:var(--acc)}
+.nota b{display:block;margin-bottom:.1rem}
+.nota .cuerpo{white-space:pre-wrap;color:var(--ink2);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.cuerpo.ficha{white-space:pre-wrap;color:var(--ink2);margin-top:.3rem;display:-webkit-box;-webkit-line-clamp:9;-webkit-box-orient:vertical;overflow:hidden}
+.ficha-completa{white-space:pre-wrap;font-size:.88rem;color:var(--ink2)}
+.relojes{position:sticky;top:3.2rem;z-index:4;display:flex;flex-direction:column;gap:.35rem;margin:.4rem 0}
+.reloj{display:flex;align-items:center;gap:.5rem;background:var(--bg2);border:1px solid var(--acc);border-radius:10px;padding:.45rem .7rem;box-shadow:0 2px 8px #0002}
+.reloj .t{flex:1;min-width:0}.reloj .t .mini{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.reloj b{font-size:1.35rem;font-variant-numeric:tabular-nums}
+.reloj.sonando{border-color:var(--mal);background:var(--mal2);animation:latido 1s ease-in-out infinite}
+.ingr{display:flex;gap:.6rem;align-items:flex-start;padding:.4rem 0;border-bottom:1px dashed var(--line)}.ingr input{width:1.25rem;height:1.25rem;flex:none;margin-top:.15rem}
+.paso{opacity:.6}.paso.hecho{opacity:.45}.paso.hecho .t{text-decoration:line-through}
+.paso.actual{opacity:1;border-color:var(--acc);border-width:2px;font-size:1.12rem}
+.paso .num{flex:none;width:1.7rem;height:1.7rem;border-radius:999px;background:var(--acc2);color:var(--acc);display:grid;place-items:center;font-size:.85rem;font-weight:600}
+.btn.dictar{margin-top:.4rem}
+.btn.dictar.grabando{background:var(--mal);color:#fff;border-color:var(--mal);animation:latido 1.4s ease-in-out infinite}
+@keyframes latido{50%{opacity:.6}}
+.nota{white-space:normal}.nota.t-preferencia{border-left:3px solid var(--acc)}.nota.t-tendencia{border-left:3px solid var(--warn)}
+.chat{display:flex;flex-direction:column;gap:.45rem}
+.msg{max-width:90%;padding:.55rem .8rem;border-radius:12px;background:var(--bg2);border:1px solid var(--line);font-size:.92rem;white-space:pre-wrap}
+.msg.yo{align-self:flex-end;background:var(--acc2);border-color:transparent}
+.modal{border:1px solid var(--line);border-radius:12px;background:var(--bg2);color:var(--ink);padding:1rem 1.1rem;width:min(92vw,26rem);max-height:90dvh;overflow:auto}
+.modal::backdrop{background:rgba(0,0,0,.45)}
+.modal h2{margin:0}
+.cabecera-modal{display:flex;align-items:flex-start;gap:.5rem;margin:0 0 .4rem}
+.cabecera-modal h2{flex:1;min-width:0}
+.cabecera-modal .cerrar{flex:none;background:none;border:0;color:var(--mute);font-size:1.25rem;line-height:1;cursor:pointer;padding:.15rem .3rem;margin:-.15rem -.3rem 0 0;border-radius:6px}
+.cabecera-modal .cerrar:hover,.cabecera-modal .cerrar:focus-visible{color:var(--ink);background:var(--line)}
+#toast{position:fixed;left:50%;bottom:4.5rem;transform:translateX(-50%) translateY(1rem);background:var(--ink);color:var(--bg);padding:.5rem .9rem;border-radius:8px;font-size:.85rem;opacity:0;transition:.2s;z-index:50;max-width:90vw;pointer-events:none}
+#toast.ver{opacity:1;transform:translateX(-50%)}
+.tabla{width:100%;border-collapse:collapse;font-size:.86rem}.tabla td,.tabla th{padding:.3rem .2rem;border-bottom:1px solid var(--line);text-align:left}.tabla td.n,.tabla th.n{text-align:right;font-variant-numeric:tabular-nums}
+.pos{color:var(--ok)}.neg{color:var(--mal)}
+.tabla tr.hoy td{background:var(--acc2)}
+.fila>.n{flex:none;text-align:right}
+.pasos{padding-left:1.2rem}.pasos li{margin:.35rem 0}
+.oscuro{position:fixed;inset:0;background:#000;color:#665;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:2rem;z-index:100;font-size:1.05rem}
+.oscuro .grande{color:#776;font-size:3rem}
+.oscuro p{max-width:22rem}
+.oscuro button{margin-top:2rem;background:#111;color:#665;border:1px solid #222}
+.tempo{font-size:2.6rem;font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
+@media (min-width:60rem){.app{max-width:none;flex-direction:row}header.cab{position:static;border:0;padding:1.2rem 2rem 0}header.cab h1{font-size:1.5rem}nav.inferior{position:sticky;top:0;height:100dvh;width:12rem;border-top:0;border-right:1px solid var(--line);flex:none}nav.inferior .in{flex-direction:column;justify-content:flex-start;gap:.3rem;padding:1rem .5rem}nav.inferior a{flex-direction:row;font-size:.95rem;gap:.6rem;padding:.5rem .7rem;border-radius:6px}nav.inferior a.activo{background:var(--acc2)}main{max-width:44rem;padding:1.5rem 2rem 3rem;width:100%}}
+textarea{resize:vertical;min-height:4.5rem}
+/* Accesos directos de Hoy (ADR-007): rejilla de 4 columnas fijas y celdas cuadradas */
+.fijar{flex:none;background:none;border:1px solid var(--line);border-radius:999px;color:var(--acc);font:500 .78rem var(--sans);padding:.2rem .6rem;cursor:pointer;white-space:nowrap}
+.fijar:hover,.fijar:focus-visible{border-color:var(--acc)}
+.fijar[hidden]{display:none}
+.cabecera-modal .fijar{align-self:center;font-size:1rem;padding:.05rem .5rem}
+h3.cab-accesos{display:flex;align-items:center;gap:.5rem;margin-top:.3rem}h3.cab-accesos span{flex:1}
+.accesos{--gap:.6rem;--celda:calc((100cqi - 3 * var(--gap)) / 4);container-type:inline-size;max-width:30rem}
+.rejilla{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:var(--celda);gap:var(--gap);position:relative}
+.acceso{--alto:var(--celda);position:relative;border:0;padding:0;background:none;cursor:pointer;font:inherit;color:#fff;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;filter:drop-shadow(0 2px 3px #0003);transition:transform .12s}
+.acceso[data-h="2"]{--alto:calc(var(--celda) * 2 + var(--gap))}
+.acceso .forma{position:absolute;inset:0;background:var(--color);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.1rem;padding:0 .3rem;text-align:center}
+.acceso .ico{font-size:calc(var(--alto) * .34);line-height:1}
+.acceso .nom{font-size:.72rem;font-weight:600;line-height:1.1;text-shadow:0 1px 2px #0005;max-width:100%;hyphens:auto;overflow-wrap:anywhere}
+.acceso.largo[data-w="1"] .nom{font-size:.64rem}
+.bloque-accesos{margin-bottom:.8rem}
+.acceso[data-h="2"] .nom{font-size:.95rem}
+.acceso[data-w="2"][data-h="1"] .forma{flex-direction:row;gap:.45rem}
+.acceso[data-w="2"][data-h="1"] .ico{font-size:calc(var(--alto) * .42)}
+.acceso[data-w="2"][data-h="1"] .nom{font-size:.85rem;text-align:left}
+.acceso:active{transform:scale(.96)}
+.acceso:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+/* El recorte usa la altura real del botón para que el hexágono no se deforme al ensancharse */
+.f-circulo .forma{border-radius:999px}
+.f-cuadrado .forma{border-radius:14px}
+.f-hoja .forma{border-radius:calc(var(--alto) * .5) 6px calc(var(--alto) * .5) 6px}
+.f-hexagono .forma{clip-path:polygon(calc(var(--alto) * .28) 0,calc(100% - var(--alto) * .28) 0,100% 50%,calc(100% - var(--alto) * .28) 100%,calc(var(--alto) * .28) 100%,0 50%);padding:0 calc(var(--alto) * .2)}
+.f-pentagono .forma{clip-path:polygon(50% 0,100% 38%,81% 100%,19% 100%,0 38%);padding-top:18%}
+.colocando .acceso{touch-action:none;cursor:grab;animation:temblor .3s ease-in-out infinite alternate}
+.colocando .acceso:nth-child(2n){animation-delay:.15s}
+.colocando .acceso.arrastrando{animation:none;z-index:20;cursor:grabbing;opacity:.9;transition:none;filter:drop-shadow(0 8px 14px #0005)}
+@keyframes temblor{from{rotate:-1.2deg}to{rotate:1.2deg}}
+.acceso .quitar{position:absolute;top:-.35rem;left:-.35rem;z-index:3;width:1.45rem;height:1.45rem;border-radius:999px;border:2px solid var(--bg);background:var(--ink2);color:var(--bg);font-size:.75rem;line-height:1;display:none;align-items:center;justify-content:center}
+.colocando .acceso .quitar{display:flex}
+.hueco{border:2px dashed var(--line);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:1.3rem;background:none;cursor:pointer;padding:0}
+.hueco:hover{border-color:var(--acc);color:var(--acc)}
+.rejilla .destino{border:2px solid var(--acc);background:var(--acc2);border-radius:12px;pointer-events:none;z-index:1}
+.rejilla .destino[hidden]{display:none}
+.sugerencias{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-top:.6rem;font-size:.8rem;color:var(--mute)}
+.fijar-acceso .lleva{font-size:.95rem;padding:.2rem 0}
+.fijar-acceso .cuenta{float:right;color:var(--mute);font-size:.75rem}
+.fijar-acceso input.icono{width:4.5rem;text-align:center;font-size:1.3rem;padding:.3rem}
+.muestras{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.3rem}
+.muestras label{margin:0;cursor:pointer}
+.muestras input{position:absolute;opacity:0;pointer-events:none}
+.muestras .color{width:2.1rem;height:2.1rem;border-radius:999px;background:var(--c);display:block;border:3px solid transparent;box-shadow:0 0 0 1px var(--line)}
+.muestras input:checked+.color{border-color:var(--bg2);box-shadow:0 0 0 2px var(--ink)}
+.muestras input:focus-visible+span{outline:2px solid var(--acc);outline-offset:2px}
+.muestras .opcion{display:flex;flex-direction:column;align-items:center;gap:.2rem;font-size:.72rem;color:var(--ink2);padding:.35rem .45rem;border:1px solid var(--line);border-radius:8px;min-width:3.6rem}
+.muestras input:checked+.opcion{border-color:var(--acc);background:var(--acc2);color:var(--acc)}
+.muestras .opcion i{display:block;width:1.6rem;height:1.6rem;background:var(--ink2)}
+.muestras input:checked+.opcion i{background:var(--acc)}
+.opcion i.f-circulo{border-radius:999px}.opcion i.f-cuadrado{border-radius:5px}.opcion i.f-hoja{border-radius:.8rem 2px .8rem 2px}
+.opcion i.f-hexagono{clip-path:polygon(28% 0,72% 0,100% 50%,72% 100%,28% 100%,0 50%)}.opcion i.f-pentagono{clip-path:polygon(50% 0,100% 38%,81% 100%,19% 100%,0 38%)}
+.opcion i.t-1x1{width:.9rem;height:.9rem;border-radius:3px;margin:.35rem}.opcion i.t-2x1{width:1.8rem;height:.9rem;border-radius:3px;margin:.35rem 0}.opcion i.t-2x2{border-radius:3px}
+.vista-acceso{margin-top:.8rem;padding:.8rem;border-radius:10px;background:var(--bg);display:flex;justify-content:center}
+.vista-acceso .accesos{width:min(100%,17rem)}
+@media (prefers-reduced-motion:reduce){.colocando .acceso{animation:none}}
+
+/* ── Notas: tareas, compras e ideas en un solo diálogo (mock 5) ── */
+.segmento{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:.3rem}
+.segmento button{font:500 .88rem var(--sans);background:var(--bg2);color:var(--ink2);border:0;border-left:1px solid var(--line);padding:.5rem .2rem;cursor:pointer}
+.segmento button:first-child{border-left:0}
+.segmento button.sel{background:var(--acc);color:#fff}
+.detectado{color:var(--acc);margin-top:.3rem;min-height:1.1em}
+.aviso-mezcla{background:var(--warn2);border:1px solid var(--warn);border-radius:8px;padding:.55rem .7rem;margin-top:.6rem;font-size:.85rem}
+.aviso-mezcla ul{margin:.3rem 0 .45rem;padding-left:1.1rem}
+.rapidas{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.4rem}
+.rapidas .pill{cursor:pointer}
+.dialogo-nota [data-leido]{display:block;margin-top:.3rem}
+.linea-compra{display:grid;grid-template-columns:minmax(0,1fr) 4.6rem 5.8rem 1.2rem;gap:.35rem;align-items:center;margin-top:.35rem}
+.linea-compra input,.linea-compra select{padding:.38rem .45rem;font-size:.88rem;min-width:0}
+.linea-compra button{background:none;border:0;color:var(--mute);cursor:pointer;font-size:1rem;padding:0}
+.tarea .chk{display:flex;align-items:center;justify-content:center;padding:0}
+.tarea.hecha .chk{background:var(--ok);border-color:var(--ok);color:#fff}
+.tarea.hecha b{text-decoration:line-through;color:var(--mute);font-weight:500}
+.tarea.vencida{border-left:3px solid var(--mal)}
+.tarea .t{cursor:pointer}
+h3.mal{color:var(--mal)}
+h3 a.mini{text-transform:none;letter-spacing:0;font-weight:400;margin-left:.3rem}
+.pestanas .n.mal{background:var(--mal2);color:var(--mal)}
+
+/* ── Cajas de texto redimensionables (mock 6): asa táctil bajo cada caja y pantalla completa ── */
+textarea.con-asa{display:block;resize:none;border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom-style:dashed}
+.asa-texto{display:flex;border:1px solid var(--line);border-top:0;border-radius:0 0 6px 6px;background:var(--bg2)}
+textarea.con-asa:focus{outline:none;border-color:var(--acc)}
+textarea.con-asa:focus+.asa-texto{border-color:var(--acc)}
+.asa-texto .asa{flex:1;height:1.6rem;display:flex;align-items:center;justify-content:center;cursor:ns-resize;touch-action:none;user-select:none;-webkit-user-select:none}
+.asa-texto .asa span{width:2.8rem;height:.3rem;border-radius:99px;background:var(--mute);opacity:.5;transition:opacity .15s,background .15s}
+.asa-texto .asa:hover span,.asa-texto .asa:focus-visible span,.asa-texto.arrastrando .asa span{background:var(--acc);opacity:1}
+.asa-texto .asa:focus-visible{outline:none}
+.asa-texto .ampliar{flex:none;width:2.6rem;background:none;border:0;border-left:1px dashed var(--line);color:var(--ink2);font-size:1rem;cursor:pointer;padding:0}
+.asa-texto .ampliar:hover,.asa-texto .ampliar:focus-visible{color:var(--acc)}
+html.con-pantalla{overflow:hidden}
+.cab-pantalla{position:fixed;left:0;right:0;top:0;z-index:1001;height:calc(env(safe-area-inset-top,0px) + 3.2rem);padding:env(safe-area-inset-top,0px) 1rem 0;display:flex;align-items:center;gap:.5rem;background:var(--bg2);border-bottom:1px solid var(--line)}
+.cab-pantalla b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+textarea.a-pantalla{position:fixed;left:0;right:0;bottom:0;top:calc(env(safe-area-inset-top,0px) + 3.2rem);z-index:1001;width:100%;height:auto!important;max-height:none;border:0;border-radius:0;padding:.8rem 1rem calc(env(safe-area-inset-bottom,0px) + .8rem);font-size:1.05rem;line-height:1.6;background:var(--bg2)}
+
+/* ── Notas: etiquetas como fichas y revisión con ✨ Revisar (mock 6) ── */
+.bajo-texto{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:.45rem}
+.bajo-texto .btn.dictar{margin-top:0}
+.bajo-texto [data-voz]:empty{display:none}
+.bajo-texto>span[data-para]:not([hidden]){display:contents}
+.bajo-texto[hidden]{display:none}
+.fichas{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;border:1px solid var(--line);border-radius:6px;padding:.3rem .4rem;background:var(--bg2);margin-top:.2rem}
+.fichas:focus-within{border-color:var(--acc)}
+.ficha{display:inline-flex;align-items:center;font-size:.8rem;background:var(--acc2);color:var(--acc);border-radius:999px;padding:.1rem .15rem .1rem .6rem}
+.ficha button{background:none;border:0;color:inherit;cursor:pointer;font-size:.78rem;padding:0 .35rem;line-height:1.4}
+.fichas input{flex:1;min-width:7rem;width:auto;border:0;padding:.2rem .1rem;background:transparent;font-size:.9rem;outline:none}
+.etqs{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.3rem}
+.etq{font:500 .72rem var(--sans);padding:.05rem .5rem;border-radius:999px;border:1px solid var(--line);background:none;color:var(--ink2)}
+.etq::before{content:'#';opacity:.55;margin-right:.08rem}
+button.etq{cursor:pointer}button.etq:hover{border-color:var(--acc);color:var(--acc)}
+.lote{background:var(--acc2);border-color:transparent}
+.enlace{background:none;border:0;color:var(--acc);font:inherit;font-size:.82rem;cursor:pointer;padding:0 .15rem;text-decoration:underline;text-underline-offset:2px}
+.revision{border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:.6rem .75rem .7rem;margin-top:.6rem}
+.rev-cab{display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem}
+.rev-cab b{flex:1;font-size:.95rem}
+.rev-cab .cerrar{background:none;border:0;color:var(--mute);font-size:1.1rem;cursor:pointer;padding:.1rem .3rem;border-radius:6px}
+.revision h4{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:.8rem 0 .15rem}
+.segmento.dos{grid-template-columns:repeat(2,1fr);margin:.1rem 0 .5rem}
+.segmento.dos button{font-size:.8rem;padding:.35rem .2rem}
+.diff{white-space:pre-wrap;font-size:.92rem;line-height:1.65;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:.55rem .65rem;overflow-wrap:anywhere;max-height:40dvh;overflow:auto}
+.diff del{background:var(--mal2);color:var(--mal);text-decoration:line-through;border-radius:3px}
+.diff ins{background:var(--ok2);color:var(--ok);text-decoration:none;font-weight:600;border-radius:3px}
+.fmt{display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:.5rem}
+.prob{display:flex;gap:.55rem;align-items:flex-start;padding:.45rem 0;border-top:1px dashed var(--line);font-size:.86rem;cursor:pointer;margin:0;color:var(--ink)}
+.prob input{flex:none;width:1.1rem;height:1.1rem;margin:.2rem 0 0;padding:0;accent-color:var(--acc)}
+.prob small{display:block;color:var(--mute);font-size:.76rem}
+.prob s{color:var(--mal)}.prob b{color:var(--ok)}
+.tipo-p{font-size:.64rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2);background:var(--line);border-radius:4px;padding:.05rem .35rem;margin-right:.35rem;vertical-align:.1em}
+.avisos{margin:.2rem 0 0;padding-left:1.1rem;font-size:.85rem}.avisos li{margin:.25rem 0}
+.propone{font-size:.86rem}.propone .fila{gap:.4rem;margin:.2rem 0;align-items:baseline;flex-wrap:wrap}
+.cargando{display:flex;gap:.55rem;align-items:center;color:var(--ink2);font-size:.88rem;padding:.3rem 0}
+.cargando i{width:.6rem;height:.6rem;border-radius:99px;background:var(--acc);animation:latido 1s ease-in-out infinite}
+.rev-hecha{font-size:.84rem;color:var(--ok);margin-top:.45rem}
+.rev-hecha blockquote{margin:.35rem 0 0;padding:.4rem .6rem;border-left:3px solid var(--line);color:var(--ink2);white-space:pre-wrap;font-size:.84rem}
+.modal .volumen{margin:.15rem 0 .7rem;color:var(--acc);font-weight:600}
+/* Informes con roles y selección de modelo (ADR-010) */
+.modal.ancho{width:min(94vw,34rem)}
+.modelo-btn{display:flex;align-items:center;gap:.6rem;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:.55rem .7rem;cursor:pointer;margin:.35rem 0}
+.modelo-btn:hover{border-color:var(--acc)}
+.modelo-btn>span:nth-child(2){flex:1;min-width:0}.modelo-btn b{display:block}.modelo-btn small{color:var(--mute);font-size:.75rem}.modelo-btn i{font-style:normal;color:var(--mute)}
+.grupo-m{font-size:.72rem;color:var(--mute);text-transform:uppercase;letter-spacing:.04em;margin:.8rem 0 .25rem}
+.lista-modelos{display:flex;flex-direction:column;gap:.3rem}
+.modelo{display:flex;align-items:center;gap:.5rem;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:.45rem .6rem;cursor:pointer}
+.modelo>span{flex:1;min-width:0}.modelo b{display:block;font-size:.88rem}.modelo code{display:block;font-size:.7rem;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.modelo small{color:var(--ink2);font-size:.74rem}
+.modelo i{font-style:normal;color:var(--acc);visibility:hidden}.modelo.on{border-color:var(--acc);background:var(--acc2)}.modelo.on i{visibility:visible}
+.modal input[type=search]{width:100%;margin:.3rem 0}
+.roles{display:grid;grid-template-columns:repeat(auto-fill,minmax(9.5rem,1fr));gap:.4rem;margin:.3rem 0}
+.rol{text-align:left;font:inherit;color:var(--ink);background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:.45rem .55rem;cursor:pointer}
+.rol b{display:block;font-size:.85rem}.rol small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--mute);font-size:.72rem;line-height:1.3}
+.rol.on{border-color:var(--acc);background:var(--acc2)}.rol.nuevo{color:var(--acc);text-align:center;border-style:dashed}
+.fuentes{max-height:28vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:.2rem .55rem;margin-top:.3rem}
+.fuentes label{display:flex;gap:.5rem;align-items:flex-start;padding:.3rem 0;margin:0;font-size:.85rem;border-bottom:1px dashed var(--line)}.fuentes label:last-child{border-bottom:0}
+.coste{margin-top:.7rem;background:var(--acc2);color:var(--acc);border-radius:8px;padding:.5rem .7rem;font-size:.82rem;line-height:1.4}
+.coste.caro{background:var(--warn2);color:var(--warn)}
+.mini.error{color:var(--mal)}
+.lista-roles .fila{width:100%;text-align:left;font:inherit;color:var(--ink);background:none;border:0;border-bottom:1px solid var(--line);padding:.55rem 0;cursor:pointer}
+.lista-roles .fila .ico{font-size:1.3rem;width:1.8rem;text-align:center}.lista-roles .fila b{display:block}
+.lista-roles .fila small{display:block;color:var(--mute);font-size:.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lista-roles .fila i{font-style:normal;color:var(--mute)}
+.titulo-informe{margin:.3rem 0 .15rem;font-size:1.15rem}
+.progreso ul{list-style:none;padding:0;margin:.4rem 0}.progreso li{padding:.12rem 0;font-size:.88rem}.progreso li.espera{color:var(--mute)}.progreso li.hecho{color:var(--ok)}.progreso li.fallido{color:var(--mal)}.progreso li.trabajando{font-weight:600}
+.aviso-informe{border-color:var(--warn);background:var(--warn2)}
+.md{line-height:1.5;overflow-wrap:anywhere}.md h1{font-size:1.2rem;margin:.2rem 0 .6rem}.md h2{font-size:1.02rem;margin:1.1rem 0 .4rem;color:var(--acc)}.md h3{font-size:.95rem;margin:.9rem 0 .3rem}.md h4{font-size:.88rem;margin:.6rem 0 .2rem}
+.md p{margin:.35rem 0}.md ul,.md ol{margin:.3rem 0;padding-left:1.3rem}.md li{margin:.15rem 0}.md code{font-size:.82em;background:var(--line);border-radius:4px;padding:0 .25rem}
+@media print{body *{visibility:hidden!important}.md-informe,.md-informe *{visibility:visible!important}.md-informe{position:absolute;left:0;top:0;width:100%;border:0;padding:0;margin:0;background:#fff;color:#000}.md-informe h2{color:#000}}
+/* Finanzas con clave (ADR-011): el candado ocupa la sección hasta que se abre; el 🔒 de las pestañas la cierra. */
+.candado{text-align:center;padding:1.4rem 1rem}
+.candado .grande{font-size:2.4rem;margin-bottom:.3rem}
+.candado .mini{text-align:left;max-width:30rem;margin:.6rem auto}
+.candado form{max-width:20rem;margin:.9rem auto 0;display:flex;flex-direction:column;gap:.55rem}
+.candado input{width:100%;box-sizing:border-box;font:1rem var(--sans);padding:.6rem .7rem;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.error{color:var(--mal)}
+.error:empty{display:none}
+.pestanas [data-a="bloquear"]{margin-left:auto}
+.filtros-listado{display:flex;flex-wrap:wrap;gap:.3rem;margin:.2rem 0 .7rem}
+
+.aviso-mock{font-size:.78rem;color:var(--ink2);background:var(--acc2);border-radius:8px;padding:.5rem .7rem;margin-bottom:.7rem}
+.pantallas{display:flex;flex-wrap:wrap;gap:.35rem;margin:0 0 .8rem}
+.pantalla[hidden]{display:none}
+.noti{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:.65rem .85rem;margin:.45rem 0;box-shadow:0 2px 10px #0001}
+.noti .de{display:flex;align-items:center;gap:.4rem;font-size:.72rem;color:var(--mute);margin-bottom:.15rem}
+.noti .de i{width:16px;height:16px;border-radius:4px;background:var(--acc);display:inline-block}
+.noti b{display:block;font-size:.92rem}
+.noti .acc{display:flex;gap:1rem;margin-top:.35rem;font-size:.8rem;color:var(--acc);font-weight:600}
+.nuevo{outline:2px dashed var(--warn);outline-offset:3px;border-radius:10px}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="cab"><h1>Finanzas</h1><small>lunes 05/10/2026</small></header>
+<main>
+<div class="aviso-mock">Mock 7 · datos inventados. Las dos primeras pantallas son la app tal como queda en esta versión; la tercera (lo marcado con raya naranja) es la propuesta de avisos al móvil para la siguiente.</div>
+<div class="pantallas"><button class="pill sel" data-p="1">1 · Pagos fijos</button><button class="pill" data-p="2">2 · Vencimientos mes a mes</button><button class="pill" data-p="3">3 · Avisos (siguiente versión)</button></div>
+<section class="pantalla" data-p="1"><div class="pestanas"><button class="" data-a="pestana" data-v="movimientos">Movimientos<i class="n">390</i></button><button class="" data-a="pestana" data-v="importar">Importar</button><button class="" data-a="pestana" data-v="informes">Listados</button><button class="sel" data-a="pestana" data-v="recurrentes">Pagos fijos<i class="n">8</i></button><button data-a="bloquear" title="Cerrar Finanzas" aria-label="Cerrar Finanzas">🔒</button></div><div id="fin-cuerpo">
+    <div class="tarjeta"><div class="grande neg">≈&nbsp;219,09&nbsp;€ al mes</div><div class="mini">2629,06&nbsp;€ al año en 8 pagos fijos: 7 detectados en tus movimientos y 1 apuntado a mano</div></div>
+    <h3>Próximos 30 días</h3>
+      <table class="tabla"><tbody><tr data-a="pago" data-k="iberdrola clientes"><td><b>hoy</b><div class="mini">lunes 05/10/2026</div></td><td>Luz (Iberdrola)<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;52,82&nbsp;€</td></tr><tr data-a="pago" data-k="naturgy iberia"><td><b>en 7 días</b><div class="mini">lunes 12/10/2026</div></td><td>Gas (Naturgy)<div class="mini">bimestral · Gastos fijos</div></td><td class="n neg">≈&nbsp;69,43&nbsp;€</td></tr><tr data-a="pago" data-k="netflix com"><td><b>en 10 días</b><div class="mini">jueves 15/10/2026</div></td><td>Netflix<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;12,99&nbsp;€</td></tr><tr data-a="pago" data-k="google payment|12"><td><b>en 15 días</b><div class="mini">martes 20/10/2026</div></td><td>YouTube Premium<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;11,99&nbsp;€</td></tr><tr data-a="pago" data-k="comunidad comunidad propietarios calle"><td><b>en 28 días</b><div class="mini">lunes 02/11/2026</div></td><td>Comunidad de vecinos<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;60,00&nbsp;€</td></tr><tr data-a="pago" data-k="google payment|2"><td><b>en 29 días</b><div class="mini">martes 03/11/2026</div></td><td>Google One<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;1,99&nbsp;€</td></tr></tbody></table>
+      <div class="acciones"><button class="btn" data-a="calendario">📅 Vencimientos mes a mes</button></div>
+      <h3>Pagos fijos</h3><div class="tarjeta fila" data-a="pago" data-k="comunidad comunidad propietarios calle"><div class="t"><b>Comunidad de vecinos</b> <span class="pill g">detectado</span><div class="mini">mensual · día 1 · Gastos fijos · 19 cargos, del 01/04/2025 al 01/10/2026</div></div>
+  <div class="n"><b class="neg">≈&nbsp;60,00&nbsp;€</b><div class="mini">al mes</div></div></div><div class="tarjeta fila" data-a="pago" data-k="google payment|2"><div class="t"><b>Google One</b> <span class="pill g">detectado</span><div class="mini">mensual · día 3 · Ingresos y gastos variables · 18 cargos, del 03/04/2025 al 03/09/2026</div></div>
+  <div class="n"><b class="neg">≈&nbsp;1,99&nbsp;€</b><div class="mini">al mes</div></div></div><div class="tarjeta fila" data-a="pago" data-k="iberdrola clientes"><div class="t"><b>Luz (Iberdrola)</b> <span class="pill g">detectado</span><div class="mini">mensual · día 5 · Gastos fijos · de 45,17&nbsp;€ a 84,00&nbsp;€ · 18 cargos, del 07/04/2025 al 07/09/2026</div></div>
+  <div class="n"><b class="neg">≈&nbsp;52,82&nbsp;€</b><div class="mini">al mes</div></div></div><div class="tarjeta fila" data-a="editarRec" data-id="r1"><div class="t"><b>Dominio web</b> <span class="pill g">a mano</span><div class="mini">anual · día 10 · apuntado a mano</div></div>
+  <div class="n"><b class="neg">15,00&nbsp;€</b><div class="mini">al año</div></div></div><div class="tarjeta fila" data-a="pago" data-k="mapfre espana poliza|520"><div class="t"><b>Seguro del coche (Mapfre)</b> <span class="pill g">detectado</span><div class="mini">anual · día 10 · Gastos fijos · 2 cargos, del 10/06/2025 al 10/06/2026</div></div>
+  <div class="n"><b class="neg">≈&nbsp;520,00&nbsp;€</b><div class="mini">al año</div></div></div><div class="tarjeta fila" data-a="pago" data-k="naturgy iberia"><div class="t"><b>Gas (Naturgy)</b> <span class="pill g">detectado</span><div class="mini">bimestral · día 12 · Gastos fijos · de 62,14&nbsp;€ a 84,56&nbsp;€ · 9 cargos, del 14/04/2025 al 12/08/2026</div></div>
+  <div class="n"><b class="neg">≈&nbsp;69,43&nbsp;€</b><div class="mini">cada 2 meses</div></div></div><div class="tarjeta fila" data-a="pago" data-k="netflix com"><div class="t"><b>Netflix</b> <span class="pill g">detectado</span><div class="mini">mensual · día 15 · Ingresos y gastos variables · 18 cargos, del 15/04/2025 al 15/09/2026</div></div>
+  <div class="n"><b class="neg">≈&nbsp;12,99&nbsp;€</b><div class="mini">al mes</div></div></div><div class="tarjeta fila" data-a="pago" data-k="google payment|12"><div class="t"><b>YouTube Premium</b> <span class="pill g">detectado</span><div class="mini">mensual · día 20 · Ingresos y gastos variables · 18 cargos, del 20/04/2025 al 20/09/2026</div></div>
+  <div class="n"><b class="neg">≈&nbsp;11,99&nbsp;€</b><div class="mini">al mes</div></div></div>
+    <details class="plegable"><summary>Ya no se cobran (1)</summary><div class="cuerpo"><div class="tarjeta fila" data-a="pago" data-k="gimnasio barrio"><div class="t"><b>Gimnasio</b> <span class="pill g">detectado</span><div class="mini">mensual · día 2 · Ingresos y gastos variables · 13 cargos, del 02/04/2025 al 02/04/2026</div></div>
+  <div class="n"><b class="neg">≈&nbsp;35,00&nbsp;€</b><div class="mini">al mes</div></div></div><p class="mini">Se cobraban con ritmo y el último cargo es de hace más de periodo y medio. No entran en el calendario.</p></div></details>
+    
+    <div class="acciones"><button class="btn p" data-a="nuevoRec">+ Pago a mano</button></div>
+    <p class="mini">Se detectan solos en los movimientos importados: cargos del mismo emisor que se repiten cada mes, dos, tres, seis o doce meses en un día parecido. El día es el habitual; un recibo domiciliado que vence en fin de semana se cuenta el lunes. Toca uno para cambiarle el nombre o quitarlo si no es un pago fijo.</p></div></section>
+<section class="pantalla" data-p="2" hidden><div class="pestanas"><button class="" data-a="pestana" data-v="movimientos">Movimientos<i class="n">390</i></button><button class="" data-a="pestana" data-v="importar">Importar</button><button class="sel" data-a="pestana" data-v="informes">Listados</button><button class="" data-a="pestana" data-v="recurrentes">Pagos fijos<i class="n">8</i></button><button data-a="bloquear" title="Cerrar Finanzas" aria-label="Cerrar Finanzas">🔒</button></div><div id="fin-cuerpo"><div><div class="fila cab"><div class="t"><b>Vencimientos de pagos fijos</b></div><button class="btn mini" data-a="cambiar">Cambiar</button><button class="btn mini" data-a="volver">Todos los listados</button></div>
+      <div class="filtros-listado"><span class="pill g">próximos 12 meses</span><span class="pill g">todas las cuentas</span></div></div><div>
+    <div class="tarjeta"><div class="grande neg">≈&nbsp;2629,06&nbsp;€</div><div class="mini">en 8 pagos fijos de octubre 2026 a septiembre 2027 · ≈&nbsp;219,09&nbsp;€ al mes</div></div>
+    <h3>octubre 2026 <span class="mini">≈&nbsp;209,22&nbsp;€</span></h3>
+      <table class="tabla"><tbody><tr class=""><td class="n"><b>1</b><div class="mini">jue</div></td><td>Comunidad de vecinos<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">60,00&nbsp;€</td><td class="n"><span class="pill ok">cobrado</span></td></tr><tr class=""><td class="n"><b>3</b><div class="mini">sáb</div></td><td>Google One<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;1,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class="hoy"><td class="n"><b>5</b><div class="mini">lun</div></td><td>Luz (Iberdrola)<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;52,82&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>12</b><div class="mini">lun</div></td><td>Gas (Naturgy)<div class="mini">bimestral · Gastos fijos</div></td><td class="n neg">≈&nbsp;69,43&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>15</b><div class="mini">jue</div></td><td>Netflix<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;12,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>20</b><div class="mini">mar</div></td><td>YouTube Premium<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;11,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr></tbody></table><h3>noviembre 2026 <span class="mini">≈&nbsp;154,79&nbsp;€</span></h3>
+      <table class="tabla"><tbody><tr class=""><td class="n"><b>2</b><div class="mini">lun</div></td><td>Comunidad de vecinos<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;60,00&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>3</b><div class="mini">mar</div></td><td>Google One<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;1,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>5</b><div class="mini">jue</div></td><td>Luz (Iberdrola)<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;52,82&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>10</b><div class="mini">mar</div></td><td>Dominio web<div class="mini">anual</div></td><td class="n neg">≈&nbsp;15,00&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>15</b><div class="mini">dom</div></td><td>Netflix<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;12,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>20</b><div class="mini">vie</div></td><td>YouTube Premium<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;11,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr></tbody></table><h3>diciembre 2026 <span class="mini">≈&nbsp;209,22&nbsp;€</span></h3>
+      <table class="tabla"><tbody><tr class=""><td class="n"><b>1</b><div class="mini">mar</div></td><td>Comunidad de vecinos<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;60,00&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>3</b><div class="mini">jue</div></td><td>Google One<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;1,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>7</b><div class="mini">lun</div></td><td>Luz (Iberdrola)<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;52,82&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>14</b><div class="mini">lun</div></td><td>Gas (Naturgy)<div class="mini">bimestral · Gastos fijos</div></td><td class="n neg">≈&nbsp;69,43&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>15</b><div class="mini">mar</div></td><td>Netflix<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;12,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>20</b><div class="mini">dom</div></td><td>YouTube Premium<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;11,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr></tbody></table><h3>enero 2027 <span class="mini">≈&nbsp;139,79&nbsp;€</span></h3>
+      <table class="tabla"><tbody><tr class=""><td class="n"><b>1</b><div class="mini">vie</div></td><td>Comunidad de vecinos<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;60,00&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>3</b><div class="mini">dom</div></td><td>Google One<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;1,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>5</b><div class="mini">mar</div></td><td>Luz (Iberdrola)<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;52,82&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>15</b><div class="mini">vie</div></td><td>Netflix<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;12,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>20</b><div class="mini">mié</div></td><td>YouTube Premium<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;11,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr></tbody></table><h3>febrero 2027 <span class="mini">≈&nbsp;209,22&nbsp;€</span></h3>
+      <table class="tabla"><tbody><tr class=""><td class="n"><b>1</b><div class="mini">lun</div></td><td>Comunidad de vecinos<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;60,00&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>3</b><div class="mini">mié</div></td><td>Google One<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;1,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>5</b><div class="mini">vie</div></td><td>Luz (Iberdrola)<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;52,82&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>12</b><div class="mini">vie</div></td><td>Gas (Naturgy)<div class="mini">bimestral · Gastos fijos</div></td><td class="n neg">≈&nbsp;69,43&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>15</b><div class="mini">lun</div></td><td>Netflix<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;12,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>20</b><div class="mini">sáb</div></td><td>YouTube Premium<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;11,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr></tbody></table><h3>marzo 2027 <span class="mini">≈&nbsp;139,79&nbsp;€</span></h3>
+      <table class="tabla"><tbody><tr class=""><td class="n"><b>1</b><div class="mini">lun</div></td><td>Comunidad de vecinos<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;60,00&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>3</b><div class="mini">mié</div></td><td>Google One<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;1,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>5</b><div class="mini">vie</div></td><td>Luz (Iberdrola)<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;52,82&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>15</b><div class="mini">lun</div></td><td>Netflix<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;12,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>20</b><div class="mini">sáb</div></td><td>YouTube Premium<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;11,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr></tbody></table><h3>abril 2027 <span class="mini">≈&nbsp;209,22&nbsp;€</span></h3>
+      <table class="tabla"><tbody><tr class=""><td class="n"><b>1</b><div class="mini">jue</div></td><td>Comunidad de vecinos<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;60,00&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>3</b><div class="mini">sáb</div></td><td>Google One<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;1,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>5</b><div class="mini">lun</div></td><td>Luz (Iberdrola)<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;52,82&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>12</b><div class="mini">lun</div></td><td>Gas (Naturgy)<div class="mini">bimestral · Gastos fijos</div></td><td class="n neg">≈&nbsp;69,43&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>15</b><div class="mini">jue</div></td><td>Netflix<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;12,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>20</b><div class="mini">mar</div></td><td>YouTube Premium<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;11,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr></tbody></table><h3>mayo 2027 <span class="mini">≈&nbsp;139,79&nbsp;€</span></h3>
+      <table class="tabla"><tbody><tr class=""><td class="n"><b>3</b><div class="mini">lun</div></td><td>Comunidad de vecinos<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;60,00&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>3</b><div class="mini">lun</div></td><td>Google One<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;1,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>5</b><div class="mini">mié</div></td><td>Luz (Iberdrola)<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;52,82&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>15</b><div class="mini">sáb</div></td><td>Netflix<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;12,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>20</b><div class="mini">jue</div></td><td>YouTube Premium<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;11,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr></tbody></table><h3>junio 2027 <span class="mini">≈&nbsp;729,22&nbsp;€</span></h3>
+      <table class="tabla"><tbody><tr class=""><td class="n"><b>1</b><div class="mini">mar</div></td><td>Comunidad de vecinos<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;60,00&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>3</b><div class="mini">jue</div></td><td>Google One<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;1,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>7</b><div class="mini">lun</div></td><td>Luz (Iberdrola)<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;52,82&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>10</b><div class="mini">jue</div></td><td>Seguro del coche (Mapfre)<div class="mini">anual · Gastos fijos</div></td><td class="n neg">≈&nbsp;520,00&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>14</b><div class="mini">lun</div></td><td>Gas (Naturgy)<div class="mini">bimestral · Gastos fijos</div></td><td class="n neg">≈&nbsp;69,43&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>15</b><div class="mini">mar</div></td><td>Netflix<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;12,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>20</b><div class="mini">dom</div></td><td>YouTube Premium<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;11,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr></tbody></table><h3>julio 2027 <span class="mini">≈&nbsp;139,79&nbsp;€</span></h3>
+      <table class="tabla"><tbody><tr class=""><td class="n"><b>1</b><div class="mini">jue</div></td><td>Comunidad de vecinos<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;60,00&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>3</b><div class="mini">sáb</div></td><td>Google One<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;1,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>5</b><div class="mini">lun</div></td><td>Luz (Iberdrola)<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;52,82&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>15</b><div class="mini">jue</div></td><td>Netflix<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;12,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>20</b><div class="mini">mar</div></td><td>YouTube Premium<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;11,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr></tbody></table><h3>agosto 2027 <span class="mini">≈&nbsp;209,22&nbsp;€</span></h3>
+      <table class="tabla"><tbody><tr class=""><td class="n"><b>2</b><div class="mini">lun</div></td><td>Comunidad de vecinos<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;60,00&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>3</b><div class="mini">mar</div></td><td>Google One<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;1,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>5</b><div class="mini">jue</div></td><td>Luz (Iberdrola)<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;52,82&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>12</b><div class="mini">jue</div></td><td>Gas (Naturgy)<div class="mini">bimestral · Gastos fijos</div></td><td class="n neg">≈&nbsp;69,43&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>15</b><div class="mini">dom</div></td><td>Netflix<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;12,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>20</b><div class="mini">vie</div></td><td>YouTube Premium<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;11,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr></tbody></table><h3>septiembre 2027 <span class="mini">≈&nbsp;139,79&nbsp;€</span></h3>
+      <table class="tabla"><tbody><tr class=""><td class="n"><b>1</b><div class="mini">mié</div></td><td>Comunidad de vecinos<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;60,00&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>3</b><div class="mini">vie</div></td><td>Google One<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;1,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>6</b><div class="mini">lun</div></td><td>Luz (Iberdrola)<div class="mini">mensual · Gastos fijos</div></td><td class="n neg">≈&nbsp;52,82&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>15</b><div class="mini">mié</div></td><td>Netflix<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;12,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr><tr class=""><td class="n"><b>20</b><div class="mini">lun</div></td><td>YouTube Premium<div class="mini">mensual · Ingresos y gastos variables</div></td><td class="n neg">≈&nbsp;11,99&nbsp;€</td><td class="n"><span class="pill g">previsto</span></td></tr></tbody></table>
+    <p class="mini">«Cobrado» es el cargo real del extracto, con su día y su importe; «previsto», el día habitual (el lunes si cae en fin de semana y ese recibo nunca se ha cobrado en fin de semana) y el importe de los últimos cargos; «no ha llegado», un recibo que ya debería estar en los extractos importados y no está. Los nombres y lo que no es un pago fijo se cambian en la pestaña Pagos fijos.</p></div></div></section>
+<section class="pantalla" data-p="3" hidden><div class="pestanas"><button class="" data-a="pestana" data-v="movimientos">Movimientos<i class="n">390</i></button><button class="" data-a="pestana" data-v="importar">Importar</button><button class="" data-a="pestana" data-v="informes">Listados</button><button  data-a="pestana" data-v="recurrentes">Pagos fijos<i class="n">8</i></button><button data-a="bloquear" title="Cerrar Finanzas" aria-label="Cerrar Finanzas">🔒</button></div>
+<div class="tarjeta nuevo">
+  <b>🔔 Avisos de pagos fijos</b>
+  <label class="check"><input type="checkbox" checked> Avisarme en el móvil antes de cada pago fijo</label>
+  <div class="mini" style="margin-top:.5rem">Con cuánta antelación</div>
+  <div class="chips"><button class="pill">el mismo día</button><button class="pill sel">1 día antes</button><button class="pill">2 días antes</button><button class="pill">3 días antes</button></div>
+  <div class="mini">A qué hora</div>
+  <div class="chips"><button class="pill">08:00</button><button class="pill sel">09:00</button><button class="pill">20:00 (la víspera)</button></div>
+  <label class="check"><input type="checkbox" checked> Decir el importe en el aviso</label>
+  <div class="acciones"><button class="btn">Probar un aviso</button></div>
+  <p class="mini">Cada pago puede llevar su propia antelación o no avisar nunca (al tocarlo en la lista de pagos fijos).</p>
+</div>
+<h3>Así llegaría al móvil</h3>
+<div class="noti nuevo"><div class="de"><i></i> maydom · 09:00</div><b>Mañana se cobra Gas (Naturgy)</b><div class="mini">≈ 69,43 € · Gastos fijos · lunes 12/10/2026</div><div class="acc"><span>Ver pagos fijos</span><span>Silenciar este</span></div></div>
+<div class="noti nuevo"><div class="de"><i></i> maydom · 09:00</div><b>Mañana se cobran 2 pagos fijos</b><div class="mini">Netflix 12,99 € · YouTube Premium ≈ 11,99 €</div><div class="acc"><span>Ver pagos fijos</span></div></div>
+<h3>En la lista de próximos</h3>
+<table class="tabla nuevo"><tr><td><b>en 7 días</b><div class="mini">lunes 12/10/2026</div></td><td>Gas (Naturgy)<div class="mini">bimestral · Gastos fijos · 🔔 aviso el domingo 11/10/2026 a las 09:00</div></td><td class="n neg">≈ 69,43 €</td></tr>
+<tr><td><b>en 10 días</b><div class="mini">jueves 15/10/2026</div></td><td>Netflix<div class="mini">mensual · Ingresos y gastos variables · 🔕 sin aviso</div></td><td class="n neg">12,99 €</td></tr></table>
+<p class="mini">Por decidir antes de hacerlo: cómo llega el aviso con la app cerrada (las opciones, en el resumen de la sesión).</p>
+</section>
+</main>
+</div>
+<script>
+document.querySelectorAll('.pantallas .pill').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.pantallas .pill').forEach(x => x.classList.toggle('sel', x === b));
+  document.querySelectorAll('.pantalla').forEach(s => { s.hidden = s.dataset.p !== b.dataset.p; });
+  scrollTo(0, 0);
+});
+document.querySelectorAll('main [data-a], main details').forEach(e => e.addEventListener('click', ev => { if (!e.matches('summary, details')) ev.preventDefault(); }));
+</script>
+</body>
+</html>

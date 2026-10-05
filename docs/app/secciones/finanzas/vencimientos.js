@@ -107,8 +107,9 @@ function ultimasFechas(movs) {
 export function detectar(movs) {
   const grupos = new Map();
   for (const m of movs) {
-    // Ni el cajero ni los traspasos entre cuentas propias son un pago: el dinero no sale de casa.
-    if (!(m.importe < 0) || m.concepto === 'efectivo' || !m.fecha || /traspaso/.test(sinTildes(m.descripcion))) continue;
+    // Ni el cajero ni los traspasos entre cuentas propias son un pago: el dinero no sale de casa. Los
+    // Bizum tampoco (preferencia del 05-oct): son pagos entre personas, no recibos, aunque se repitan.
+    if (!(m.importe < 0) || m.concepto === 'efectivo' || !m.fecha || /traspaso|bizum/.test(sinTildes(m.descripcion))) continue;
     const k = claveDe(m.descripcion);
     if (!k) continue;
     if (!grupos.has(k)) grupos.set(k, []);
@@ -184,7 +185,7 @@ export function pagosFijos(movs, recurrentes = []) {
     const r = porClave.get(d.clave);
     const gemelo = manuales.find(m => !usados.has(m.id) && mismo(d.clave, m.descripcion));
     if (gemelo) usados.add(gemelo.id);
-    const p = { ...d, id: r?.id || null, origen: 'detectado', nombre: r?.descripcion || gemelo?.descripcion || d.nombre, manualId: gemelo?.id || null };
+    const p = { ...d, id: r?.id || null, origen: 'detectado', nombre: r?.descripcion || gemelo?.descripcion || d.nombre, manualId: gemelo?.id || null, aviso: r?.aviso ?? gemelo?.aviso ?? '' };
     if (r?.descartado) descartados.push(p); else if (d.activo) activos.push(p); else terminados.push(p);
   }
   for (const m of manuales) {
@@ -195,7 +196,7 @@ export function pagosFijos(movs, recurrentes = []) {
     activos.push({
       clave: null, id: m.id, origen: 'manual', nombre: m.descripcion, periodo, dia, desde: dia, hasta: dia, margen: 0,
       importe: Math.abs(Number(m.importe) || 0), minimo: null, maximo: null, cuenta: m.cuenta || '', concepto: m.concepto || 'otros',
-      mesInicial: Number(m.mes) || 1, ingreso: Number(m.importe) > 0, cargos, finSemana: true, activo: true,
+      mesInicial: Number(m.mes) || 1, ingreso: Number(m.importe) > 0, cargos, finSemana: true, activo: true, aviso: m.aviso ?? '',
     });
   }
   const orden = (a, b) => a.dia - b.dia || a.nombre.localeCompare(b.nombre);
@@ -256,4 +257,19 @@ export function proximos(pagos, hoy, n = 30) {
   return calendario(pagos, hoy.slice(0, 7), meses).flatMap(m => m.filas)
     .filter(f => f.estado === 'previsto' && f.fecha >= hoy && f.fecha <= hasta)
     .map(f => ({ ...f, dentro: dias(hoy, f.fecha) }));
+}
+
+// ---------- agenda de avisos (ADR-012, opción A) ----------
+// Lo que el service worker necesita para avisar sin la clave: por cada cobro previsto en los
+// próximos `dias`, su nombre, la fecha, el día de avisar (la antelación general o la del pago; un
+// pago con `aviso: 'no'` no entra) y, si se quiere, el importe y la cuenta. Es lo único de Finanzas
+// que queda sin cifrar, y solo mientras los avisos estén puestos.
+export function agendaAvisos(pagos, hoy, { antelacion = 1, importe = true } = {}, dias = 60, nombreCuenta = () => '') {
+  return proximos(pagos.filter(p => !p.ingreso && p.aviso !== 'no'), hoy, dias).map(f => {
+    const ant = f.pago.aviso === '' || f.pago.aviso == null ? Number(antelacion) || 0 : Number(f.pago.aviso);
+    return {
+      id: `${f.pago.clave || f.pago.id}|${f.fecha}`, nombre: f.pago.nombre, fecha: f.fecha, avisar: sumarDias(f.fecha, -ant),
+      ...(importe ? { importe: f.importe, aprox: f.pago.origen === 'detectado', cuenta: f.pago.cuenta ? nombreCuenta(f.pago.cuenta) : '' } : {}),
+    };
+  });
 }

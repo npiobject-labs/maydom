@@ -35,6 +35,8 @@ export function generar(hasta) {
     for (let d = 1; d <= 28; d += 3 + Math.round(azar())) mov(dia(d), 'Compra tarjeta · MERCADONA BARRIO', -(30 + 50 * azar()), 'variables', 'alimentación');
     for (let k = 0; k < 4; k++) mov(dia(1 + Math.floor(azar() * 27)), 'Compra tarjeta · CAFETERIA ESQUINA', -(1.5 + 2 * azar()), 'variables', 'restauración');
     mov(dia(27), 'Abono · NOMINA EMPRESA', 1800, 'variables', 'ingresos');
+    // Un Bizum fijo cada mes a la misma persona (inventada): no es un recibo.
+    mov(dia(10), 'Bizum · Enviado: clases de guitarra · ENVIADO: CLASES DE GUITARRA', -40, 'variables', 'transferencias');
     mov(dia(28), 'Traspaso · A CUENTA AHORRO', -300 - Math.round(azar() * 3) * 100, 'variables', 'transferencias');
     mov(dia(1 + Math.floor(azar() * 27)), 'Ret. efectivo · CAJERO', -50, 'variables', 'efectivo');
   }

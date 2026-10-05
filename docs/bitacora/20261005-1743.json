@@ -1,0 +1,32 @@
+{
+  "fecha": "2026-10-05T17:43:00+02:00",
+  "titulo": "Avisos de pagos fijos al móvil y Bizum fuera",
+  "objetivo": "Avisar en el móvil antes de cada pago fijo, con la antelación ajustable, sin servidor; y que un Bizum nunca cuente como pago fijo.",
+  "prompts": [
+    { "texto": "Vale, el mock fusiona y elijo la opción A." },
+    { "texto": "Quita los Bizum de los pagos fijos." },
+    { "texto": "Nunca un Bizum va a ser un pago fijo." }
+  ],
+  "cambios": [
+    "Fusionado el previsor de pagos fijos (PR 38) y publicado (build MA-B1-20261005-001).",
+    "Tarjeta «Avisos de pagos fijos»: antelación el mismo día, 1, 2 o 3 días, hora, importe sí o no, «Probar un aviso»; antelación o «No avisar» por pago.",
+    "Agenda de 60 días en Cache Storage, escrita al abrir Finanzas y borrada al quitar los avisos.",
+    "Avisos desde la página y desde el service worker (Periodic Background Sync con la app instalada), sin repetirse y uno por día de cobro.",
+    "Los Bizum nunca cuentan como pago fijo.",
+    "Prueba de humo prueba-avisos-pagos.mjs con service worker."
+  ],
+  "sha": null,
+  "sha_completo": null,
+  "run": null,
+  "mock": "mocks/007-pagos-fijos.html",
+  "build": "MA-B1-20261005-002",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/finanzas?v=recurrentes",
+  "fly": null,
+  "pendiente": [
+    "Comprobar en el móvil real que Chrome despierta la app instalada para avisar; si llega tarde, exportar al calendario (D17)."
+  ],
+  "enlaces": [
+    { "texto": "PR 38 (previsor)", "url": "https://github.com/npiobject-labs/maydom/pull/38" }
+  ],
+  "notas": "Prompts cortos, transcritos tal cual (con «mock» donde dictó «MOC»). Movimientos de prueba inventados. El SHA no se sabe hasta el commit y cambiará al fusionar con squash."
+}

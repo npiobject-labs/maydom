@@ -1,6 +1,7 @@
 // Arranque de maydom: registra secciones, pinta la shell y enruta por hash.
 import { estado, guardar, registrar, secciones, seccion, rutaActual, alCambiar, arrancarVigilante, h, lista, fechaLarga, hoyISO, toast, anotarOrigen } from './nucleo.js';
 import { esFijable, opcionDeBoton, opcionesDePantalla, lanzarAccion, contarUso, abrirFijar } from './accesos.js';
+import { arrancarAvisos } from './avisos-pagos.js';
 import { cargarSemillas, aplicarTema } from './secciones/ajustes.js';
 import { sincronizarCompra } from './secciones/compra.js';
 import { consejosNuevos } from './secciones/mayordomo.js';
@@ -64,6 +65,8 @@ window.addEventListener('hashchange', render);
 alCambiar(() => { if (!document.querySelector('dialog[open]')) render(); });
 render();
 arrancarVigilante();
+// Avisos de pagos fijos (ADR-012): se repasan al abrir la app, al volver a ella y cada cinco minutos.
+arrancarAvisos();
 
 // PWA: service worker, aviso de versión nueva e instalación. Si Ajustes está delante, se repinta
 // cuando el navegador ofrece instalar (o deja de ofrecerlo) y cuando aparece una versión nueva.

@@ -52,7 +52,7 @@ await pag.waitForSelector('.pestanas', { timeout: 15000 });
 console.log('\n--- 1. Las cuatro pestañas ---');
 const pest = await pag.locator('.pestanas button[data-a="pestana"]').allInnerTexts();
 console.log('  ', pest.join(' | '));
-comprobar(pest.length === 4 && /Movimientos/.test(pest[0]) && /Importar/.test(pest[1]) && /Listados/.test(pest[2]) && /Recurrentes/.test(pest[3]), 'Movimientos, Importar, Listados y Recurrentes, en ese orden');
+comprobar(pest.length === 4 && /Movimientos/.test(pest[0]) && /Importar/.test(pest[1]) && /Listados/.test(pest[2]) && /Pagos fijos/.test(pest[3]), 'Movimientos, Importar, Listados y Pagos fijos, en ese orden');
 comprobar(await pag.locator('.pestanas [data-a="bloquear"]').count() === 1, 'y al final el 🔒 para cerrar Finanzas');
 comprobar(/Movimientos3/.test(pest[0].replace(/\s/g, '')), `la pestaña lleva el contador de movimientos — «${pest[0]}»`);
 comprobar(await pag.locator('.pestanas button.sel').innerText().then(t => /Movimientos/.test(t)), 'Movimientos es la pestaña por defecto');
@@ -103,11 +103,11 @@ await ir('#/finanzas?vista=anio&anio=2025');
 t = await texto();
 comprobar(/Resumen del año/.test(t) && /Ingresos y gastos por mes/i.test(t), '?vista=anio sigue abriendo el informe anual');
 
-console.log('\n--- 6. Recurrentes ---');
+console.log('\n--- 6. Pagos fijos (ruta recurrentes) ---');
 await ir('#/finanzas?v=recurrentes');
 t = await texto();
 console.log('  ', t.split('\n').slice(0, 3).join(' | '));
-comprobar(/Fly\.io/.test(t), 'lista los recurrentes');
+comprobar(/Fly\.io/.test(t) && /a mano/.test(t), 'lista los recurrentes apuntados a mano');
 comprobar(/72,00/.test(t), 'suma el coste anual');
 
 console.log('\n--- 7. Ninguna sección pinta una fecha en ISO ---');

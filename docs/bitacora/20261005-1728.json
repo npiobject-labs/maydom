@@ -1,0 +1,30 @@
+{
+  "fecha": "2026-10-05T17:28:00+02:00",
+  "titulo": "Previsor de pagos fijos",
+  "objetivo": "Detectar en los movimientos los pagos de gastos fijos y sacar, mes a mes, el día en que vence cada uno; preparar con un mock los avisos al móvil N días antes.",
+  "prompts": [
+    { "texto": "El código que hay en este repositorio maydom corresponde a la versión instalada en este dispositivo, build MA-B1-20260927-003?" },
+    { "texto": "En la sección de finanzas tenemos apartados movimientos, importar, listados y recurrentes. Quiero añadir una nueva sección; no sé si es nueva o iría en recurrentes. La idea es, haciendo un análisis de todos los movimientos de las cuentas, sacar un informe en el cual por cada mes diga el día en el cual se va a producir el vencimiento de un pago de una factura de las que son de gastos fijos: por ejemplo, la luz, la comunidad, el gas, las suscripciones, etcétera. Y estaría bien que en la siguiente versión pueda mandar una notificación al móvil un día antes de que se vaya a producir un movimiento, avisando: mañana tienes el pago del recibo de Unión Fenosa o Iberdrola, o tienes el pago de la comunidad. Lo de un día antes que sea un parámetro que se pueda ajustar: uno, dos o tres días. Lo que estoy pidiendo es un previsor o un avisador de los pagos de los gastos fijos; si no lo entiendes, pregunta.", "nota": "dictado; transcripción limpiada de repeticiones y errores del reconocimiento de voz" },
+    { "texto": "Dame primero un mock de cómo quedaría esta sección de avisos de los gastos fijos." }
+  ],
+  "cambios": [
+    "Pagos fijos detectados solos en los movimientos: mismo emisor, cada 1, 2, 3, 6 o 12 meses, día parecido (ADR-012).",
+    "La pestaña Recurrentes pasa a Pagos fijos: coste al mes, próximos 30 días, renombrar, descartar y recuperar, y pagos a mano con periodicidad.",
+    "Listado nuevo «Vencimientos de pagos fijos»: mes a mes el día de cada pago, cobrado, previsto o no ha llegado.",
+    "Mock 007 con las dos pantallas y la propuesta de avisos al móvil (antelación de 0 a 3 días).",
+    "Prueba de humo prueba-vencimientos.mjs con movimientos inventados."
+  ],
+  "sha": null,
+  "sha_completo": null,
+  "run": null,
+  "mock": "mocks/007-pagos-fijos.html",
+  "build": "MA-B1-20261005-001",
+  "pagina": "https://npiobject-labs.github.io/maydom/#/finanzas?v=recurrentes",
+  "fly": null,
+  "pendiente": [
+    "Visto bueno al mock, fusionar el PR y confirmar el run de Pages.",
+    "Decidir cómo llegan los avisos con la app cerrada (D17) y hacerlos."
+  ],
+  "enlaces": [],
+  "notas": "Prompts dictados, transcritos limpiando repeticiones; sin datos personales. Los movimientos de las pruebas y del mock son inventados. El SHA no se sabe hasta el commit y cambiará al fusionar con squash."
+}

@@ -1,0 +1,122 @@
+# TEMPORAL: comprueba desde el runner (el sandbox de la sesión no alcanza a los proveedores) lo que
+# Requesty publica sin clave: catálogo global y UE con precios, comparado con el de OpenRouter, y su
+# documentación. No usa secretos. Se borra antes de fusionar.
+name: Temporal · Requesty frente a OpenRouter
+on:
+  push:
+    branches: [claude/stoic-gauss-7sr9ne]
+    paths: ['.github/workflows/temporal-requesty.yml']
+permissions:
+  contents: read
+jobs:
+  comprobar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Catálogos y comparación
+        shell: python3 {0}
+        run: |
+          import json, urllib.request, urllib.error, statistics
+          def get(url, auth=None):
+              req = urllib.request.Request(url, headers={'User-Agent': 'npiobject-labs-verificacion/1.0', 'Accept': 'application/json'})
+              try:
+                  with urllib.request.urlopen(req, timeout=40) as r:
+                      return r.status, r.read()
+              except urllib.error.HTTPError as e:
+                  return e.code, e.read()
+              except Exception as e:
+                  return 0, str(e).encode()
+          def precios(m):
+              p = m.get('pricing') or {}
+              ent = p.get('prompt', p.get('input', m.get('input_price')))
+              sal = p.get('completion', p.get('output', m.get('output_price')))
+              try: return float(ent), float(sal)
+              except Exception: return None, None
+          cat = {}
+          for nombre, url in [('openrouter', 'https://openrouter.ai/api/v1/models'), ('requesty', 'https://router.requesty.ai/v1/models'), ('requesty_ue', 'https://router.eu.requesty.ai/v1/models')]:
+              st, cuerpo = get(url)
+              print(f'== {nombre}: HTTP {st}, {len(cuerpo)} bytes')
+              try:
+                  d = json.loads(cuerpo)
+              except Exception:
+                  print('   no es JSON:', cuerpo[:300]); continue
+              lista = d.get('data', d if isinstance(d, list) else [])
+              cat[nombre] = {m.get('id'): m for m in lista if isinstance(m, dict)}
+              print(f'   modelos: {len(cat[nombre])}')
+              if lista:
+                  print('   claves del primer modelo:', sorted(lista[0].keys()))
+                  print('   ejemplo:', json.dumps(lista[0], ensure_ascii=False)[:1500])
+          if 'requesty' in cat:
+              prov = {}
+              for i in cat['requesty']: prov[i.split('/')[0]] = prov.get(i.split('/')[0], 0) + 1
+              print('== prefijos de Requesty:', dict(sorted(prov.items(), key=lambda x: -x[1])))
+          if 'openrouter' in cat and 'requesty' in cat:
+              orids, rqids = set(cat['openrouter']), set(cat['requesty'])
+              comunes = orids & rqids
+              print(f'== ids idénticos OpenRouter∩Requesty: {len(comunes)} de {len(orids)} (OpenRouter) y {len(rqids)} (Requesty)')
+              ratios = []
+              for i in sorted(comunes):
+                  a, b = precios(cat['openrouter'][i]), precios(cat['requesty'][i])
+                  if a[0] and b[0]: ratios.append(b[0] / a[0])
+              if ratios: print(f'   precio entrada Requesty/OpenRouter en comunes: mediana {statistics.median(ratios):.3f}, min {min(ratios):.3f}, max {max(ratios):.3f}, n={len(ratios)}')
+          interes = ['google/gemini-2.5-flash-lite', 'google/gemini-2.5-flash', 'openai/gpt-oss-120b', 'openai/gpt-5-mini', 'deepseek/deepseek-chat', 'mistralai/mistral-small', 'anthropic/claude-sonnet', 'anthropic/claude-opus', 'qwen/qwen3', 'meta-llama/llama-3.3-70b', 'x-ai/grok']
+          for pat in interes:
+              print(f'-- {pat}')
+              for nombre in ('openrouter', 'requesty', 'requesty_ue'):
+                  ids = [i for i in cat.get(nombre, {}) if pat.split('/')[-1] in i]
+                  for i in ids[:6]:
+                      print(f'   {nombre:12} {i:60} {precios(cat[nombre][i])}')
+          if 'requesty' in cat and 'requesty_ue' in cat:
+              ue = cat['requesty_ue']; gl = cat['requesty']
+              print(f'== UE: {len(ue)} modelos; ids que no están en global: {len(set(ue) - set(gl))}; ejemplos: {sorted(ue)[:40]}')
+              rs = []
+              for i in set(ue) & set(gl):
+                  a, b = precios(gl[i]), precios(ue[i])
+                  if a[0] and b[0]: rs.append(b[0] / a[0])
+              if rs: print(f'   precio UE/global en comunes: mediana {statistics.median(rs):.3f}, min {min(rs):.3f}, max {max(rs):.3f}')
+      - name: Documentación de Requesty
+        shell: python3 {0}
+        run: |
+          import re, urllib.request, urllib.error
+          def get(url):
+              req = urllib.request.Request(url, headers={'User-Agent': 'npiobject-labs-verificacion/1.0'})
+              try:
+                  with urllib.request.urlopen(req, timeout=40) as r: return r.status, r.read().decode('utf-8', 'replace')
+              except urllib.error.HTTPError as e: return e.code, ''
+              except Exception as e: return 0, str(e)
+          st, indice = get('https://docs.requesty.ai/llms.txt')
+          print(f'== llms.txt HTTP {st}, {len(indice)} chars'); print(indice[:12000])
+          enlaces = re.findall(r'\((https://docs\.requesty\.ai/[^)\s]+)\)', indice)
+          claves = ['cost', 'pricing', 'models', 'eu', 'region', 'fallback', 'routing', 'privacy', 'retention', 'security', 'byok', 'limit', 'error', 'stream', 'usage', 'chat-completion', 'quickstart', 'policies', 'billing', 'gdpr']
+          vistos = []
+          for u in enlaces:
+              if any(k in u.lower() for k in claves) and u not in vistos: vistos.append(u)
+          print(f'== páginas elegidas: {len(vistos)}')
+          for u in vistos[:28]:
+              st, txt = get(u if u.endswith('.md') else u + '.md')
+              if st != 200: st, txt = get(u)
+              txt = re.sub(r'<[^>]+>', ' ', txt); txt = re.sub(r'\n\s*\n+', '\n', txt)
+              print(f'\n######## {u} (HTTP {st}, {len(txt)} chars)\n{txt[:5000]}')
+      - name: Web de Requesty (precios, UE, privacidad, estado)
+        shell: python3 {0}
+        run: |
+          import re, urllib.request, urllib.error, html
+          def texto(url):
+              req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (verificacion npiobject-labs)'})
+              try:
+                  with urllib.request.urlopen(req, timeout=40) as r: t = r.read().decode('utf-8', 'replace'); st = r.status
+              except urllib.error.HTTPError as e: return e.code, ''
+              except Exception as e: return 0, str(e)
+              t = re.sub(r'(?is)<(script|style)[^>]*>.*?</\1>', ' ', t); t = html.unescape(re.sub(r'<[^>]+>', ' ', t))
+              return st, re.sub(r'\s+', ' ', t)
+          for u in ['https://www.requesty.ai/pricing', 'https://www.requesty.ai/eu', 'https://www.requesty.ai/privacy', 'https://www.requesty.ai/terms', 'https://www.requesty.ai/security', 'https://status.requesty.ai/', 'https://www.requesty.ai/dpa']:
+              st, t = texto(u)
+              print(f'\n######## {u} (HTTP {st}, {len(t)} chars)')
+              claves = ['%', 'fee', 'markup', 'BYOK', 'retain', 'retention', 'train', 'GDPR', 'Frankfurt', 'EU', 'subprocessor', 'delete', 'days', 'uptime', 'incident', 'credit', 'invoice', 'VAT', 'refund', 'minimum', 'free', 'Ltd', 'London', 'Inc']
+              trozos = []
+              for k in claves:
+                  for m in re.finditer(re.escape(k), t):
+                      trozos.append((m.start(), t[max(0, m.start()-220):m.start()+260]))
+              trozos.sort(); ult = -10**9
+              for pos, tr in trozos:
+                  if pos - ult > 400: print('…', tr); ult = pos

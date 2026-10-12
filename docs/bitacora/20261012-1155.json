@@ -1,0 +1,39 @@
+{
+  "fecha": "2026-10-12T11:55:00+02:00",
+  "titulo": "Alternativas a OpenRouter: investigación que pasa al gateway",
+  "objetivo": "Saber qué otros servicios como OpenRouter hay para enrutar hacia modelos de LLM y cuál poner de segundo agregador, y llevar ese trabajo al proyecto que le corresponde.",
+  "prompts": [
+    { "texto": "Una pregunta: la parte en la que, en lugar de ir solamente a OpenRouter, se buscan otros proveedores, ¿está hecha? ¿Se deja para otra versión? ¿Cómo está esa parte?" },
+    { "texto": "Me estoy refiriendo a sitios similares a OpenRouter, sitios que hacen de proxy hacia modelos de LLM. Debe haber más, yo sé que hay más. Tienes que investigar qué otros sitios hay para poder enrutar hacia modelos de LLM. ¡Investiga!" },
+    { "texto": "¿Tú crees que Requesty es el agregador más parecido a OpenRouter y que lo podemos utilizar como segundo agregador, para que la app empiece a trabajar con más de uno? Creo que es la app de OpenRouter a la que estás llamando. Hazme un pequeño análisis de cuál pondrías como segundo agregador y estudia especialmente Requesty." },
+    { "texto": "Ya tengo una cuenta en Requesty, ya me he dado de alta." },
+    { "texto": "Pero estamos en el proyecto de maydom; esto de Requesty no corresponde a este proyecto. Lo que quiero es plantear en mercamodels, además de los modelos de OpenRouter, tener los de Requesty." },
+    { "texto": "O incluso creo que no es ni de mercamodels, porque mercamodels usa OpenRouter; a lo mejor tenía que ir al proyecto de OpenRouter. No lo sé. Mira a ver. Investiga." },
+    { "texto": "¿Y no sería más conveniente abrir un nuevo proyecto en el que pongamos las dos aplicaciones, OpenRouter y mercamodels, y trabajas con acceso a ambas? ¿Qué te parece? Siempre salvando la investigación que ya has hecho." },
+    { "texto": "Ábrelo tú." },
+    { "texto": "Vale, cierra sesión." }
+  ],
+  "cambios": [
+    "Investigación de alternativas a OpenRouter en cuatro frentes, con informe.",
+    "Análisis de Requesty con datos de primera mano: 754 modelos, precios de lista, coste por llamada en usage.cost, región UE, ids por proveedor y región y log de prompts encendido por defecto.",
+    "El trabajo pasa al gateway: PR 35 de npiobject-labs/openrouter con los dos documentos; el PR 40 de maydom se cerró sin fusionar.",
+    "Sesión nueva con el gateway y mercamodels para el segundo agregador.",
+    "Plan de maydom: deuda D18, sustituto de gemini-2.5-flash-lite antes del 20/10/2026."
+  ],
+  "sha": null,
+  "sha_completo": null,
+  "run": null,
+  "mock": null,
+  "build": "MA-B1-20261005-002",
+  "pagina": "https://npiobject-labs.github.io/maydom/bitacora.html",
+  "fly": null,
+  "pendiente": [
+    "D18: elegir el sustituto de gemini-2.5-flash-lite antes del 20/10/2026.",
+    "Gateway: fusionar el PR 35 y crear los secretos de Requesty con el log de prompts apagado."
+  ],
+  "enlaces": [
+    { "texto": "PR 35 de openrouter (investigación y análisis)", "url": "https://github.com/npiobject-labs/openrouter/pull/35" },
+    { "texto": "PR 40 de maydom (cerrado)", "url": "https://github.com/npiobject-labs/maydom/pull/40" }
+  ],
+  "notas": "Prompts dictados, transcritos limpiando repeticiones y errores del reconocimiento de voz (por ejemplo «recoestic» y «merkamodel»). Sin datos personales ni claves. La comprobación de Requesty se hizo con un workflow temporal sin secretos, que se borró en la misma rama. La sesión empezó el 06/10 y se cerró el 12/10."
+}
